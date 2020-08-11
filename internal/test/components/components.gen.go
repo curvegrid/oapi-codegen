@@ -1610,11 +1610,18 @@ func (w *ServerInterfaceWrapper) ParamsWithAddProps(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p1: %s", err))
 	}
 
+	if err := params.Validate(); err != nil {
+		return err
+	}
 	// ------------- Required query parameter "p2" -------------
 
 	err = runtime.BindQueryParameter("form", true, true, "p2", ctx.QueryParams(), &params.P2)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p2: %s", err))
+	}
+
+	if err := params.Validate(); err != nil {
+		return err
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

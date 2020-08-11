@@ -170,6 +170,7 @@ func DescribeParameters(params openapi3.Parameters, path []string) ([]ParameterD
 					paramOrRef.Ref, param.Name, err)
 			}
 			pd.Schema.GoType = goType
+			pd.Schema.RefType = goType
 		}
 		outParams = append(outParams, pd)
 	}
@@ -565,6 +566,18 @@ func GenerateTypeDefsForOperation(op OperationDefinition) []TypeDefinition {
 	// Now, go through all the additional types we need to declare.
 	for _, param := range op.AllParams() {
 		typeDefs = append(typeDefs, param.Schema.GetAdditionalTypeDefs()...)
+	}
+
+	// We want all path params too
+	for idx, param := range op.PathParams {
+		if param.Schema.RefType == "" {
+			goName := op.OperationId + "Path" + ToCamelCase(param.ParamName)
+			typeDefs = append(typeDefs, TypeDefinition{
+				TypeName: goName,
+				Schema:   param.Schema,
+			})
+			op.PathParams[idx].Schema.GoType = goName
+		}
 	}
 
 	for _, body := range op.Bodies {

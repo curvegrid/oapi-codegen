@@ -14,6 +14,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -2801,6 +2802,10 @@ func (w *ServerInterfaceWrapper) GetContentObject(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter 'param' as JSON")
 	}
 
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetContentObject(&GetContentObjectContext{ctx}, param)
 	return err
@@ -3030,6 +3035,10 @@ func (w *ServerInterfaceWrapper) GetLabelExplodeArray(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
 	}
 
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetLabelExplodeArray(&GetLabelExplodeArrayContext{ctx}, param)
 	return err
@@ -3044,6 +3053,10 @@ func (w *ServerInterfaceWrapper) GetLabelExplodeObject(ctx echo.Context) error {
 	err = runtime.BindStyledParameter("label", true, "param", ctx.Param("param"), &param)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3062,6 +3075,10 @@ func (w *ServerInterfaceWrapper) GetLabelNoExplodeArray(ctx echo.Context) error 
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
 	}
 
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetLabelNoExplodeArray(&GetLabelNoExplodeArrayContext{ctx}, param)
 	return err
@@ -3076,6 +3093,10 @@ func (w *ServerInterfaceWrapper) GetLabelNoExplodeObject(ctx echo.Context) error
 	err = runtime.BindStyledParameter("label", false, "param", ctx.Param("param"), &param)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3094,6 +3115,10 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeArray(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
+	if err := id.Validate(); err != nil {
+		return errors.Wrapf(err, "field id")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetMatrixExplodeArray(&GetMatrixExplodeArrayContext{ctx}, id)
 	return err
@@ -3108,6 +3133,10 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeObject(ctx echo.Context) error 
 	err = runtime.BindStyledParameter("matrix", true, "id", ctx.Param("id"), &id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	if err := id.Validate(); err != nil {
+		return errors.Wrapf(err, "field id")
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3126,6 +3155,10 @@ func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray(ctx echo.Context) error
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
+	if err := id.Validate(); err != nil {
+		return errors.Wrapf(err, "field id")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetMatrixNoExplodeArray(&GetMatrixNoExplodeArrayContext{ctx}, id)
 	return err
@@ -3142,6 +3175,10 @@ func (w *ServerInterfaceWrapper) GetMatrixNoExplodeObject(ctx echo.Context) erro
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
+	if err := id.Validate(); err != nil {
+		return errors.Wrapf(err, "field id")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetMatrixNoExplodeObject(&GetMatrixNoExplodeObjectContext{ctx}, id)
 	return err
@@ -3154,6 +3191,10 @@ func (w *ServerInterfaceWrapper) GetPassThrough(ctx echo.Context) error {
 	var param string
 
 	param = ctx.Param("param")
+
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetPassThrough(&GetPassThroughContext{ctx}, param)
@@ -3171,6 +3212,10 @@ func (w *ServerInterfaceWrapper) GetDeepObject(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("deepObject", true, true, "deepObj", ctx.QueryParams(), &params.DeepObj)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter deepObj: %s", err))
+	}
+
+	if err := params.Validate(); err != nil {
+		return err
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3191,6 +3236,9 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ea: %s", err))
 	}
 
+	if err := params.Validate(); err != nil {
+		return err
+	}
 	// ------------- Optional query parameter "a" -------------
 
 	err = runtime.BindQueryParameter("form", false, false, "a", ctx.QueryParams(), &params.A)
@@ -3198,6 +3246,9 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter a: %s", err))
 	}
 
+	if err := params.Validate(); err != nil {
+		return err
+	}
 	// ------------- Optional query parameter "eo" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "eo", ctx.QueryParams(), &params.Eo)
@@ -3205,6 +3256,9 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter eo: %s", err))
 	}
 
+	if err := params.Validate(); err != nil {
+		return err
+	}
 	// ------------- Optional query parameter "o" -------------
 
 	err = runtime.BindQueryParameter("form", false, false, "o", ctx.QueryParams(), &params.O)
@@ -3212,6 +3266,9 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter o: %s", err))
 	}
 
+	if err := params.Validate(); err != nil {
+		return err
+	}
 	// ------------- Optional query parameter "ep" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "ep", ctx.QueryParams(), &params.Ep)
@@ -3219,6 +3276,9 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ep: %s", err))
 	}
 
+	if err := params.Validate(); err != nil {
+		return err
+	}
 	// ------------- Optional query parameter "p" -------------
 
 	err = runtime.BindQueryParameter("form", false, false, "p", ctx.QueryParams(), &params.P)
@@ -3226,6 +3286,9 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p: %s", err))
 	}
 
+	if err := params.Validate(); err != nil {
+		return err
+	}
 	// ------------- Optional query parameter "co" -------------
 
 	if paramValue := ctx.QueryParam("co"); paramValue != "" {
@@ -3237,6 +3300,10 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 		}
 		params.Co = &value
 
+	}
+
+	if err := params.Validate(); err != nil {
+		return err
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3255,6 +3322,10 @@ func (w *ServerInterfaceWrapper) GetSimpleExplodeArray(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
 	}
 
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetSimpleExplodeArray(&GetSimpleExplodeArrayContext{ctx}, param)
 	return err
@@ -3269,6 +3340,10 @@ func (w *ServerInterfaceWrapper) GetSimpleExplodeObject(ctx echo.Context) error 
 	err = runtime.BindStyledParameter("simple", true, "param", ctx.Param("param"), &param)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3287,6 +3362,10 @@ func (w *ServerInterfaceWrapper) GetSimpleNoExplodeArray(ctx echo.Context) error
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
 	}
 
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetSimpleNoExplodeArray(&GetSimpleNoExplodeArrayContext{ctx}, param)
 	return err
@@ -3303,6 +3382,10 @@ func (w *ServerInterfaceWrapper) GetSimpleNoExplodeObject(ctx echo.Context) erro
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
 	}
 
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetSimpleNoExplodeObject(&GetSimpleNoExplodeObjectContext{ctx}, param)
 	return err
@@ -3317,6 +3400,10 @@ func (w *ServerInterfaceWrapper) GetSimplePrimitive(ctx echo.Context) error {
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.Wrapf(err, "field param")
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

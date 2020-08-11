@@ -109,11 +109,18 @@ func (w *ServerInterfaceWrapper) FindPets(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
 	}
 
+	if err := params.Validate(); err != nil {
+		return err
+	}
 	// ------------- Optional query parameter "limit" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	if err := params.Validate(); err != nil {
+		return err
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -141,6 +148,10 @@ func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
+	if err := id.Validate(); err != nil {
+		return errors.Wrapf(err, "field id")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.DeletePet(&DeletePetContext{ctx}, id)
 	return err
@@ -155,6 +166,10 @@ func (w *ServerInterfaceWrapper) FindPetById(ctx echo.Context) error {
 	err = runtime.BindStyledParameter("simple", false, "id", ctx.Param("id"), &id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	if err := id.Validate(); err != nil {
+		return errors.Wrapf(err, "field id")
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

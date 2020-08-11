@@ -1290,6 +1290,10 @@ func (w *ServerInterfaceWrapper) Issue209(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter str: %s", err))
 	}
 
+	if err := str.Validate(); err != nil {
+		return errors.Wrapf(err, "field str")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.Issue209(&Issue209Context{ctx}, str)
 	return err
@@ -1304,6 +1308,10 @@ func (w *ServerInterfaceWrapper) Issue30(ctx echo.Context) error {
 	err = runtime.BindStyledParameter("simple", false, "fallthrough", ctx.Param("fallthrough"), &pFallthrough)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter fallthrough: %s", err))
+	}
+
+	if err := pFallthrough.Validate(); err != nil {
+		return errors.Wrapf(err, "field pFallthrough")
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1322,6 +1330,10 @@ func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter 1param: %s", err))
 	}
 
+	if err := n1param.Validate(); err != nil {
+		return errors.Wrapf(err, "field n1param")
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.Issue41(&Issue41Context{ctx}, n1param)
 	return err
@@ -1338,6 +1350,10 @@ func (w *ServerInterfaceWrapper) Issue9(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, true, "foo", ctx.QueryParams(), &params.Foo)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter foo: %s", err))
+	}
+
+	if err := params.Validate(); err != nil {
+		return err
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

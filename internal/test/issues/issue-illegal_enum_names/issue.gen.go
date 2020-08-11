@@ -40,7 +40,7 @@ func (s Bar) Validate() error {
 	return validation.Validate(
 		(string)(s),
 		validation.In(
-			"_Foo_", "Foo", "Bar", "Foo Bar", "Foo-Bar", "1Foo", " Foo", " Foo ",
+			"Foo Bar", "Foo-Bar", "1Foo", " Foo", " Foo ", "_Foo_", "Foo", "Bar",
 		),
 	)
 

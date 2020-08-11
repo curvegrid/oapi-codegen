@@ -932,6 +932,9 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
         return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter {{.ParamName}}: %s", err))
     }
 {{end}}
+    if err := {{$varName}}.Validate(); err != nil {
+        return errors.Wrapf(err, "field {{$varName}}")
+    }
 {{end}}
 
 {{range .SecurityDefinitions}}
@@ -964,6 +967,9 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
         return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Query argument {{.ParamName}} is required, but not found"))
     }{{end}}
     {{end}}
+    if err := params.Validate(); err != nil {
+        return err
+    }
 {{end}}
 
 {{if .HeaderParams}}
