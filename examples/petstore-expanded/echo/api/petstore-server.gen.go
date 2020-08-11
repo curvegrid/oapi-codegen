@@ -11,6 +11,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"net/http"
 	"strings"
 )
@@ -19,16 +20,75 @@ import (
 type ServerInterface interface {
 	// Returns all pets
 	// (GET /pets)
-	FindPets(ctx echo.Context, params FindPetsParams) error
+	FindPets(ctx *FindPetsContext, params FindPetsParams) error
 	// Creates a new pet
 	// (POST /pets)
-	AddPet(ctx echo.Context) error
+	AddPet(ctx *AddPetContext) error
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(ctx echo.Context, id int64) error
+	DeletePet(ctx *DeletePetContext, id int64) error
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetById(ctx echo.Context, id int64) error
+	FindPetById(ctx *FindPetByIdContext, id int64) error
+}
+
+// FindPetsContext is a context customized for FindPets (GET /pets).
+type FindPetsContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *FindPetsContext) OK(resp FindPetsResponseOK) error {
+	return c.JSON(200, resp)
+}
+
+// FindPetsResponseOK is the response type for FindPets's "200" response.
+type FindPetsResponseOK = []Pet
+
+// AddPetContext is a context customized for AddPet (POST /pets).
+type AddPetContext struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *AddPetContext) ParseJSONBody() (AddPetJSONBody, error) {
+	var resp AddPetJSONBody
+	if err := c.Bind(&resp); err != nil {
+		return resp, errors.WithStack(err)
+	}
+	if err := resp.Validate(); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *AddPetContext) OK(resp Pet) error {
+	return c.JSON(200, resp)
+}
+
+// DeletePetContext is a context customized for DeletePet (DELETE /pets/{id}).
+type DeletePetContext struct {
+	echo.Context
+}
+
+// Responses
+
+// FindPetByIdContext is a context customized for FindPetById (GET /pets/{id}).
+type FindPetByIdContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *FindPetByIdContext) OK(resp Pet) error {
+	return c.JSON(200, resp)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -57,7 +117,7 @@ func (w *ServerInterfaceWrapper) FindPets(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.FindPets(ctx, params)
+	err = w.Handler.FindPets(&FindPetsContext{ctx}, params)
 	return err
 }
 
@@ -66,7 +126,7 @@ func (w *ServerInterfaceWrapper) AddPet(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.AddPet(ctx)
+	err = w.Handler.AddPet(&AddPetContext{ctx})
 	return err
 }
 
@@ -82,7 +142,7 @@ func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeletePet(ctx, id)
+	err = w.Handler.DeletePet(&DeletePetContext{ctx}, id)
 	return err
 }
 
@@ -98,7 +158,7 @@ func (w *ServerInterfaceWrapper) FindPetById(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.FindPetById(ctx, id)
+	err = w.Handler.FindPetById(&FindPetByIdContext{ctx}, id)
 	return err
 }
 

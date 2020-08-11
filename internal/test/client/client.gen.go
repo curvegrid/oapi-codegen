@@ -967,6 +967,7 @@ type PostBothContext struct {
 }
 
 // The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *PostBothContext) ParseJSONBody() (PostBothJSONBody, error) {
 	var resp PostBothJSONBody
 	if err := c.Bind(&resp); err != nil {
@@ -989,6 +990,7 @@ type PostJsonContext struct {
 }
 
 // The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *PostJsonContext) ParseJSONBody() (PostJsonJSONBody, error) {
 	var resp PostJsonJSONBody
 	if err := c.Bind(&resp); err != nil {

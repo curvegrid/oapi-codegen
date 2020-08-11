@@ -789,6 +789,7 @@ type {{.OperationId}}Context struct {
 
 // The body parsers
 {{- range .Bodies }}
+// Parse{{.NameTag}}Body tries to parse the body into the respective structure and validate it.
 func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}}{{.NameTag}}Body, error) {
     var resp {{$op.OperationId}}{{.NameTag}}Body
     if err := c.Bind(&resp); err != nil {
@@ -805,6 +806,12 @@ func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}
 {{- if gt (len .GetResponseTypeDefinitions) 0 }}
 
 // Responses
+{{ if $op.HasEmptySuccess }}
+// OK returns the successful response with no body.
+func (c *{{$op.OperationId}}Context) OK() error {
+    return c.NoContent(200)
+}
+{{- end }}
 {{- range .GetResponseTypeDefinitions }}
 {{ $respType := .Schema.RefType }}
 {{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
@@ -815,7 +822,7 @@ func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}
 func (c *{{$op.OperationId}}Context) Respond{{.ResponseName}}(code int, resp {{$respType}}) error {
     return c.JSON(code, resp)
 }
-{{- else }}
+{{- else if (ne .ResponseName "default") }}
 {{ $respName := statusText .ResponseName | camelCase | title }}
 {{ if eq $respType "" }}
 {{ $respType = printf "%sResponse%s" $op.OperationId $respName }}
@@ -825,7 +832,7 @@ func (c *{{$op.OperationId}}Context) {{$respName}}(resp {{$respType}}) error {
     return c.JSON({{.ResponseName}}, resp)
 }
 {{- end }}
-{{ if eq .Schema.RefType "" }}
+{{ if and (ne $respType "") (eq .Schema.RefType "") }}
 // {{$respType}} is the response type for {{$op.OperationId}}'s "{{.ResponseName}}" response.
 type {{$respType}} = {{.Schema.GoType}}
 {{- end }}

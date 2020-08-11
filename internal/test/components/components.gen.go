@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"io"
@@ -29,16 +30,68 @@ type AdditionalPropertiesObject1 struct {
 	AdditionalProperties map[string]int `json:"-"`
 }
 
+// Validate perform validation on the AdditionalPropertiesObject1
+func (s AdditionalPropertiesObject1) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Id,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Optional,
+		),
+		validation.Field(&s.AdditionalProperties),
+	)
+
+}
+
 // AdditionalPropertiesObject2 defines model for AdditionalPropertiesObject2.
 type AdditionalPropertiesObject2 struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
 }
 
+// Validate perform validation on the AdditionalPropertiesObject2
+func (s AdditionalPropertiesObject2) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Id,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
 // AdditionalPropertiesObject3 defines model for AdditionalPropertiesObject3.
 type AdditionalPropertiesObject3 struct {
 	Name                 string                 `json:"name"`
 	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// Validate perform validation on the AdditionalPropertiesObject3
+func (s AdditionalPropertiesObject3) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(&s.AdditionalProperties),
+	)
+
 }
 
 // AdditionalPropertiesObject4 defines model for AdditionalPropertiesObject4.
@@ -48,15 +101,57 @@ type AdditionalPropertiesObject4 struct {
 	AdditionalProperties map[string]interface{}            `json:"-"`
 }
 
+// Validate perform validation on the AdditionalPropertiesObject4
+func (s AdditionalPropertiesObject4) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Inner,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(&s.AdditionalProperties),
+	)
+
+}
+
 // AdditionalPropertiesObject4_Inner defines model for AdditionalPropertiesObject4.Inner.
 type AdditionalPropertiesObject4_Inner struct {
 	Name                 string                 `json:"name"`
 	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
+// Validate perform validation on the AdditionalPropertiesObject4_Inner
+func (s AdditionalPropertiesObject4_Inner) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(&s.AdditionalProperties),
+	)
+
+}
+
 // AdditionalPropertiesObject5 defines model for AdditionalPropertiesObject5.
 type AdditionalPropertiesObject5 struct {
 	AdditionalProperties map[string]SchemaObject `json:"-"`
+}
+
+// Validate perform validation on the AdditionalPropertiesObject5
+func (s AdditionalPropertiesObject5) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
 }
 
 // ObjectWithJsonField defines model for ObjectWithJsonField.
@@ -66,10 +161,47 @@ type ObjectWithJsonField struct {
 	Value2 json.RawMessage `json:"value2,omitempty"`
 }
 
+// Validate perform validation on the ObjectWithJsonField
+func (s ObjectWithJsonField) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Value1,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Value2,
+		),
+	)
+
+}
+
 // SchemaObject defines model for SchemaObject.
 type SchemaObject struct {
 	FirstName string `json:"firstName"`
 	Role      string `json:"role"`
+}
+
+// Validate perform validation on the SchemaObject
+func (s SchemaObject) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.FirstName,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Role,
+			validation.Required,
+		),
+	)
+
 }
 
 // ResponseObject defines model for ResponseObject.
@@ -77,14 +209,50 @@ type ResponseObject struct {
 	Field SchemaObject `json:"Field"`
 }
 
+// Validate perform validation on the ResponseObject
+func (s ResponseObject) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Field,
+			validation.Required,
+		),
+	)
+
+}
+
 // RequestBody defines model for RequestBody.
 type RequestBody struct {
 	Field SchemaObject `json:"Field"`
 }
 
+// Validate perform validation on the RequestBody
+func (s RequestBody) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Field,
+			validation.Required,
+		),
+	)
+
+}
+
 // ParamsWithAddPropsParams_P1 defines parameters for ParamsWithAddProps.
 type ParamsWithAddPropsParams_P1 struct {
 	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// Validate perform validation on the ParamsWithAddPropsParams_P1
+func (s ParamsWithAddPropsParams_P1) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
 }
 
 // ParamsWithAddPropsParams defines parameters for ParamsWithAddProps.
@@ -100,9 +268,36 @@ type ParamsWithAddPropsParams struct {
 	} `json:"p2"`
 }
 
+// Validate perform validation on the ParamsWithAddPropsParams
+func (s ParamsWithAddPropsParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.P1,
+			validation.Required,
+		),
+		validation.Field(
+			&s.P2,
+			validation.Required,
+		),
+	)
+
+}
+
 // ParamsWithAddPropsParams_P2_Inner defines parameters for ParamsWithAddProps.
 type ParamsWithAddPropsParams_P2_Inner struct {
 	AdditionalProperties map[string]string `json:"-"`
+}
+
+// Validate perform validation on the ParamsWithAddPropsParams_P2_Inner
+func (s ParamsWithAddPropsParams_P2_Inner) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
 }
 
 // BodyWithAddPropsJSONBody defines parameters for BodyWithAddProps.
@@ -112,9 +307,37 @@ type BodyWithAddPropsJSONBody struct {
 	AdditionalProperties map[string]interface{}         `json:"-"`
 }
 
+// Validate perform validation on the BodyWithAddPropsJSONBody
+func (s BodyWithAddPropsJSONBody) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Inner,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(&s.AdditionalProperties),
+	)
+
+}
+
 // BodyWithAddPropsJSONBody_Inner defines parameters for BodyWithAddProps.
 type BodyWithAddPropsJSONBody_Inner struct {
 	AdditionalProperties map[string]int `json:"-"`
+}
+
+// Validate perform validation on the BodyWithAddPropsJSONBody_Inner
+func (s BodyWithAddPropsJSONBody_Inner) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
 }
 
 // EnsureEverythingIsReferencedRequestBody defines body for EnsureEverythingIsReferenced for application/json ContentType.
@@ -1279,13 +1502,81 @@ func ParseBodyWithAddPropsResponse(rsp *http.Response) (*BodyWithAddPropsRespons
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(ctx echo.Context) error
+	EnsureEverythingIsReferenced(ctx *EnsureEverythingIsReferencedContext) error
 
 	// (GET /params_with_add_props)
-	ParamsWithAddProps(ctx echo.Context, params ParamsWithAddPropsParams) error
+	ParamsWithAddProps(ctx *ParamsWithAddPropsContext, params ParamsWithAddPropsParams) error
 
 	// (POST /params_with_add_props)
-	BodyWithAddProps(ctx echo.Context) error
+	BodyWithAddProps(ctx *BodyWithAddPropsContext) error
+}
+
+// EnsureEverythingIsReferencedContext is a context customized for EnsureEverythingIsReferenced (GET /ensure-everything-is-referenced).
+type EnsureEverythingIsReferencedContext struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *EnsureEverythingIsReferencedContext) ParseJSONBody() (EnsureEverythingIsReferencedJSONBody, error) {
+	var resp EnsureEverythingIsReferencedJSONBody
+	if err := c.Bind(&resp); err != nil {
+		return resp, errors.WithStack(err)
+	}
+	if err := resp.Validate(); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *EnsureEverythingIsReferencedContext) OK(resp EnsureEverythingIsReferencedResponseOK) error {
+	return c.JSON(200, resp)
+}
+
+// EnsureEverythingIsReferencedResponseOK is the response type for EnsureEverythingIsReferenced's "200" response.
+type EnsureEverythingIsReferencedResponseOK = struct {
+
+	// Has additional properties with schema for dictionaries
+	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
+
+	// Has anonymous field which has additional properties
+	Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
+	JsonField *ObjectWithJsonField         `json:"jsonField,omitempty"`
+
+	// Has additional properties of type int
+	One *AdditionalPropertiesObject1 `json:"one,omitempty"`
+
+	// Allows any additional property
+	Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
+
+	// Does not allow additional properties
+	Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
+}
+
+// ParamsWithAddPropsContext is a context customized for ParamsWithAddProps (GET /params_with_add_props).
+type ParamsWithAddPropsContext struct {
+	echo.Context
+}
+
+// BodyWithAddPropsContext is a context customized for BodyWithAddProps (POST /params_with_add_props).
+type BodyWithAddPropsContext struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *BodyWithAddPropsContext) ParseJSONBody() (BodyWithAddPropsJSONBody, error) {
+	var resp BodyWithAddPropsJSONBody
+	if err := c.Bind(&resp); err != nil {
+		return resp, errors.WithStack(err)
+	}
+	if err := resp.Validate(); err != nil {
+		return resp, err
+	}
+	return resp, nil
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1298,7 +1589,7 @@ func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced(ctx echo.Context) 
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.EnsureEverythingIsReferenced(ctx)
+	err = w.Handler.EnsureEverythingIsReferenced(&EnsureEverythingIsReferencedContext{ctx})
 	return err
 }
 
@@ -1323,7 +1614,7 @@ func (w *ServerInterfaceWrapper) ParamsWithAddProps(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.ParamsWithAddProps(ctx, params)
+	err = w.Handler.ParamsWithAddProps(&ParamsWithAddPropsContext{ctx}, params)
 	return err
 }
 
@@ -1332,7 +1623,7 @@ func (w *ServerInterfaceWrapper) BodyWithAddProps(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.BodyWithAddProps(ctx)
+	err = w.Handler.BodyWithAddProps(&BodyWithAddPropsContext{ctx})
 	return err
 }
 

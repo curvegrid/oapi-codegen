@@ -40,7 +40,7 @@ func (s Bar) Validate() error {
 	return validation.Validate(
 		&s,
 		validation.In(
-			" Foo ", "_Foo_", "Foo", "Bar", "Foo Bar", "Foo-Bar", "1Foo", " Foo",
+			" Foo", " Foo ", "_Foo_", "Foo", "Bar", "Foo Bar", "Foo-Bar", "1Foo",
 		),
 		validation.Skip, // Do not recursively run this method
 	)

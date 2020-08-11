@@ -241,6 +241,13 @@ func (o *OperationDefinition) HasBody() bool {
 	return o.Spec.RequestBody != nil
 }
 
+// HasEmptySuccess returns whether the operation has an empty
+// success response.
+func (o *OperationDefinition) HasEmptySuccess() bool {
+	successResp := o.Spec.Responses.Get(200)
+	return successResp != nil && len(successResp.Value.Content) == 0
+}
+
 // This returns the Operations summary as a multi line comment
 func (o *OperationDefinition) SummaryAsComment() string {
 	if o.Summary == "" {

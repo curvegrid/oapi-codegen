@@ -13,7 +13,9 @@ import (
 	"fmt"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -25,17 +27,67 @@ import (
 // N5StartsWithNumber defines model for 5StartsWithNumber.
 type N5StartsWithNumber map[string]interface{}
 
+// Validate perform validation on the N5StartsWithNumber
+func (s N5StartsWithNumber) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
+
 // AnyType1 defines model for AnyType1.
 type AnyType1 interface{}
+
+// Validate perform validation on the AnyType1
+func (s AnyType1) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
 
 // AnyType2 defines model for AnyType2.
 type AnyType2 interface{}
 
+// Validate perform validation on the AnyType2
+func (s AnyType2) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
+
 // CustomStringType defines model for CustomStringType.
 type CustomStringType string
 
+// Validate perform validation on the CustomStringType
+func (s CustomStringType) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
+
 // GenericObject defines model for GenericObject.
 type GenericObject map[string]interface{}
+
+// Validate perform validation on the GenericObject
+func (s GenericObject) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
 
 // NullableProperties defines model for NullableProperties.
 type NullableProperties struct {
@@ -45,18 +97,83 @@ type NullableProperties struct {
 	RequiredAndNullable *string `json:"requiredAndNullable"`
 }
 
+// Validate perform validation on the NullableProperties
+func (s NullableProperties) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Optional,
+		),
+		validation.Field(
+			&s.OptionalAndNullable,
+		),
+		validation.Field(
+			&s.Required,
+			validation.Required,
+		),
+		validation.Field(
+			&s.RequiredAndNullable,
+		),
+	)
+
+}
+
 // StringInPath defines model for StringInPath.
 type StringInPath string
+
+// Validate perform validation on the StringInPath
+func (s StringInPath) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
 
 // Issue185JSONBody defines parameters for Issue185.
 type Issue185JSONBody NullableProperties
 
+// Validate perform validation on the Issue185JSONBody
+func (s Issue185JSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
+
 // Issue9JSONBody defines parameters for Issue9.
 type Issue9JSONBody interface{}
+
+// Validate perform validation on the Issue9JSONBody
+func (s Issue9JSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
 
 // Issue9Params defines parameters for Issue9.
 type Issue9Params struct {
 	Foo string `json:"foo"`
+}
+
+// Validate perform validation on the Issue9Params
+func (s Issue9Params) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Foo,
+			validation.Required,
+		),
+	)
+
 }
 
 // Issue185RequestBody defines body for Issue185 for application/json ContentType.
@@ -1023,25 +1140,119 @@ func ParseIssue9Response(rsp *http.Response) (*Issue9Response, error) {
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(ctx echo.Context) error
+	EnsureEverythingIsReferenced(ctx *EnsureEverythingIsReferencedContext) error
 
 	// (GET /issues/127)
-	Issue127(ctx echo.Context) error
+	Issue127(ctx *Issue127Context) error
 
 	// (GET /issues/185)
-	Issue185(ctx echo.Context) error
+	Issue185(ctx *Issue185Context) error
 
 	// (GET /issues/209/${str})
-	Issue209(ctx echo.Context, str StringInPath) error
+	Issue209(ctx *Issue209Context, str StringInPath) error
 
 	// (GET /issues/30/{fallthrough})
-	Issue30(ctx echo.Context, pFallthrough string) error
+	Issue30(ctx *Issue30Context, pFallthrough string) error
 
 	// (GET /issues/41/{1param})
-	Issue41(ctx echo.Context, n1param N5StartsWithNumber) error
+	Issue41(ctx *Issue41Context, n1param N5StartsWithNumber) error
 
 	// (GET /issues/9)
-	Issue9(ctx echo.Context, params Issue9Params) error
+	Issue9(ctx *Issue9Context, params Issue9Params) error
+}
+
+// EnsureEverythingIsReferencedContext is a context customized for EnsureEverythingIsReferenced (GET /ensure-everything-is-referenced).
+type EnsureEverythingIsReferencedContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *EnsureEverythingIsReferencedContext) OK(resp EnsureEverythingIsReferencedResponseOK) error {
+	return c.JSON(200, resp)
+}
+
+// EnsureEverythingIsReferencedResponseOK is the response type for EnsureEverythingIsReferenced's "200" response.
+type EnsureEverythingIsReferencedResponseOK = struct {
+	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
+
+	// This should be an interface{}
+	AnyType2         *AnyType2         `json:"anyType2,omitempty"`
+	CustomStringType *CustomStringType `json:"customStringType,omitempty"`
+}
+
+// Issue127Context is a context customized for Issue127 (GET /issues/127).
+type Issue127Context struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *Issue127Context) OK(resp GenericObject) error {
+	return c.JSON(200, resp)
+}
+
+// OK responses with the appropriate code and the JSON response.
+func (c *Issue127Context) OK(resp GenericObject) error {
+	return c.JSON(200, resp)
+}
+
+// OK responses with the appropriate code and the JSON response.
+func (c *Issue127Context) OK(resp GenericObject) error {
+	return c.JSON(200, resp)
+}
+
+// Issue185Context is a context customized for Issue185 (GET /issues/185).
+type Issue185Context struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *Issue185Context) ParseJSONBody() (Issue185JSONBody, error) {
+	var resp Issue185JSONBody
+	if err := c.Bind(&resp); err != nil {
+		return resp, errors.WithStack(err)
+	}
+	if err := resp.Validate(); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// Issue209Context is a context customized for Issue209 (GET /issues/209/${str}).
+type Issue209Context struct {
+	echo.Context
+}
+
+// Issue30Context is a context customized for Issue30 (GET /issues/30/{fallthrough}).
+type Issue30Context struct {
+	echo.Context
+}
+
+// Issue41Context is a context customized for Issue41 (GET /issues/41/{1param}).
+type Issue41Context struct {
+	echo.Context
+}
+
+// Issue9Context is a context customized for Issue9 (GET /issues/9).
+type Issue9Context struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *Issue9Context) ParseJSONBody() (Issue9JSONBody, error) {
+	var resp Issue9JSONBody
+	if err := c.Bind(&resp); err != nil {
+		return resp, errors.WithStack(err)
+	}
+	if err := resp.Validate(); err != nil {
+		return resp, err
+	}
+	return resp, nil
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1054,7 +1265,7 @@ func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced(ctx echo.Context) 
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.EnsureEverythingIsReferenced(ctx)
+	err = w.Handler.EnsureEverythingIsReferenced(&EnsureEverythingIsReferencedContext{ctx})
 	return err
 }
 
@@ -1063,7 +1274,7 @@ func (w *ServerInterfaceWrapper) Issue127(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue127(ctx)
+	err = w.Handler.Issue127(&Issue127Context{ctx})
 	return err
 }
 
@@ -1072,7 +1283,7 @@ func (w *ServerInterfaceWrapper) Issue185(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue185(ctx)
+	err = w.Handler.Issue185(&Issue185Context{ctx})
 	return err
 }
 
@@ -1088,7 +1299,7 @@ func (w *ServerInterfaceWrapper) Issue209(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue209(ctx, str)
+	err = w.Handler.Issue209(&Issue209Context{ctx}, str)
 	return err
 }
 
@@ -1104,7 +1315,7 @@ func (w *ServerInterfaceWrapper) Issue30(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue30(ctx, pFallthrough)
+	err = w.Handler.Issue30(&Issue30Context{ctx}, pFallthrough)
 	return err
 }
 
@@ -1120,7 +1331,7 @@ func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue41(ctx, n1param)
+	err = w.Handler.Issue41(&Issue41Context{ctx}, n1param)
 	return err
 }
 
@@ -1138,7 +1349,7 @@ func (w *ServerInterfaceWrapper) Issue9(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue9(ctx, params)
+	err = w.Handler.Issue9(&Issue9Context{ctx}, params)
 	return err
 }
 
