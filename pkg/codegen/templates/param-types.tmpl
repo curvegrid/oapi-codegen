@@ -10,9 +10,8 @@ func (s {{.TypeName}}) Validate() error {
     {{ if eq (len .Schema.Properties) 0 }}
     // Run validate on a scalar
     return validation.Validate(
-        &s,
+        ({{.Schema.GoType}})(s),
         {{- template "validateRules" .Schema -}}
-        validation.Skip, // Do not recursively run this method
     )
     {{ else }}
     // Run validate on a struct

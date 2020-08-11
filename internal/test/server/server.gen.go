@@ -255,8 +255,7 @@ type Argument string
 func (s Argument) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(string)(s),
 	)
 
 }
@@ -268,8 +267,7 @@ type ResponseWithReference SomeObject
 func (s ResponseWithReference) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(SomeObject)(s),
 	)
 
 }
@@ -331,8 +329,7 @@ type CreateResourceJSONBody EveryTypeRequired
 func (s CreateResourceJSONBody) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(EveryTypeRequired)(s),
 	)
 
 }
@@ -344,8 +341,7 @@ type CreateResource2JSONBody Resource
 func (s CreateResource2JSONBody) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(Resource)(s),
 	)
 
 }

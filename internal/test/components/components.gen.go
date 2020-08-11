@@ -148,8 +148,9 @@ type AdditionalPropertiesObject5 struct {
 func (s AdditionalPropertiesObject5) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(struct {
+			AdditionalProperties map[string]SchemaObject `json:"-"`
+		})(s),
 	)
 
 }
@@ -249,8 +250,9 @@ type ParamsWithAddPropsParams_P1 struct {
 func (s ParamsWithAddPropsParams_P1) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(struct {
+			AdditionalProperties map[string]interface{} `json:"-"`
+		})(s),
 	)
 
 }
@@ -294,8 +296,9 @@ type ParamsWithAddPropsParams_P2_Inner struct {
 func (s ParamsWithAddPropsParams_P2_Inner) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(struct {
+			AdditionalProperties map[string]string `json:"-"`
+		})(s),
 	)
 
 }
@@ -334,8 +337,9 @@ type BodyWithAddPropsJSONBody_Inner struct {
 func (s BodyWithAddPropsJSONBody_Inner) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(struct {
+			AdditionalProperties map[string]int `json:"-"`
+		})(s),
 	)
 
 }

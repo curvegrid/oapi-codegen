@@ -51,8 +51,7 @@ type PostBothJSONBody SchemaObject
 func (s PostBothJSONBody) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(SchemaObject)(s),
 	)
 
 }
@@ -64,8 +63,7 @@ type PostJsonJSONBody SchemaObject
 func (s PostJsonJSONBody) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(SchemaObject)(s),
 	)
 
 }

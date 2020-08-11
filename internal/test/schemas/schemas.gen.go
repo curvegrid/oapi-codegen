@@ -31,8 +31,7 @@ type N5StartsWithNumber map[string]interface{}
 func (s N5StartsWithNumber) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(map[string]interface{})(s),
 	)
 
 }
@@ -44,8 +43,7 @@ type AnyType1 interface{}
 func (s AnyType1) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(interface{})(s),
 	)
 
 }
@@ -57,8 +55,7 @@ type AnyType2 interface{}
 func (s AnyType2) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(interface{})(s),
 	)
 
 }
@@ -70,8 +67,7 @@ type CustomStringType string
 func (s CustomStringType) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(string)(s),
 	)
 
 }
@@ -83,8 +79,7 @@ type GenericObject map[string]interface{}
 func (s GenericObject) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(map[string]interface{})(s),
 	)
 
 }
@@ -126,8 +121,7 @@ type StringInPath string
 func (s StringInPath) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(string)(s),
 	)
 
 }
@@ -139,8 +133,7 @@ type Issue185JSONBody NullableProperties
 func (s Issue185JSONBody) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(NullableProperties)(s),
 	)
 
 }
@@ -152,8 +145,7 @@ type Issue9JSONBody interface{}
 func (s Issue9JSONBody) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(interface{})(s),
 	)
 
 }

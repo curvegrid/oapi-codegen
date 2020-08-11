@@ -38,11 +38,10 @@ const (
 func (s Bar) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
+		(string)(s),
 		validation.In(
-			" Foo ", "_Foo_", "Foo", "Bar", "Foo Bar", "Foo-Bar", "1Foo", " Foo",
+			"_Foo_", "Foo", "Bar", "Foo Bar", "Foo-Bar", "1Foo", " Foo", " Foo ",
 		),
-		validation.Skip, // Do not recursively run this method
 	)
 
 }

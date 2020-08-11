@@ -710,9 +710,8 @@ func (s {{.TypeName}}) Validate() error {
     {{ if eq (len .Schema.Properties) 0 }}
     // Run validate on a scalar
     return validation.Validate(
-        &s,
+        ({{.Schema.GoType}})(s),
         {{- template "validateRules" .Schema -}}
-        validation.Skip, // Do not recursively run this method
     )
     {{ else }}
     // Run validate on a struct
@@ -856,14 +855,11 @@ const (
 // Validate perform validation on the {{.TypeName}}
 func (s {{.TypeName}}) Validate() error {
     {{- $v := .Schema.Validations -}}
-    {{ if .Schema.IsExternal }}
-    return ({{.Schema.GoType}})(s).Validate()
-    {{ else if eq (len .Schema.Properties) 0 }}
+    {{ if eq (len .Schema.Properties) 0 }}
     // Run validate on a scalar
     return validation.Validate(
-        &s,
+        ({{.Schema.GoType}})(s),
         {{- template "validateRules" .Schema -}}
-        validation.Skip, // Do not recursively run this method
     )
     {{ else }}
     // Run validate on a struct

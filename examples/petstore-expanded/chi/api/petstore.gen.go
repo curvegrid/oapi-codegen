@@ -126,8 +126,7 @@ type AddPetJSONBody NewPet
 func (s AddPetJSONBody) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(NewPet)(s),
 	)
 
 }

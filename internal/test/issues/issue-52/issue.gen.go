@@ -27,10 +27,8 @@ type ArrayValue []Value
 func (s ArrayValue) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
+		([]Value)(s),
 		validation.Each(),
-
-		validation.Skip, // Do not recursively run this method
 	)
 
 }
@@ -61,8 +59,9 @@ type Document_Fields struct {
 func (s Document_Fields) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
-		&s,
-		validation.Skip, // Do not recursively run this method
+		(struct {
+			AdditionalProperties map[string]Value `json:"-"`
+		})(s),
 	)
 
 }
