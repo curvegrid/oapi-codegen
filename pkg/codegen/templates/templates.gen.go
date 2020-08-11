@@ -702,6 +702,37 @@ func GetSwagger() (*openapi3.Swagger, error) {
 {{range .TypeDefinitions}}
 // {{.TypeName}} defines parameters for {{$opid}}.
 type {{.TypeName}} {{.Schema.TypeDecl}}
+
+{{ if not .Schema.RefType }}
+// Validate perform validation on the {{.TypeName}}
+func (s {{.TypeName}}) Validate() error {
+    {{- $v := .Schema.Validations -}}
+    {{ if eq (len .Schema.Properties) 0 }}
+    // Run validate on a scalar
+    return validation.Validate(
+        &s,
+        {{- template "validateRules" .Schema -}}
+        validation.Skip, // Do not recursively run this method
+    )
+    {{ else }}
+    // Run validate on a struct
+    return validation.ValidateStruct(
+        &s,
+        {{- range .Schema.EmbeddedFields }}validation.Field(&s.{{.}}),{{ end }}
+        {{- range .Schema.Properties }}
+        validation.Field(
+            &s.{{.GoFieldName}},
+            {{ if and .Required (not .Nullable) }}validation.Required,{{ end }}
+            {{- template "validateRules" .Schema -}}
+        ),
+        {{- end }}
+        {{- if .Schema.HasAdditionalProperties }}
+        validation.Field(&s.AdditionalProperties, {{ template "validateRules" .Schema.AdditionalPropertiesType }}),
+        {{ end }}
+    )
+    {{ end }}
+}
+{{ end }}
 {{end}}
 {{end}}
 `,
@@ -744,9 +775,63 @@ type {{$opid}}{{.NameTag}}RequestBody {{.TypeDef}}
 type ServerInterface interface {
 {{range .}}{{.SummaryAsComment }}
 // ({{.Method}} {{.Path}})
-{{.OperationId}}(ctx echo.Context{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}}) error
+{{.OperationId}}(ctx *{{.OperationId}}Context{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}}) error
 {{end}}
 }
+
+{{ range . }}
+{{ $op := . }}
+// {{.OperationId}}Context is a context customized for {{.OperationId}} ({{.Method}} {{.Path}}).
+type {{.OperationId}}Context struct {
+    echo.Context
+}
+{{- if .HasBody }}
+
+// The body parsers
+{{- range .Bodies }}
+func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}}{{.NameTag}}Body, error) {
+    var resp {{$op.OperationId}}{{.NameTag}}Body
+    if err := c.Bind(&resp); err != nil {
+        return resp, errors.WithStack(err)
+    }
+    if err := resp.Validate(); err != nil {
+        return resp, err
+    }
+    return resp, nil
+}
+{{- end }}
+{{- end }}
+
+{{- if gt (len .GetResponseTypeDefinitions) 0 }}
+
+// Responses
+{{- range .GetResponseTypeDefinitions }}
+{{ $respType := .Schema.RefType }}
+{{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
+{{ if eq $respType "" }}
+{{ $respType = printf "%sResponse%s" $op.OperationId .ResponseName}}
+{{ end }}
+// Respond{{.ResponseName}} responses with the given code in range and the JSON response.
+func (c *{{$op.OperationId}}Context) Respond{{.ResponseName}}(code int, resp {{$respType}}) error {
+    return c.JSON(code, resp)
+}
+{{- else }}
+{{ $respName := statusText .ResponseName | camelCase | title }}
+{{ if eq $respType "" }}
+{{ $respType = printf "%sResponse%s" $op.OperationId $respName }}
+{{ end }}
+// {{$respName}} responses with the appropriate code and the JSON response.
+func (c *{{$op.OperationId}}Context) {{$respName}}(resp {{$respType}}) error {
+    return c.JSON({{.ResponseName}}, resp)
+}
+{{- end }}
+{{ if eq .Schema.RefType "" }}
+// {{$respType}} is the response type for {{$op.OperationId}}'s "{{.ResponseName}}" response.
+type {{$respType}} = {{.Schema.GoType}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{ end }}
 `,
 	"typedef.tmpl": `{{range .Types}}
 // {{.TypeName}} defines model for {{.JsonName}}.
@@ -760,7 +845,64 @@ const (
     {{- end }}
 )
 {{- end }}
+
+// Validate perform validation on the {{.TypeName}}
+func (s {{.TypeName}}) Validate() error {
+    {{- $v := .Schema.Validations -}}
+    {{ if .Schema.IsExternal }}
+    return ({{.Schema.GoType}})(s).Validate()
+    {{ else if eq (len .Schema.Properties) 0 }}
+    // Run validate on a scalar
+    return validation.Validate(
+        &s,
+        {{- template "validateRules" .Schema -}}
+        validation.Skip, // Do not recursively run this method
+    )
+    {{ else }}
+    // Run validate on a struct
+    return validation.ValidateStruct(
+        &s,
+        {{- range .Schema.EmbeddedFields }}validation.Field(&s.{{.}}),{{ end }}
+        {{- range .Schema.Properties }}
+        validation.Field(
+            &s.{{.GoFieldName}},
+            {{ if and .Required (not .Nullable) }}validation.Required,{{ end }}
+            {{- template "validateRules" .Schema -}}
+        ),
+        {{- end }}
+        {{- if .Schema.HasAdditionalProperties }}
+        validation.Field(&s.AdditionalProperties, {{ template "validateRules" .Schema.AdditionalPropertiesType }}),
+        {{ end }}
+    )
+    {{ end }}
+}
 {{end}}
+
+{{ define "validateRules" }}
+{{- $v := .Validations }}
+{{- if or $v.MinItems $v.MaxItems }}
+validation.Length({{$v.MinItems}}, {{if $v.MaxItems}}{{ $v.MaxItems }}{{else}}0{{end}}),
+{{ end }}
+{{- if .ItemType }}
+validation.Each(
+    {{ template "validateRules" .ItemType }}
+),
+{{ end }}
+{{- if $v.Min }} validation.Min({{ $v.Min }}){{if $v.ExclusiveMin}}.Exclusive(){{end}},{{end}}
+{{- if $v.Max }} validation.Max({{ $v.Max }}){{if $v.ExclusiveMax}}.Exclusive(){{end}},{{end}}
+{{- if $v.MultipleOf }} validation.MultipleOf({{ $v.MultipleOf }}),{{end}}
+{{- if or $v.MinLength $v.MaxLength }}
+validation.Length({{$v.MinLength}}, {{if $v.MaxLength}}{{ $v.MaxLength }}{{else}}0{{end}}),
+{{- end }}
+{{- if ne $v.Pattern "" }}
+validation.Match(regexp.MustCompile({{ printf "%#v" $v.Pattern}})),
+{{- end }}
+{{- if ne (len $v.Values) 0 }}
+validation.In(
+    {{ range $v.Values }}{{ printf "%#v" . }},{{ end }}
+),
+{{- end }}
+{{ end }}
 `,
 	"wrappers.tmpl": `// ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
@@ -886,7 +1028,7 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
 
 {{end}}{{/* .RequiresParamObject */}}
     // Invoke the callback with all the unmarshalled arguments
-    err = w.Handler.{{.OperationId}}(ctx{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
+    err = w.Handler.{{.OperationId}}(&{{.OperationId}}Context{ctx}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
     return err
 }
 {{end}}

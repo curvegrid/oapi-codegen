@@ -11,7 +11,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -25,11 +27,48 @@ type SchemaObject struct {
 	Role      string `json:"role"`
 }
 
+// Validate perform validation on the SchemaObject
+func (s SchemaObject) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.FirstName,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Role,
+			validation.Required,
+		),
+	)
+
+}
+
 // PostBothJSONBody defines parameters for PostBoth.
 type PostBothJSONBody SchemaObject
 
+// Validate perform validation on the PostBothJSONBody
+func (s PostBothJSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
+
 // PostJsonJSONBody defines parameters for PostJson.
 type PostJsonJSONBody SchemaObject
+
+// Validate perform validation on the PostJsonJSONBody
+func (s PostJsonJSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
 
 // PostBothRequestBody defines body for PostBoth for application/json ContentType.
 type PostBothJSONRequestBody PostBothJSONBody
@@ -901,25 +940,86 @@ func ParseGetJsonWithTrailingSlashResponse(rsp *http.Response) (*GetJsonWithTrai
 type ServerInterface interface {
 
 	// (POST /with_both_bodies)
-	PostBoth(ctx echo.Context) error
+	PostBoth(ctx *PostBothContext) error
 
 	// (GET /with_both_responses)
-	GetBoth(ctx echo.Context) error
+	GetBoth(ctx *GetBothContext) error
 
 	// (POST /with_json_body)
-	PostJson(ctx echo.Context) error
+	PostJson(ctx *PostJsonContext) error
 
 	// (GET /with_json_response)
-	GetJson(ctx echo.Context) error
+	GetJson(ctx *GetJsonContext) error
 
 	// (POST /with_other_body)
-	PostOther(ctx echo.Context) error
+	PostOther(ctx *PostOtherContext) error
 
 	// (GET /with_other_response)
-	GetOther(ctx echo.Context) error
+	GetOther(ctx *GetOtherContext) error
 
 	// (GET /with_trailing_slash/)
-	GetJsonWithTrailingSlash(ctx echo.Context) error
+	GetJsonWithTrailingSlash(ctx *GetJsonWithTrailingSlashContext) error
+}
+
+// PostBothContext is a context customized for PostBoth (POST /with_both_bodies).
+type PostBothContext struct {
+	echo.Context
+}
+
+// The body parsers
+func (c *PostBothContext) ParseJSONBody() (PostBothJSONBody, error) {
+	var resp PostBothJSONBody
+	if err := c.Bind(&resp); err != nil {
+		return resp, errors.WithStack(err)
+	}
+	if err := resp.Validate(); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// GetBothContext is a context customized for GetBoth (GET /with_both_responses).
+type GetBothContext struct {
+	echo.Context
+}
+
+// PostJsonContext is a context customized for PostJson (POST /with_json_body).
+type PostJsonContext struct {
+	echo.Context
+}
+
+// The body parsers
+func (c *PostJsonContext) ParseJSONBody() (PostJsonJSONBody, error) {
+	var resp PostJsonJSONBody
+	if err := c.Bind(&resp); err != nil {
+		return resp, errors.WithStack(err)
+	}
+	if err := resp.Validate(); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// GetJsonContext is a context customized for GetJson (GET /with_json_response).
+type GetJsonContext struct {
+	echo.Context
+}
+
+// PostOtherContext is a context customized for PostOther (POST /with_other_body).
+type PostOtherContext struct {
+	echo.Context
+}
+
+// The body parsers
+
+// GetOtherContext is a context customized for GetOther (GET /with_other_response).
+type GetOtherContext struct {
+	echo.Context
+}
+
+// GetJsonWithTrailingSlashContext is a context customized for GetJsonWithTrailingSlash (GET /with_trailing_slash/).
+type GetJsonWithTrailingSlashContext struct {
+	echo.Context
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -932,7 +1032,7 @@ func (w *ServerInterfaceWrapper) PostBoth(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostBoth(ctx)
+	err = w.Handler.PostBoth(&PostBothContext{ctx})
 	return err
 }
 
@@ -941,7 +1041,7 @@ func (w *ServerInterfaceWrapper) GetBoth(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetBoth(ctx)
+	err = w.Handler.GetBoth(&GetBothContext{ctx})
 	return err
 }
 
@@ -950,7 +1050,7 @@ func (w *ServerInterfaceWrapper) PostJson(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostJson(ctx)
+	err = w.Handler.PostJson(&PostJsonContext{ctx})
 	return err
 }
 
@@ -961,7 +1061,7 @@ func (w *ServerInterfaceWrapper) GetJson(ctx echo.Context) error {
 	ctx.Set("OpenId.Scopes", []string{"json.read", "json.admin"})
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetJson(ctx)
+	err = w.Handler.GetJson(&GetJsonContext{ctx})
 	return err
 }
 
@@ -970,7 +1070,7 @@ func (w *ServerInterfaceWrapper) PostOther(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostOther(ctx)
+	err = w.Handler.PostOther(&PostOtherContext{ctx})
 	return err
 }
 
@@ -979,7 +1079,7 @@ func (w *ServerInterfaceWrapper) GetOther(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetOther(ctx)
+	err = w.Handler.GetOther(&GetOtherContext{ctx})
 	return err
 }
 
@@ -990,7 +1090,7 @@ func (w *ServerInterfaceWrapper) GetJsonWithTrailingSlash(ctx echo.Context) erro
 	ctx.Set("OpenId.Scopes", []string{"json.read", "json.admin"})
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetJsonWithTrailingSlash(ctx)
+	err = w.Handler.GetJsonWithTrailingSlash(&GetJsonWithTrailingSlashContext{ctx})
 	return err
 }
 

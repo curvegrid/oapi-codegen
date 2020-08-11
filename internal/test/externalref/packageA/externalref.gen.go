@@ -5,10 +5,26 @@ package packageA
 
 import (
 	externalRef0 "github.com/deepmap/oapi-codegen/internal/test/externalref/packageB"
+	"github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // ObjectA defines model for ObjectA.
 type ObjectA struct {
 	Name    *string               `json:"name,omitempty"`
 	ObjectB *externalRef0.ObjectB `json:"object_b,omitempty"`
+}
+
+// Validate perform validation on the ObjectA
+func (s ObjectA) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+		),
+		validation.Field(
+			&s.ObjectB,
+		),
+	)
+
 }

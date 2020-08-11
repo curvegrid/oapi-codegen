@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"io/ioutil"
@@ -22,9 +23,33 @@ import (
 // ArrayValue defines model for ArrayValue.
 type ArrayValue []Value
 
+// Validate perform validation on the ArrayValue
+func (s ArrayValue) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Each(),
+
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
+
 // Document defines model for Document.
 type Document struct {
 	Fields *Document_Fields `json:"fields,omitempty"`
+}
+
+// Validate perform validation on the Document
+func (s Document) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Fields,
+		),
+	)
+
 }
 
 // Document_Fields defines model for Document.Fields.
@@ -32,10 +57,35 @@ type Document_Fields struct {
 	AdditionalProperties map[string]Value `json:"-"`
 }
 
+// Validate perform validation on the Document_Fields
+func (s Document_Fields) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
+
 // Value defines model for Value.
 type Value struct {
 	ArrayValue  *ArrayValue `json:"arrayValue,omitempty"`
 	StringValue *string     `json:"stringValue,omitempty"`
+}
+
+// Validate perform validation on the Value
+func (s Value) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.ArrayValue,
+		),
+		validation.Field(
+			&s.StringValue,
+		),
+	)
+
 }
 
 // Getter for additional properties for Document_Fields. Returns the specified
@@ -302,7 +352,19 @@ func ParseExampleGetResponse(rsp *http.Response) (*ExampleGetResponse, error) {
 type ServerInterface interface {
 
 	// (GET /example)
-	ExampleGet(ctx echo.Context) error
+	ExampleGet(ctx *ExampleGetContext) error
+}
+
+// ExampleGetContext is a context customized for ExampleGet (GET /example).
+type ExampleGetContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *ExampleGetContext) OK(resp Document) error {
+	return c.JSON(200, resp)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -315,7 +377,7 @@ func (w *ServerInterfaceWrapper) ExampleGet(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.ExampleGet(ctx)
+	err = w.Handler.ExampleGet(&ExampleGetContext{ctx})
 	return err
 }
 

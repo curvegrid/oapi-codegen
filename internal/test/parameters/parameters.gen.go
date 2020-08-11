@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
 	"io/ioutil"
 	"net/http"
@@ -26,10 +27,48 @@ type ComplexObject struct {
 	Object  Object `json:"Object"`
 }
 
+// Validate perform validation on the ComplexObject
+func (s ComplexObject) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Id,
+			validation.Required,
+		),
+		validation.Field(
+			&s.IsAdmin,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Object,
+			validation.Required,
+		),
+	)
+
+}
+
 // Object defines model for Object.
 type Object struct {
 	FirstName string `json:"firstName"`
 	Role      string `json:"role"`
+}
+
+// Validate perform validation on the Object
+func (s Object) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.FirstName,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Role,
+			validation.Required,
+		),
+	)
+
 }
 
 // GetCookieParams defines parameters for GetCookie.
@@ -57,6 +96,40 @@ type GetCookieParams struct {
 	Co *ComplexObject `json:"co,omitempty"`
 }
 
+// Validate perform validation on the GetCookieParams
+func (s GetCookieParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.P,
+		),
+		validation.Field(
+			&s.Ep,
+		),
+		validation.Field(
+			&s.Ea,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.A,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.Eo,
+		),
+		validation.Field(
+			&s.O,
+		),
+		validation.Field(
+			&s.Co,
+		),
+	)
+
+}
+
 // GetHeaderParams defines parameters for GetHeader.
 type GetHeaderParams struct {
 
@@ -82,11 +155,58 @@ type GetHeaderParams struct {
 	XComplexObject *ComplexObject `json:"X-Complex-Object,omitempty"`
 }
 
+// Validate perform validation on the GetHeaderParams
+func (s GetHeaderParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.XPrimitive,
+		),
+		validation.Field(
+			&s.XPrimitiveExploded,
+		),
+		validation.Field(
+			&s.XArrayExploded,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.XArray,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.XObjectExploded,
+		),
+		validation.Field(
+			&s.XObject,
+		),
+		validation.Field(
+			&s.XComplexObject,
+		),
+	)
+
+}
+
 // GetDeepObjectParams defines parameters for GetDeepObject.
 type GetDeepObjectParams struct {
 
 	// deep object
 	DeepObj ComplexObject `json:"deepObj"`
+}
+
+// Validate perform validation on the GetDeepObjectParams
+func (s GetDeepObjectParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.DeepObj,
+			validation.Required,
+		),
+	)
+
 }
 
 // GetQueryFormParams defines parameters for GetQueryForm.
@@ -112,6 +232,40 @@ type GetQueryFormParams struct {
 
 	// complex object
 	Co *ComplexObject `json:"co,omitempty"`
+}
+
+// Validate perform validation on the GetQueryFormParams
+func (s GetQueryFormParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Ea,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.A,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.Eo,
+		),
+		validation.Field(
+			&s.O,
+		),
+		validation.Field(
+			&s.Ep,
+		),
+		validation.Field(
+			&s.P,
+		),
+		validation.Field(
+			&s.Co,
+		),
+	)
+
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -2479,61 +2633,156 @@ func ParseGetSimplePrimitiveResponse(rsp *http.Response) (*GetSimplePrimitiveRes
 type ServerInterface interface {
 
 	// (GET /contentObject/{param})
-	GetContentObject(ctx echo.Context, param ComplexObject) error
+	GetContentObject(ctx *GetContentObjectContext, param ComplexObject) error
 
 	// (GET /cookie)
-	GetCookie(ctx echo.Context, params GetCookieParams) error
+	GetCookie(ctx *GetCookieContext, params GetCookieParams) error
 
 	// (GET /header)
-	GetHeader(ctx echo.Context, params GetHeaderParams) error
+	GetHeader(ctx *GetHeaderContext, params GetHeaderParams) error
 
 	// (GET /labelExplodeArray/{.param*})
-	GetLabelExplodeArray(ctx echo.Context, param []int32) error
+	GetLabelExplodeArray(ctx *GetLabelExplodeArrayContext, param []int32) error
 
 	// (GET /labelExplodeObject/{.param*})
-	GetLabelExplodeObject(ctx echo.Context, param Object) error
+	GetLabelExplodeObject(ctx *GetLabelExplodeObjectContext, param Object) error
 
 	// (GET /labelNoExplodeArray/{.param})
-	GetLabelNoExplodeArray(ctx echo.Context, param []int32) error
+	GetLabelNoExplodeArray(ctx *GetLabelNoExplodeArrayContext, param []int32) error
 
 	// (GET /labelNoExplodeObject/{.param})
-	GetLabelNoExplodeObject(ctx echo.Context, param Object) error
+	GetLabelNoExplodeObject(ctx *GetLabelNoExplodeObjectContext, param Object) error
 
 	// (GET /matrixExplodeArray/{.id*})
-	GetMatrixExplodeArray(ctx echo.Context, id []int32) error
+	GetMatrixExplodeArray(ctx *GetMatrixExplodeArrayContext, id []int32) error
 
 	// (GET /matrixExplodeObject/{.id*})
-	GetMatrixExplodeObject(ctx echo.Context, id Object) error
+	GetMatrixExplodeObject(ctx *GetMatrixExplodeObjectContext, id Object) error
 
 	// (GET /matrixNoExplodeArray/{.id})
-	GetMatrixNoExplodeArray(ctx echo.Context, id []int32) error
+	GetMatrixNoExplodeArray(ctx *GetMatrixNoExplodeArrayContext, id []int32) error
 
 	// (GET /matrixNoExplodeObject/{.id})
-	GetMatrixNoExplodeObject(ctx echo.Context, id Object) error
+	GetMatrixNoExplodeObject(ctx *GetMatrixNoExplodeObjectContext, id Object) error
 
 	// (GET /passThrough/{param})
-	GetPassThrough(ctx echo.Context, param string) error
+	GetPassThrough(ctx *GetPassThroughContext, param string) error
 
 	// (GET /queryDeepObject)
-	GetDeepObject(ctx echo.Context, params GetDeepObjectParams) error
+	GetDeepObject(ctx *GetDeepObjectContext, params GetDeepObjectParams) error
 
 	// (GET /queryForm)
-	GetQueryForm(ctx echo.Context, params GetQueryFormParams) error
+	GetQueryForm(ctx *GetQueryFormContext, params GetQueryFormParams) error
 
 	// (GET /simpleExplodeArray/{param*})
-	GetSimpleExplodeArray(ctx echo.Context, param []int32) error
+	GetSimpleExplodeArray(ctx *GetSimpleExplodeArrayContext, param []int32) error
 
 	// (GET /simpleExplodeObject/{param*})
-	GetSimpleExplodeObject(ctx echo.Context, param Object) error
+	GetSimpleExplodeObject(ctx *GetSimpleExplodeObjectContext, param Object) error
 
 	// (GET /simpleNoExplodeArray/{param})
-	GetSimpleNoExplodeArray(ctx echo.Context, param []int32) error
+	GetSimpleNoExplodeArray(ctx *GetSimpleNoExplodeArrayContext, param []int32) error
 
 	// (GET /simpleNoExplodeObject/{param})
-	GetSimpleNoExplodeObject(ctx echo.Context, param Object) error
+	GetSimpleNoExplodeObject(ctx *GetSimpleNoExplodeObjectContext, param Object) error
 
 	// (GET /simplePrimitive/{param})
-	GetSimplePrimitive(ctx echo.Context, param int32) error
+	GetSimplePrimitive(ctx *GetSimplePrimitiveContext, param int32) error
+}
+
+// GetContentObjectContext is a context customized for GetContentObject (GET /contentObject/{param}).
+type GetContentObjectContext struct {
+	echo.Context
+}
+
+// GetCookieContext is a context customized for GetCookie (GET /cookie).
+type GetCookieContext struct {
+	echo.Context
+}
+
+// GetHeaderContext is a context customized for GetHeader (GET /header).
+type GetHeaderContext struct {
+	echo.Context
+}
+
+// GetLabelExplodeArrayContext is a context customized for GetLabelExplodeArray (GET /labelExplodeArray/{.param*}).
+type GetLabelExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetLabelExplodeObjectContext is a context customized for GetLabelExplodeObject (GET /labelExplodeObject/{.param*}).
+type GetLabelExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetLabelNoExplodeArrayContext is a context customized for GetLabelNoExplodeArray (GET /labelNoExplodeArray/{.param}).
+type GetLabelNoExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetLabelNoExplodeObjectContext is a context customized for GetLabelNoExplodeObject (GET /labelNoExplodeObject/{.param}).
+type GetLabelNoExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetMatrixExplodeArrayContext is a context customized for GetMatrixExplodeArray (GET /matrixExplodeArray/{.id*}).
+type GetMatrixExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetMatrixExplodeObjectContext is a context customized for GetMatrixExplodeObject (GET /matrixExplodeObject/{.id*}).
+type GetMatrixExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetMatrixNoExplodeArrayContext is a context customized for GetMatrixNoExplodeArray (GET /matrixNoExplodeArray/{.id}).
+type GetMatrixNoExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetMatrixNoExplodeObjectContext is a context customized for GetMatrixNoExplodeObject (GET /matrixNoExplodeObject/{.id}).
+type GetMatrixNoExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetPassThroughContext is a context customized for GetPassThrough (GET /passThrough/{param}).
+type GetPassThroughContext struct {
+	echo.Context
+}
+
+// GetDeepObjectContext is a context customized for GetDeepObject (GET /queryDeepObject).
+type GetDeepObjectContext struct {
+	echo.Context
+}
+
+// GetQueryFormContext is a context customized for GetQueryForm (GET /queryForm).
+type GetQueryFormContext struct {
+	echo.Context
+}
+
+// GetSimpleExplodeArrayContext is a context customized for GetSimpleExplodeArray (GET /simpleExplodeArray/{param*}).
+type GetSimpleExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetSimpleExplodeObjectContext is a context customized for GetSimpleExplodeObject (GET /simpleExplodeObject/{param*}).
+type GetSimpleExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetSimpleNoExplodeArrayContext is a context customized for GetSimpleNoExplodeArray (GET /simpleNoExplodeArray/{param}).
+type GetSimpleNoExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetSimpleNoExplodeObjectContext is a context customized for GetSimpleNoExplodeObject (GET /simpleNoExplodeObject/{param}).
+type GetSimpleNoExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetSimplePrimitiveContext is a context customized for GetSimplePrimitive (GET /simplePrimitive/{param}).
+type GetSimplePrimitiveContext struct {
+	echo.Context
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -2553,7 +2802,7 @@ func (w *ServerInterfaceWrapper) GetContentObject(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetContentObject(ctx, param)
+	err = w.Handler.GetContentObject(&GetContentObjectContext{ctx}, param)
 	return err
 }
 
@@ -2647,7 +2896,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetCookie(ctx, params)
+	err = w.Handler.GetCookie(&GetCookieContext{ctx}, params)
 	return err
 }
 
@@ -2766,7 +3015,7 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetHeader(ctx, params)
+	err = w.Handler.GetHeader(&GetHeaderContext{ctx}, params)
 	return err
 }
 
@@ -2782,7 +3031,7 @@ func (w *ServerInterfaceWrapper) GetLabelExplodeArray(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetLabelExplodeArray(ctx, param)
+	err = w.Handler.GetLabelExplodeArray(&GetLabelExplodeArrayContext{ctx}, param)
 	return err
 }
 
@@ -2798,7 +3047,7 @@ func (w *ServerInterfaceWrapper) GetLabelExplodeObject(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetLabelExplodeObject(ctx, param)
+	err = w.Handler.GetLabelExplodeObject(&GetLabelExplodeObjectContext{ctx}, param)
 	return err
 }
 
@@ -2814,7 +3063,7 @@ func (w *ServerInterfaceWrapper) GetLabelNoExplodeArray(ctx echo.Context) error 
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetLabelNoExplodeArray(ctx, param)
+	err = w.Handler.GetLabelNoExplodeArray(&GetLabelNoExplodeArrayContext{ctx}, param)
 	return err
 }
 
@@ -2830,7 +3079,7 @@ func (w *ServerInterfaceWrapper) GetLabelNoExplodeObject(ctx echo.Context) error
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetLabelNoExplodeObject(ctx, param)
+	err = w.Handler.GetLabelNoExplodeObject(&GetLabelNoExplodeObjectContext{ctx}, param)
 	return err
 }
 
@@ -2846,7 +3095,7 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeArray(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixExplodeArray(ctx, id)
+	err = w.Handler.GetMatrixExplodeArray(&GetMatrixExplodeArrayContext{ctx}, id)
 	return err
 }
 
@@ -2862,7 +3111,7 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeObject(ctx echo.Context) error 
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixExplodeObject(ctx, id)
+	err = w.Handler.GetMatrixExplodeObject(&GetMatrixExplodeObjectContext{ctx}, id)
 	return err
 }
 
@@ -2878,7 +3127,7 @@ func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray(ctx echo.Context) error
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixNoExplodeArray(ctx, id)
+	err = w.Handler.GetMatrixNoExplodeArray(&GetMatrixNoExplodeArrayContext{ctx}, id)
 	return err
 }
 
@@ -2894,7 +3143,7 @@ func (w *ServerInterfaceWrapper) GetMatrixNoExplodeObject(ctx echo.Context) erro
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixNoExplodeObject(ctx, id)
+	err = w.Handler.GetMatrixNoExplodeObject(&GetMatrixNoExplodeObjectContext{ctx}, id)
 	return err
 }
 
@@ -2907,7 +3156,7 @@ func (w *ServerInterfaceWrapper) GetPassThrough(ctx echo.Context) error {
 	param = ctx.Param("param")
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetPassThrough(ctx, param)
+	err = w.Handler.GetPassThrough(&GetPassThroughContext{ctx}, param)
 	return err
 }
 
@@ -2925,7 +3174,7 @@ func (w *ServerInterfaceWrapper) GetDeepObject(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetDeepObject(ctx, params)
+	err = w.Handler.GetDeepObject(&GetDeepObjectContext{ctx}, params)
 	return err
 }
 
@@ -2991,7 +3240,7 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetQueryForm(ctx, params)
+	err = w.Handler.GetQueryForm(&GetQueryFormContext{ctx}, params)
 	return err
 }
 
@@ -3007,7 +3256,7 @@ func (w *ServerInterfaceWrapper) GetSimpleExplodeArray(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimpleExplodeArray(ctx, param)
+	err = w.Handler.GetSimpleExplodeArray(&GetSimpleExplodeArrayContext{ctx}, param)
 	return err
 }
 
@@ -3023,7 +3272,7 @@ func (w *ServerInterfaceWrapper) GetSimpleExplodeObject(ctx echo.Context) error 
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimpleExplodeObject(ctx, param)
+	err = w.Handler.GetSimpleExplodeObject(&GetSimpleExplodeObjectContext{ctx}, param)
 	return err
 }
 
@@ -3039,7 +3288,7 @@ func (w *ServerInterfaceWrapper) GetSimpleNoExplodeArray(ctx echo.Context) error
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimpleNoExplodeArray(ctx, param)
+	err = w.Handler.GetSimpleNoExplodeArray(&GetSimpleNoExplodeArrayContext{ctx}, param)
 	return err
 }
 
@@ -3055,7 +3304,7 @@ func (w *ServerInterfaceWrapper) GetSimpleNoExplodeObject(ctx echo.Context) erro
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimpleNoExplodeObject(ctx, param)
+	err = w.Handler.GetSimpleNoExplodeObject(&GetSimpleNoExplodeObjectContext{ctx}, param)
 	return err
 }
 
@@ -3071,7 +3320,7 @@ func (w *ServerInterfaceWrapper) GetSimplePrimitive(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimplePrimitive(ctx, param)
+	err = w.Handler.GetSimplePrimitive(&GetSimplePrimitiveContext{ctx}, param)
 	return err
 }
 

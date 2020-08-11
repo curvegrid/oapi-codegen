@@ -8,6 +8,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/go-chi/chi"
+	"github.com/go-ozzo/ozzo-validation/v4"
 	"net/http"
 	"time"
 )
@@ -34,6 +35,64 @@ type EveryTypeOptional struct {
 	StringField     *string     `json:"string_field,omitempty"`
 }
 
+// Validate perform validation on the EveryTypeOptional
+func (s EveryTypeOptional) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.ArrayInlineField,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.ArrayReferencedField,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.BoolField,
+		),
+		validation.Field(
+			&s.ByteField,
+		),
+		validation.Field(
+			&s.DateField,
+		),
+		validation.Field(
+			&s.DateTimeField,
+		),
+		validation.Field(
+			&s.DoubleField,
+		),
+		validation.Field(
+			&s.FloatField,
+		),
+		validation.Field(
+			&s.InlineObjectField,
+		),
+		validation.Field(
+			&s.Int32Field,
+		),
+		validation.Field(
+			&s.Int64Field,
+		),
+		validation.Field(
+			&s.IntField,
+		),
+		validation.Field(
+			&s.NumberField,
+		),
+		validation.Field(
+			&s.ReferencedField,
+		),
+		validation.Field(
+			&s.StringField,
+		),
+	)
+
+}
+
 // EveryTypeRequired defines model for EveryTypeRequired.
 type EveryTypeRequired struct {
 	ArrayInlineField     []int                `json:"array_inline_field"`
@@ -57,9 +116,95 @@ type EveryTypeRequired struct {
 	StringField     string     `json:"string_field"`
 }
 
+// Validate perform validation on the EveryTypeRequired
+func (s EveryTypeRequired) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.ArrayInlineField,
+			validation.Required,
+			validation.Each(),
+		),
+		validation.Field(
+			&s.ArrayReferencedField,
+			validation.Required,
+			validation.Each(),
+		),
+		validation.Field(
+			&s.BoolField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.ByteField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.DateField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.DateTimeField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.DoubleField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.EmailField,
+		),
+		validation.Field(
+			&s.FloatField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.InlineObjectField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Int32Field,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Int64Field,
+			validation.Required,
+		),
+		validation.Field(
+			&s.IntField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.NumberField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.ReferencedField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.StringField,
+			validation.Required,
+		),
+	)
+
+}
+
 // ReservedKeyword defines model for ReservedKeyword.
 type ReservedKeyword struct {
 	Channel *string `json:"channel,omitempty"`
+}
+
+// Validate perform validation on the ReservedKeyword
+func (s ReservedKeyword) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Channel,
+		),
+	)
+
 }
 
 // Resource defines model for Resource.
@@ -68,20 +213,83 @@ type Resource struct {
 	Value float32 `json:"value"`
 }
 
+// Validate perform validation on the Resource
+func (s Resource) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Value,
+			validation.Required,
+		),
+	)
+
+}
+
 // SomeObject defines model for some_object.
 type SomeObject struct {
 	Name string `json:"name"`
 }
 
+// Validate perform validation on the SomeObject
+func (s SomeObject) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
 // Argument defines model for argument.
 type Argument string
+
+// Validate perform validation on the Argument
+func (s Argument) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
 
 // ResponseWithReference defines model for ResponseWithReference.
 type ResponseWithReference SomeObject
 
+// Validate perform validation on the ResponseWithReference
+func (s ResponseWithReference) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
+
 // SimpleResponse defines model for SimpleResponse.
 type SimpleResponse struct {
 	Name string `json:"name"`
+}
+
+// Validate perform validation on the SimpleResponse
+func (s SimpleResponse) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
 }
 
 // GetWithArgsParams defines parameters for GetWithArgs.
@@ -97,11 +305,50 @@ type GetWithArgsParams struct {
 	HeaderArgument *int32 `json:"header_argument,omitempty"`
 }
 
+// Validate perform validation on the GetWithArgsParams
+func (s GetWithArgsParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.OptionalArgument,
+		),
+		validation.Field(
+			&s.RequiredArgument,
+			validation.Required,
+		),
+		validation.Field(
+			&s.HeaderArgument,
+		),
+	)
+
+}
+
 // CreateResourceJSONBody defines parameters for CreateResource.
 type CreateResourceJSONBody EveryTypeRequired
 
+// Validate perform validation on the CreateResourceJSONBody
+func (s CreateResourceJSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
+
 // CreateResource2JSONBody defines parameters for CreateResource2.
 type CreateResource2JSONBody Resource
+
+// Validate perform validation on the CreateResource2JSONBody
+func (s CreateResource2JSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		&s,
+		validation.Skip, // Do not recursively run this method
+	)
+
+}
 
 // CreateResource2Params defines parameters for CreateResource2.
 type CreateResource2Params struct {
@@ -110,10 +357,37 @@ type CreateResource2Params struct {
 	InlineQueryArgument *int `json:"inline_query_argument,omitempty"`
 }
 
+// Validate perform validation on the CreateResource2Params
+func (s CreateResource2Params) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.InlineQueryArgument,
+		),
+	)
+
+}
+
 // UpdateResource3JSONBody defines parameters for UpdateResource3.
 type UpdateResource3JSONBody struct {
 	Id   *int    `json:"id,omitempty"`
 	Name *string `json:"name,omitempty"`
+}
+
+// Validate perform validation on the UpdateResource3JSONBody
+func (s UpdateResource3JSONBody) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Id,
+		),
+		validation.Field(
+			&s.Name,
+		),
+	)
+
 }
 
 // CreateResourceRequestBody defines body for CreateResource for application/json ContentType.

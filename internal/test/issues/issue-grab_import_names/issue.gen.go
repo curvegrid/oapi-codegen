@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
 	"io/ioutil"
 	"net/http"
@@ -27,6 +28,21 @@ type GetFooParams struct {
 
 	// openapi_types. path. runtime. strings. time.Duration time.Time url. xml. yaml.
 	Bar *string `json:"Bar,omitempty"`
+}
+
+// Validate perform validation on the GetFooParams
+func (s GetFooParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Foo,
+		),
+		validation.Field(
+			&s.Bar,
+		),
+	)
+
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -262,8 +278,23 @@ func ParseGetFooResponse(rsp *http.Response) (*GetFooResponse, error) {
 type ServerInterface interface {
 
 	// (GET /foo)
-	GetFoo(ctx echo.Context, params GetFooParams) error
+	GetFoo(ctx *GetFooContext, params GetFooParams) error
 }
+
+// GetFooContext is a context customized for GetFoo (GET /foo).
+type GetFooContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *GetFooContext) OK(resp GetFooResponseOK) error {
+	return c.JSON(200, resp)
+}
+
+// GetFooResponseOK is the response type for GetFoo's "200" response.
+type GetFooResponseOK = string
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
@@ -310,7 +341,7 @@ func (w *ServerInterfaceWrapper) GetFoo(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetFoo(ctx, params)
+	err = w.Handler.GetFoo(&GetFooContext{ctx}, params)
 	return err
 }
 
