@@ -322,6 +322,33 @@ func (s GetWithArgsParams) Validate() error {
 
 }
 
+// GetWithReferencesPathGlobalArgument defines parameters for GetWithReferences.
+type GetWithReferencesPathGlobalArgument int64
+
+// Validate perform validation on the GetWithReferencesPathGlobalArgument
+func (s GetWithReferencesPathGlobalArgument) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
+// GetWithContentTypePathContentType defines parameters for GetWithContentType.
+type GetWithContentTypePathContentType string
+
+// Validate perform validation on the GetWithContentTypePathContentType
+func (s GetWithContentTypePathContentType) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+		validation.In(
+			"text", "json",
+		),
+	)
+
+}
+
 // CreateResourceJSONBody defines parameters for CreateResource.
 type CreateResourceJSONBody EveryTypeRequired
 
@@ -365,6 +392,18 @@ func (s CreateResource2Params) Validate() error {
 
 }
 
+// CreateResource2PathInlineArgument defines parameters for CreateResource2.
+type CreateResource2PathInlineArgument int
+
+// Validate perform validation on the CreateResource2PathInlineArgument
+func (s CreateResource2PathInlineArgument) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int)(s),
+	)
+
+}
+
 // UpdateResource3JSONBody defines parameters for UpdateResource3.
 type UpdateResource3JSONBody struct {
 	Id   *int    `json:"id,omitempty"`
@@ -382,6 +421,18 @@ func (s UpdateResource3JSONBody) Validate() error {
 		validation.Field(
 			&s.Name,
 		),
+	)
+
+}
+
+// UpdateResource3PathFallthrough defines parameters for UpdateResource3.
+type UpdateResource3PathFallthrough int
+
+// Validate perform validation on the UpdateResource3PathFallthrough
+func (s UpdateResource3PathFallthrough) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int)(s),
 	)
 
 }
@@ -408,10 +459,10 @@ type ServerInterface interface {
 	GetWithArgs(w http.ResponseWriter, r *http.Request, params GetWithArgsParams)
 	// Getter with referenced parameter and referenced response
 	// (GET /get-with-references/{global_argument}/{argument})
-	GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument)
+	GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument GetWithReferencesPathGlobalArgument, argument Argument)
 	// Get an object by ID
 	// (GET /get-with-type/{content_type})
-	GetWithContentType(w http.ResponseWriter, r *http.Request, contentType string)
+	GetWithContentType(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypePathContentType)
 	// get with reserved keyword
 	// (GET /reserved-keyword)
 	GetReservedKeyword(w http.ResponseWriter, r *http.Request)
@@ -420,11 +471,11 @@ type ServerInterface interface {
 	CreateResource(w http.ResponseWriter, r *http.Request, argument Argument)
 	// Create a resource with inline parameter
 	// (POST /resource2/{inline_argument})
-	CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params)
+	CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument CreateResource2PathInlineArgument, params CreateResource2Params)
 	// Update a resource with inline body. The parameter name is a reserved
 	// keyword, so make sure that gets prefixed to avoid syntax errors
 	// (PUT /resource3/{fallthrough})
-	UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough int)
+	UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough UpdateResource3PathFallthrough)
 	// get response with reference
 	// (GET /response-with-reference)
 	GetResponseWithReference(w http.ResponseWriter, r *http.Request)
@@ -514,7 +565,7 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	var err error
 
 	// ------------- Path parameter "global_argument" -------------
-	var globalArgument int64
+	var globalArgument GetWithReferencesPathGlobalArgument
 
 	err = runtime.BindStyledParameter("simple", false, "global_argument", chi.URLParam(r, "global_argument"), &globalArgument)
 	if err != nil {
@@ -541,7 +592,7 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 	var err error
 
 	// ------------- Path parameter "content_type" -------------
-	var contentType string
+	var contentType GetWithContentTypePathContentType
 
 	err = runtime.BindStyledParameter("simple", false, "content_type", chi.URLParam(r, "content_type"), &contentType)
 	if err != nil {
@@ -584,7 +635,7 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	var err error
 
 	// ------------- Path parameter "inline_argument" -------------
-	var inlineArgument int
+	var inlineArgument CreateResource2PathInlineArgument
 
 	err = runtime.BindStyledParameter("simple", false, "inline_argument", chi.URLParam(r, "inline_argument"), &inlineArgument)
 	if err != nil {
@@ -616,7 +667,7 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 	var err error
 
 	// ------------- Path parameter "fallthrough" -------------
-	var pFallthrough int
+	var pFallthrough UpdateResource3PathFallthrough
 
 	err = runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough)
 	if err != nil {

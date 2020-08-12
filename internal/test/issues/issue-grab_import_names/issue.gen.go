@@ -371,6 +371,24 @@ func RegisterHandlers(router EchoRouter, si ServerInterface) {
 
 }
 
+// SecurityScheme represents a security scheme used in the server.
+type SecurityScheme string
+
+// ScopesKey returns the key of the scopes in the Context.
+func (ss SecurityScheme) ScopesKey() string {
+	return string(ss) + ".Scopes"
+}
+
+// Scopes collect the scopes defined in the Context.
+func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
+	val := c.Get(ss.ScopesKey())
+	scopes, ok := val.([]string)
+	return scopes, ok
+}
+
+// All security schemes defined.
+const ()
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 

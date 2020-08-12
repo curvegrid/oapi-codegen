@@ -26,10 +26,10 @@ type ServerInterface interface {
 	AddPet(ctx *AddPetContext) error
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(ctx *DeletePetContext, id int64) error
+	DeletePet(ctx *DeletePetContext, id DeletePetPathId) error
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetById(ctx *FindPetByIdContext, id int64) error
+	FindPetById(ctx *FindPetByIdContext, id FindPetByIdPathId) error
 }
 
 // FindPetsContext is a context customized for FindPets (GET /pets).
@@ -141,7 +141,7 @@ func (w *ServerInterfaceWrapper) AddPet(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var id DeletePetPathId
 
 	err = runtime.BindStyledParameter("simple", false, "id", ctx.Param("id"), &id)
 	if err != nil {
@@ -161,7 +161,7 @@ func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) FindPetById(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var id FindPetByIdPathId
 
 	err = runtime.BindStyledParameter("simple", false, "id", ctx.Param("id"), &id)
 	if err != nil {
@@ -205,6 +205,24 @@ func RegisterHandlers(router EchoRouter, si ServerInterface) {
 	router.GET("/pets/:id", wrapper.FindPetById)
 
 }
+
+// SecurityScheme represents a security scheme used in the server.
+type SecurityScheme string
+
+// ScopesKey returns the key of the scopes in the Context.
+func (ss SecurityScheme) ScopesKey() string {
+	return string(ss) + ".Scopes"
+}
+
+// Scopes collect the scopes defined in the Context.
+func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
+	val := c.Get(ss.ScopesKey())
+	scopes, ok := val.([]string)
+	return scopes, ok
+}
+
+// All security schemes defined.
+const ()
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{

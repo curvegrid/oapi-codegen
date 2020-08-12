@@ -138,6 +138,30 @@ func (s Issue185JSONBody) Validate() error {
 
 }
 
+// Issue30PathFallthrough defines parameters for Issue30.
+type Issue30PathFallthrough string
+
+// Validate perform validation on the Issue30PathFallthrough
+func (s Issue30PathFallthrough) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+	)
+
+}
+
+// Issue41Path1param defines parameters for Issue41.
+type Issue41Path1param N5StartsWithNumber
+
+// Validate perform validation on the Issue41Path1param
+func (s Issue41Path1param) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(N5StartsWithNumber)(s),
+	)
+
+}
+
 // Issue9JSONBody defines parameters for Issue9.
 type Issue9JSONBody interface{}
 
@@ -260,10 +284,10 @@ type ClientInterface interface {
 	Issue209(ctx context.Context, str StringInPath) (*http.Response, error)
 
 	// Issue30 request
-	Issue30(ctx context.Context, pFallthrough string) (*http.Response, error)
+	Issue30(ctx context.Context, pFallthrough Issue30PathFallthrough) (*http.Response, error)
 
 	// Issue41 request
-	Issue41(ctx context.Context, n1param N5StartsWithNumber) (*http.Response, error)
+	Issue41(ctx context.Context, n1param Issue41Path1param) (*http.Response, error)
 
 	// Issue9 request  with any body
 	Issue9WithBody(ctx context.Context, params *Issue9Params, contentType string, body io.Reader) (*http.Response, error)
@@ -346,7 +370,7 @@ func (c *Client) Issue209(ctx context.Context, str StringInPath) (*http.Response
 	return c.Client.Do(req)
 }
 
-func (c *Client) Issue30(ctx context.Context, pFallthrough string) (*http.Response, error) {
+func (c *Client) Issue30(ctx context.Context, pFallthrough Issue30PathFallthrough) (*http.Response, error) {
 	req, err := NewIssue30Request(c.Server, pFallthrough)
 	if err != nil {
 		return nil, err
@@ -361,7 +385,7 @@ func (c *Client) Issue30(ctx context.Context, pFallthrough string) (*http.Respon
 	return c.Client.Do(req)
 }
 
-func (c *Client) Issue41(ctx context.Context, n1param N5StartsWithNumber) (*http.Response, error) {
+func (c *Client) Issue41(ctx context.Context, n1param Issue41Path1param) (*http.Response, error) {
 	req, err := NewIssue41Request(c.Server, n1param)
 	if err != nil {
 		return nil, err
@@ -534,7 +558,7 @@ func NewIssue209Request(server string, str StringInPath) (*http.Request, error) 
 }
 
 // NewIssue30Request generates requests for Issue30
-func NewIssue30Request(server string, pFallthrough string) (*http.Request, error) {
+func NewIssue30Request(server string, pFallthrough Issue30PathFallthrough) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -568,7 +592,7 @@ func NewIssue30Request(server string, pFallthrough string) (*http.Request, error
 }
 
 // NewIssue41Request generates requests for Issue41
-func NewIssue41Request(server string, n1param N5StartsWithNumber) (*http.Request, error) {
+func NewIssue41Request(server string, n1param Issue41Path1param) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -700,10 +724,10 @@ type ClientWithResponsesInterface interface {
 	Issue209WithResponse(ctx context.Context, str StringInPath) (*Issue209Response, error)
 
 	// Issue30 request
-	Issue30WithResponse(ctx context.Context, pFallthrough string) (*Issue30Response, error)
+	Issue30WithResponse(ctx context.Context, pFallthrough Issue30PathFallthrough) (*Issue30Response, error)
 
 	// Issue41 request
-	Issue41WithResponse(ctx context.Context, n1param N5StartsWithNumber) (*Issue41Response, error)
+	Issue41WithResponse(ctx context.Context, n1param Issue41Path1param) (*Issue41Response, error)
 
 	// Issue9 request  with any body
 	Issue9WithBodyWithResponse(ctx context.Context, params *Issue9Params, contentType string, body io.Reader) (*Issue9Response, error)
@@ -914,7 +938,7 @@ func (c *ClientWithResponses) Issue209WithResponse(ctx context.Context, str Stri
 }
 
 // Issue30WithResponse request returning *Issue30Response
-func (c *ClientWithResponses) Issue30WithResponse(ctx context.Context, pFallthrough string) (*Issue30Response, error) {
+func (c *ClientWithResponses) Issue30WithResponse(ctx context.Context, pFallthrough Issue30PathFallthrough) (*Issue30Response, error) {
 	rsp, err := c.Issue30(ctx, pFallthrough)
 	if err != nil {
 		return nil, err
@@ -923,7 +947,7 @@ func (c *ClientWithResponses) Issue30WithResponse(ctx context.Context, pFallthro
 }
 
 // Issue41WithResponse request returning *Issue41Response
-func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, n1param N5StartsWithNumber) (*Issue41Response, error) {
+func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, n1param Issue41Path1param) (*Issue41Response, error) {
 	rsp, err := c.Issue41(ctx, n1param)
 	if err != nil {
 		return nil, err
@@ -1144,10 +1168,10 @@ type ServerInterface interface {
 	Issue209(ctx *Issue209Context, str StringInPath) error
 
 	// (GET /issues/30/{fallthrough})
-	Issue30(ctx *Issue30Context, pFallthrough string) error
+	Issue30(ctx *Issue30Context, pFallthrough Issue30PathFallthrough) error
 
 	// (GET /issues/41/{1param})
-	Issue41(ctx *Issue41Context, n1param N5StartsWithNumber) error
+	Issue41(ctx *Issue41Context, n1param Issue41Path1param) error
 
 	// (GET /issues/9)
 	Issue9(ctx *Issue9Context, params Issue9Params) error
@@ -1303,7 +1327,7 @@ func (w *ServerInterfaceWrapper) Issue209(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) Issue30(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "fallthrough" -------------
-	var pFallthrough string
+	var pFallthrough Issue30PathFallthrough
 
 	err = runtime.BindStyledParameter("simple", false, "fallthrough", ctx.Param("fallthrough"), &pFallthrough)
 	if err != nil {
@@ -1323,7 +1347,7 @@ func (w *ServerInterfaceWrapper) Issue30(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "1param" -------------
-	var n1param N5StartsWithNumber
+	var n1param Issue41Path1param
 
 	err = runtime.BindStyledParameter("simple", false, "1param", ctx.Param("1param"), &n1param)
 	if err != nil {
@@ -1392,6 +1416,24 @@ func RegisterHandlers(router EchoRouter, si ServerInterface) {
 	router.GET("/issues/9", wrapper.Issue9)
 
 }
+
+// SecurityScheme represents a security scheme used in the server.
+type SecurityScheme string
+
+// ScopesKey returns the key of the scopes in the Context.
+func (ss SecurityScheme) ScopesKey() string {
+	return string(ss) + ".Scopes"
+}
+
+// Scopes collect the scopes defined in the Context.
+func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
+	val := c.Get(ss.ScopesKey())
+	scopes, ok := val.([]string)
+	return scopes, ok
+}
+
+// All security schemes defined.
+const ()
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{

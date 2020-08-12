@@ -122,5 +122,29 @@ func (s AddPetJSONBody) Validate() error {
 
 }
 
+// DeletePetPathId defines parameters for DeletePet.
+type DeletePetPathId int64
+
+// Validate perform validation on the DeletePetPathId
+func (s DeletePetPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
+// FindPetByIdPathId defines parameters for FindPetById.
+type FindPetByIdPathId int64
+
+// Validate perform validation on the FindPetByIdPathId
+func (s FindPetByIdPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
 // AddPetRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody

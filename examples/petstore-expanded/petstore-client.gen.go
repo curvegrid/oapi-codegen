@@ -132,6 +132,30 @@ func (s AddPetJSONBody) Validate() error {
 
 }
 
+// DeletePetPathId defines parameters for DeletePet.
+type DeletePetPathId int64
+
+// Validate perform validation on the DeletePetPathId
+func (s DeletePetPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
+// FindPetByIdPathId defines parameters for FindPetById.
+type FindPetByIdPathId int64
+
+// Validate perform validation on the FindPetByIdPathId
+func (s FindPetByIdPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
 // AddPetRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody
 
@@ -215,10 +239,10 @@ type ClientInterface interface {
 	AddPet(ctx context.Context, body AddPetJSONRequestBody) (*http.Response, error)
 
 	// DeletePet request
-	DeletePet(ctx context.Context, id int64) (*http.Response, error)
+	DeletePet(ctx context.Context, id DeletePetPathId) (*http.Response, error)
 
 	// FindPetById request
-	FindPetById(ctx context.Context, id int64) (*http.Response, error)
+	FindPetById(ctx context.Context, id FindPetByIdPathId) (*http.Response, error)
 }
 
 func (c *Client) FindPets(ctx context.Context, params *FindPetsParams) (*http.Response, error) {
@@ -266,7 +290,7 @@ func (c *Client) AddPet(ctx context.Context, body AddPetJSONRequestBody) (*http.
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeletePet(ctx context.Context, id int64) (*http.Response, error) {
+func (c *Client) DeletePet(ctx context.Context, id DeletePetPathId) (*http.Response, error) {
 	req, err := NewDeletePetRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -281,7 +305,7 @@ func (c *Client) DeletePet(ctx context.Context, id int64) (*http.Response, error
 	return c.Client.Do(req)
 }
 
-func (c *Client) FindPetById(ctx context.Context, id int64) (*http.Response, error) {
+func (c *Client) FindPetById(ctx context.Context, id FindPetByIdPathId) (*http.Response, error) {
 	req, err := NewFindPetByIdRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -399,7 +423,7 @@ func NewAddPetRequestWithBody(server string, contentType string, body io.Reader)
 }
 
 // NewDeletePetRequest generates requests for DeletePet
-func NewDeletePetRequest(server string, id int64) (*http.Request, error) {
+func NewDeletePetRequest(server string, id DeletePetPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -433,7 +457,7 @@ func NewDeletePetRequest(server string, id int64) (*http.Request, error) {
 }
 
 // NewFindPetByIdRequest generates requests for FindPetById
-func NewFindPetByIdRequest(server string, id int64) (*http.Request, error) {
+func NewFindPetByIdRequest(server string, id FindPetByIdPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -504,10 +528,10 @@ type ClientWithResponsesInterface interface {
 	AddPetWithResponse(ctx context.Context, body AddPetJSONRequestBody) (*AddPetResponse, error)
 
 	// DeletePet request
-	DeletePetWithResponse(ctx context.Context, id int64) (*DeletePetResponse, error)
+	DeletePetWithResponse(ctx context.Context, id DeletePetPathId) (*DeletePetResponse, error)
 
 	// FindPetById request
-	FindPetByIdWithResponse(ctx context.Context, id int64) (*FindPetByIdResponse, error)
+	FindPetByIdWithResponse(ctx context.Context, id FindPetByIdPathId) (*FindPetByIdResponse, error)
 }
 
 type FindPetsResponse struct {
@@ -628,7 +652,7 @@ func (c *ClientWithResponses) AddPetWithResponse(ctx context.Context, body AddPe
 }
 
 // DeletePetWithResponse request returning *DeletePetResponse
-func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, id int64) (*DeletePetResponse, error) {
+func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, id DeletePetPathId) (*DeletePetResponse, error) {
 	rsp, err := c.DeletePet(ctx, id)
 	if err != nil {
 		return nil, err
@@ -637,7 +661,7 @@ func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, id int6
 }
 
 // FindPetByIdWithResponse request returning *FindPetByIdResponse
-func (c *ClientWithResponses) FindPetByIdWithResponse(ctx context.Context, id int64) (*FindPetByIdResponse, error) {
+func (c *ClientWithResponses) FindPetByIdWithResponse(ctx context.Context, id FindPetByIdPathId) (*FindPetByIdResponse, error) {
 	rsp, err := c.FindPetById(ctx, id)
 	if err != nil {
 		return nil, err

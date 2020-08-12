@@ -131,6 +131,30 @@ func (s AddPetJSONBody) Validate() error {
 
 }
 
+// DeletePetPathId defines parameters for DeletePet.
+type DeletePetPathId int64
+
+// Validate perform validation on the DeletePetPathId
+func (s DeletePetPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
+// FindPetByIdPathId defines parameters for FindPetById.
+type FindPetByIdPathId int64
+
+// Validate perform validation on the FindPetByIdPathId
+func (s FindPetByIdPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
 // AddPetRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody
 
@@ -144,10 +168,10 @@ type ServerInterface interface {
 	AddPet(w http.ResponseWriter, r *http.Request)
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(w http.ResponseWriter, r *http.Request, id int64)
+	DeletePet(w http.ResponseWriter, r *http.Request, id DeletePetPathId)
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetById(w http.ResponseWriter, r *http.Request, id int64)
+	FindPetById(w http.ResponseWriter, r *http.Request, id FindPetByIdPathId)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -203,7 +227,7 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var id DeletePetPathId
 
 	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
@@ -221,7 +245,7 @@ func (siw *ServerInterfaceWrapper) FindPetById(w http.ResponseWriter, r *http.Re
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var id FindPetByIdPathId
 
 	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {

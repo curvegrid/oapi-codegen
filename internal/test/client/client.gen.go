@@ -1058,7 +1058,7 @@ func (w *ServerInterfaceWrapper) PostJson(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetJson(ctx echo.Context) error {
 	var err error
 
-	ctx.Set("OpenId.Scopes", []string{"json.read", "json.admin"})
+	ctx.Set(SecuritySchemeOpenId.ScopesKey(), []string{"json.read", "json.admin"})
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetJson(&GetJsonContext{ctx})
@@ -1087,7 +1087,7 @@ func (w *ServerInterfaceWrapper) GetOther(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetJsonWithTrailingSlash(ctx echo.Context) error {
 	var err error
 
-	ctx.Set("OpenId.Scopes", []string{"json.read", "json.admin"})
+	ctx.Set(SecuritySchemeOpenId.ScopesKey(), []string{"json.read", "json.admin"})
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetJsonWithTrailingSlash(&GetJsonWithTrailingSlashContext{ctx})
@@ -1125,6 +1125,24 @@ func RegisterHandlers(router EchoRouter, si ServerInterface) {
 	router.GET("/with_trailing_slash/", wrapper.GetJsonWithTrailingSlash)
 
 }
+
+// SecurityScheme represents a security scheme used in the server.
+type SecurityScheme string
+
+// ScopesKey returns the key of the scopes in the Context.
+func (ss SecurityScheme) ScopesKey() string {
+	return string(ss) + ".Scopes"
+}
+
+// Scopes collect the scopes defined in the Context.
+func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
+	val := c.Get(ss.ScopesKey())
+	scopes, ok := val.([]string)
+	return scopes, ok
+}
+
+// All security schemes defined.
+const ()
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{

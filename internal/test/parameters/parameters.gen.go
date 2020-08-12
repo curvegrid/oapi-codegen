@@ -72,6 +72,18 @@ func (s Object) Validate() error {
 
 }
 
+// GetContentObjectPathParam defines parameters for GetContentObject.
+type GetContentObjectPathParam ComplexObject
+
+// Validate perform validation on the GetContentObjectPathParam
+func (s GetContentObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(ComplexObject)(s),
+	)
+
+}
+
 // GetCookieParams defines parameters for GetCookie.
 type GetCookieParams struct {
 
@@ -190,6 +202,118 @@ func (s GetHeaderParams) Validate() error {
 
 }
 
+// GetLabelExplodeArrayPathParam defines parameters for GetLabelExplodeArray.
+type GetLabelExplodeArrayPathParam []int32
+
+// Validate perform validation on the GetLabelExplodeArrayPathParam
+func (s GetLabelExplodeArrayPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetLabelExplodeObjectPathParam defines parameters for GetLabelExplodeObject.
+type GetLabelExplodeObjectPathParam Object
+
+// Validate perform validation on the GetLabelExplodeObjectPathParam
+func (s GetLabelExplodeObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetLabelNoExplodeArrayPathParam defines parameters for GetLabelNoExplodeArray.
+type GetLabelNoExplodeArrayPathParam []int32
+
+// Validate perform validation on the GetLabelNoExplodeArrayPathParam
+func (s GetLabelNoExplodeArrayPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetLabelNoExplodeObjectPathParam defines parameters for GetLabelNoExplodeObject.
+type GetLabelNoExplodeObjectPathParam Object
+
+// Validate perform validation on the GetLabelNoExplodeObjectPathParam
+func (s GetLabelNoExplodeObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetMatrixExplodeArrayPathId defines parameters for GetMatrixExplodeArray.
+type GetMatrixExplodeArrayPathId []int32
+
+// Validate perform validation on the GetMatrixExplodeArrayPathId
+func (s GetMatrixExplodeArrayPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetMatrixExplodeObjectPathId defines parameters for GetMatrixExplodeObject.
+type GetMatrixExplodeObjectPathId Object
+
+// Validate perform validation on the GetMatrixExplodeObjectPathId
+func (s GetMatrixExplodeObjectPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetMatrixNoExplodeArrayPathId defines parameters for GetMatrixNoExplodeArray.
+type GetMatrixNoExplodeArrayPathId []int32
+
+// Validate perform validation on the GetMatrixNoExplodeArrayPathId
+func (s GetMatrixNoExplodeArrayPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetMatrixNoExplodeObjectPathId defines parameters for GetMatrixNoExplodeObject.
+type GetMatrixNoExplodeObjectPathId Object
+
+// Validate perform validation on the GetMatrixNoExplodeObjectPathId
+func (s GetMatrixNoExplodeObjectPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetPassThroughPathParam defines parameters for GetPassThrough.
+type GetPassThroughPathParam string
+
+// Validate perform validation on the GetPassThroughPathParam
+func (s GetPassThroughPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+	)
+
+}
+
 // GetDeepObjectParams defines parameters for GetDeepObject.
 type GetDeepObjectParams struct {
 
@@ -269,6 +393,68 @@ func (s GetQueryFormParams) Validate() error {
 
 }
 
+// GetSimpleExplodeArrayPathParam defines parameters for GetSimpleExplodeArray.
+type GetSimpleExplodeArrayPathParam []int32
+
+// Validate perform validation on the GetSimpleExplodeArrayPathParam
+func (s GetSimpleExplodeArrayPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetSimpleExplodeObjectPathParam defines parameters for GetSimpleExplodeObject.
+type GetSimpleExplodeObjectPathParam Object
+
+// Validate perform validation on the GetSimpleExplodeObjectPathParam
+func (s GetSimpleExplodeObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetSimpleNoExplodeArrayPathParam defines parameters for GetSimpleNoExplodeArray.
+type GetSimpleNoExplodeArrayPathParam []int32
+
+// Validate perform validation on the GetSimpleNoExplodeArrayPathParam
+func (s GetSimpleNoExplodeArrayPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetSimpleNoExplodeObjectPathParam defines parameters for GetSimpleNoExplodeObject.
+type GetSimpleNoExplodeObjectPathParam Object
+
+// Validate perform validation on the GetSimpleNoExplodeObjectPathParam
+func (s GetSimpleNoExplodeObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetSimplePrimitivePathParam defines parameters for GetSimplePrimitive.
+type GetSimplePrimitivePathParam int32
+
+// Validate perform validation on the GetSimplePrimitivePathParam
+func (s GetSimplePrimitivePathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int32)(s),
+	)
+
+}
+
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -341,7 +527,7 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 	// GetContentObject request
-	GetContentObject(ctx context.Context, param ComplexObject) (*http.Response, error)
+	GetContentObject(ctx context.Context, param GetContentObjectPathParam) (*http.Response, error)
 
 	// GetCookie request
 	GetCookie(ctx context.Context, params *GetCookieParams) (*http.Response, error)
@@ -350,31 +536,31 @@ type ClientInterface interface {
 	GetHeader(ctx context.Context, params *GetHeaderParams) (*http.Response, error)
 
 	// GetLabelExplodeArray request
-	GetLabelExplodeArray(ctx context.Context, param []int32) (*http.Response, error)
+	GetLabelExplodeArray(ctx context.Context, param GetLabelExplodeArrayPathParam) (*http.Response, error)
 
 	// GetLabelExplodeObject request
-	GetLabelExplodeObject(ctx context.Context, param Object) (*http.Response, error)
+	GetLabelExplodeObject(ctx context.Context, param GetLabelExplodeObjectPathParam) (*http.Response, error)
 
 	// GetLabelNoExplodeArray request
-	GetLabelNoExplodeArray(ctx context.Context, param []int32) (*http.Response, error)
+	GetLabelNoExplodeArray(ctx context.Context, param GetLabelNoExplodeArrayPathParam) (*http.Response, error)
 
 	// GetLabelNoExplodeObject request
-	GetLabelNoExplodeObject(ctx context.Context, param Object) (*http.Response, error)
+	GetLabelNoExplodeObject(ctx context.Context, param GetLabelNoExplodeObjectPathParam) (*http.Response, error)
 
 	// GetMatrixExplodeArray request
-	GetMatrixExplodeArray(ctx context.Context, id []int32) (*http.Response, error)
+	GetMatrixExplodeArray(ctx context.Context, id GetMatrixExplodeArrayPathId) (*http.Response, error)
 
 	// GetMatrixExplodeObject request
-	GetMatrixExplodeObject(ctx context.Context, id Object) (*http.Response, error)
+	GetMatrixExplodeObject(ctx context.Context, id GetMatrixExplodeObjectPathId) (*http.Response, error)
 
 	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArray(ctx context.Context, id []int32) (*http.Response, error)
+	GetMatrixNoExplodeArray(ctx context.Context, id GetMatrixNoExplodeArrayPathId) (*http.Response, error)
 
 	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObject(ctx context.Context, id Object) (*http.Response, error)
+	GetMatrixNoExplodeObject(ctx context.Context, id GetMatrixNoExplodeObjectPathId) (*http.Response, error)
 
 	// GetPassThrough request
-	GetPassThrough(ctx context.Context, param string) (*http.Response, error)
+	GetPassThrough(ctx context.Context, param GetPassThroughPathParam) (*http.Response, error)
 
 	// GetDeepObject request
 	GetDeepObject(ctx context.Context, params *GetDeepObjectParams) (*http.Response, error)
@@ -383,22 +569,22 @@ type ClientInterface interface {
 	GetQueryForm(ctx context.Context, params *GetQueryFormParams) (*http.Response, error)
 
 	// GetSimpleExplodeArray request
-	GetSimpleExplodeArray(ctx context.Context, param []int32) (*http.Response, error)
+	GetSimpleExplodeArray(ctx context.Context, param GetSimpleExplodeArrayPathParam) (*http.Response, error)
 
 	// GetSimpleExplodeObject request
-	GetSimpleExplodeObject(ctx context.Context, param Object) (*http.Response, error)
+	GetSimpleExplodeObject(ctx context.Context, param GetSimpleExplodeObjectPathParam) (*http.Response, error)
 
 	// GetSimpleNoExplodeArray request
-	GetSimpleNoExplodeArray(ctx context.Context, param []int32) (*http.Response, error)
+	GetSimpleNoExplodeArray(ctx context.Context, param GetSimpleNoExplodeArrayPathParam) (*http.Response, error)
 
 	// GetSimpleNoExplodeObject request
-	GetSimpleNoExplodeObject(ctx context.Context, param Object) (*http.Response, error)
+	GetSimpleNoExplodeObject(ctx context.Context, param GetSimpleNoExplodeObjectPathParam) (*http.Response, error)
 
 	// GetSimplePrimitive request
-	GetSimplePrimitive(ctx context.Context, param int32) (*http.Response, error)
+	GetSimplePrimitive(ctx context.Context, param GetSimplePrimitivePathParam) (*http.Response, error)
 }
 
-func (c *Client) GetContentObject(ctx context.Context, param ComplexObject) (*http.Response, error) {
+func (c *Client) GetContentObject(ctx context.Context, param GetContentObjectPathParam) (*http.Response, error) {
 	req, err := NewGetContentObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -443,7 +629,7 @@ func (c *Client) GetHeader(ctx context.Context, params *GetHeaderParams) (*http.
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLabelExplodeArray(ctx context.Context, param []int32) (*http.Response, error) {
+func (c *Client) GetLabelExplodeArray(ctx context.Context, param GetLabelExplodeArrayPathParam) (*http.Response, error) {
 	req, err := NewGetLabelExplodeArrayRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -458,7 +644,7 @@ func (c *Client) GetLabelExplodeArray(ctx context.Context, param []int32) (*http
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLabelExplodeObject(ctx context.Context, param Object) (*http.Response, error) {
+func (c *Client) GetLabelExplodeObject(ctx context.Context, param GetLabelExplodeObjectPathParam) (*http.Response, error) {
 	req, err := NewGetLabelExplodeObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -473,7 +659,7 @@ func (c *Client) GetLabelExplodeObject(ctx context.Context, param Object) (*http
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLabelNoExplodeArray(ctx context.Context, param []int32) (*http.Response, error) {
+func (c *Client) GetLabelNoExplodeArray(ctx context.Context, param GetLabelNoExplodeArrayPathParam) (*http.Response, error) {
 	req, err := NewGetLabelNoExplodeArrayRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -488,7 +674,7 @@ func (c *Client) GetLabelNoExplodeArray(ctx context.Context, param []int32) (*ht
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLabelNoExplodeObject(ctx context.Context, param Object) (*http.Response, error) {
+func (c *Client) GetLabelNoExplodeObject(ctx context.Context, param GetLabelNoExplodeObjectPathParam) (*http.Response, error) {
 	req, err := NewGetLabelNoExplodeObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -503,7 +689,7 @@ func (c *Client) GetLabelNoExplodeObject(ctx context.Context, param Object) (*ht
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixExplodeArray(ctx context.Context, id []int32) (*http.Response, error) {
+func (c *Client) GetMatrixExplodeArray(ctx context.Context, id GetMatrixExplodeArrayPathId) (*http.Response, error) {
 	req, err := NewGetMatrixExplodeArrayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -518,7 +704,7 @@ func (c *Client) GetMatrixExplodeArray(ctx context.Context, id []int32) (*http.R
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixExplodeObject(ctx context.Context, id Object) (*http.Response, error) {
+func (c *Client) GetMatrixExplodeObject(ctx context.Context, id GetMatrixExplodeObjectPathId) (*http.Response, error) {
 	req, err := NewGetMatrixExplodeObjectRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -533,7 +719,7 @@ func (c *Client) GetMatrixExplodeObject(ctx context.Context, id Object) (*http.R
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, id []int32) (*http.Response, error) {
+func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, id GetMatrixNoExplodeArrayPathId) (*http.Response, error) {
 	req, err := NewGetMatrixNoExplodeArrayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -548,7 +734,7 @@ func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, id []int32) (*http
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, id Object) (*http.Response, error) {
+func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, id GetMatrixNoExplodeObjectPathId) (*http.Response, error) {
 	req, err := NewGetMatrixNoExplodeObjectRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -563,7 +749,7 @@ func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, id Object) (*http
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetPassThrough(ctx context.Context, param string) (*http.Response, error) {
+func (c *Client) GetPassThrough(ctx context.Context, param GetPassThroughPathParam) (*http.Response, error) {
 	req, err := NewGetPassThroughRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -608,7 +794,7 @@ func (c *Client) GetQueryForm(ctx context.Context, params *GetQueryFormParams) (
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimpleExplodeArray(ctx context.Context, param []int32) (*http.Response, error) {
+func (c *Client) GetSimpleExplodeArray(ctx context.Context, param GetSimpleExplodeArrayPathParam) (*http.Response, error) {
 	req, err := NewGetSimpleExplodeArrayRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -623,7 +809,7 @@ func (c *Client) GetSimpleExplodeArray(ctx context.Context, param []int32) (*htt
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimpleExplodeObject(ctx context.Context, param Object) (*http.Response, error) {
+func (c *Client) GetSimpleExplodeObject(ctx context.Context, param GetSimpleExplodeObjectPathParam) (*http.Response, error) {
 	req, err := NewGetSimpleExplodeObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -638,7 +824,7 @@ func (c *Client) GetSimpleExplodeObject(ctx context.Context, param Object) (*htt
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimpleNoExplodeArray(ctx context.Context, param []int32) (*http.Response, error) {
+func (c *Client) GetSimpleNoExplodeArray(ctx context.Context, param GetSimpleNoExplodeArrayPathParam) (*http.Response, error) {
 	req, err := NewGetSimpleNoExplodeArrayRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -653,7 +839,7 @@ func (c *Client) GetSimpleNoExplodeArray(ctx context.Context, param []int32) (*h
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimpleNoExplodeObject(ctx context.Context, param Object) (*http.Response, error) {
+func (c *Client) GetSimpleNoExplodeObject(ctx context.Context, param GetSimpleNoExplodeObjectPathParam) (*http.Response, error) {
 	req, err := NewGetSimpleNoExplodeObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -668,7 +854,7 @@ func (c *Client) GetSimpleNoExplodeObject(ctx context.Context, param Object) (*h
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimplePrimitive(ctx context.Context, param int32) (*http.Response, error) {
+func (c *Client) GetSimplePrimitive(ctx context.Context, param GetSimplePrimitivePathParam) (*http.Response, error) {
 	req, err := NewGetSimplePrimitiveRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -684,7 +870,7 @@ func (c *Client) GetSimplePrimitive(ctx context.Context, param int32) (*http.Res
 }
 
 // NewGetContentObjectRequest generates requests for GetContentObject
-func NewGetContentObjectRequest(server string, param ComplexObject) (*http.Request, error) {
+func NewGetContentObjectRequest(server string, param GetContentObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -960,7 +1146,7 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 }
 
 // NewGetLabelExplodeArrayRequest generates requests for GetLabelExplodeArray
-func NewGetLabelExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
+func NewGetLabelExplodeArrayRequest(server string, param GetLabelExplodeArrayPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -994,7 +1180,7 @@ func NewGetLabelExplodeArrayRequest(server string, param []int32) (*http.Request
 }
 
 // NewGetLabelExplodeObjectRequest generates requests for GetLabelExplodeObject
-func NewGetLabelExplodeObjectRequest(server string, param Object) (*http.Request, error) {
+func NewGetLabelExplodeObjectRequest(server string, param GetLabelExplodeObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1028,7 +1214,7 @@ func NewGetLabelExplodeObjectRequest(server string, param Object) (*http.Request
 }
 
 // NewGetLabelNoExplodeArrayRequest generates requests for GetLabelNoExplodeArray
-func NewGetLabelNoExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
+func NewGetLabelNoExplodeArrayRequest(server string, param GetLabelNoExplodeArrayPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1062,7 +1248,7 @@ func NewGetLabelNoExplodeArrayRequest(server string, param []int32) (*http.Reque
 }
 
 // NewGetLabelNoExplodeObjectRequest generates requests for GetLabelNoExplodeObject
-func NewGetLabelNoExplodeObjectRequest(server string, param Object) (*http.Request, error) {
+func NewGetLabelNoExplodeObjectRequest(server string, param GetLabelNoExplodeObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1096,7 +1282,7 @@ func NewGetLabelNoExplodeObjectRequest(server string, param Object) (*http.Reque
 }
 
 // NewGetMatrixExplodeArrayRequest generates requests for GetMatrixExplodeArray
-func NewGetMatrixExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
+func NewGetMatrixExplodeArrayRequest(server string, id GetMatrixExplodeArrayPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1130,7 +1316,7 @@ func NewGetMatrixExplodeArrayRequest(server string, id []int32) (*http.Request, 
 }
 
 // NewGetMatrixExplodeObjectRequest generates requests for GetMatrixExplodeObject
-func NewGetMatrixExplodeObjectRequest(server string, id Object) (*http.Request, error) {
+func NewGetMatrixExplodeObjectRequest(server string, id GetMatrixExplodeObjectPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1164,7 +1350,7 @@ func NewGetMatrixExplodeObjectRequest(server string, id Object) (*http.Request, 
 }
 
 // NewGetMatrixNoExplodeArrayRequest generates requests for GetMatrixNoExplodeArray
-func NewGetMatrixNoExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
+func NewGetMatrixNoExplodeArrayRequest(server string, id GetMatrixNoExplodeArrayPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1198,7 +1384,7 @@ func NewGetMatrixNoExplodeArrayRequest(server string, id []int32) (*http.Request
 }
 
 // NewGetMatrixNoExplodeObjectRequest generates requests for GetMatrixNoExplodeObject
-func NewGetMatrixNoExplodeObjectRequest(server string, id Object) (*http.Request, error) {
+func NewGetMatrixNoExplodeObjectRequest(server string, id GetMatrixNoExplodeObjectPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1232,7 +1418,7 @@ func NewGetMatrixNoExplodeObjectRequest(server string, id Object) (*http.Request
 }
 
 // NewGetPassThroughRequest generates requests for GetPassThrough
-func NewGetPassThroughRequest(server string, param string) (*http.Request, error) {
+func NewGetPassThroughRequest(server string, param GetPassThroughPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1443,7 +1629,7 @@ func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Re
 }
 
 // NewGetSimpleExplodeArrayRequest generates requests for GetSimpleExplodeArray
-func NewGetSimpleExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
+func NewGetSimpleExplodeArrayRequest(server string, param GetSimpleExplodeArrayPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1477,7 +1663,7 @@ func NewGetSimpleExplodeArrayRequest(server string, param []int32) (*http.Reques
 }
 
 // NewGetSimpleExplodeObjectRequest generates requests for GetSimpleExplodeObject
-func NewGetSimpleExplodeObjectRequest(server string, param Object) (*http.Request, error) {
+func NewGetSimpleExplodeObjectRequest(server string, param GetSimpleExplodeObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1511,7 +1697,7 @@ func NewGetSimpleExplodeObjectRequest(server string, param Object) (*http.Reques
 }
 
 // NewGetSimpleNoExplodeArrayRequest generates requests for GetSimpleNoExplodeArray
-func NewGetSimpleNoExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
+func NewGetSimpleNoExplodeArrayRequest(server string, param GetSimpleNoExplodeArrayPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1545,7 +1731,7 @@ func NewGetSimpleNoExplodeArrayRequest(server string, param []int32) (*http.Requ
 }
 
 // NewGetSimpleNoExplodeObjectRequest generates requests for GetSimpleNoExplodeObject
-func NewGetSimpleNoExplodeObjectRequest(server string, param Object) (*http.Request, error) {
+func NewGetSimpleNoExplodeObjectRequest(server string, param GetSimpleNoExplodeObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1579,7 +1765,7 @@ func NewGetSimpleNoExplodeObjectRequest(server string, param Object) (*http.Requ
 }
 
 // NewGetSimplePrimitiveRequest generates requests for GetSimplePrimitive
-func NewGetSimplePrimitiveRequest(server string, param int32) (*http.Request, error) {
+func NewGetSimplePrimitiveRequest(server string, param GetSimplePrimitivePathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1642,7 +1828,7 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 	// GetContentObject request
-	GetContentObjectWithResponse(ctx context.Context, param ComplexObject) (*GetContentObjectResponse, error)
+	GetContentObjectWithResponse(ctx context.Context, param GetContentObjectPathParam) (*GetContentObjectResponse, error)
 
 	// GetCookie request
 	GetCookieWithResponse(ctx context.Context, params *GetCookieParams) (*GetCookieResponse, error)
@@ -1651,31 +1837,31 @@ type ClientWithResponsesInterface interface {
 	GetHeaderWithResponse(ctx context.Context, params *GetHeaderParams) (*GetHeaderResponse, error)
 
 	// GetLabelExplodeArray request
-	GetLabelExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetLabelExplodeArrayResponse, error)
+	GetLabelExplodeArrayWithResponse(ctx context.Context, param GetLabelExplodeArrayPathParam) (*GetLabelExplodeArrayResponse, error)
 
 	// GetLabelExplodeObject request
-	GetLabelExplodeObjectWithResponse(ctx context.Context, param Object) (*GetLabelExplodeObjectResponse, error)
+	GetLabelExplodeObjectWithResponse(ctx context.Context, param GetLabelExplodeObjectPathParam) (*GetLabelExplodeObjectResponse, error)
 
 	// GetLabelNoExplodeArray request
-	GetLabelNoExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetLabelNoExplodeArrayResponse, error)
+	GetLabelNoExplodeArrayWithResponse(ctx context.Context, param GetLabelNoExplodeArrayPathParam) (*GetLabelNoExplodeArrayResponse, error)
 
 	// GetLabelNoExplodeObject request
-	GetLabelNoExplodeObjectWithResponse(ctx context.Context, param Object) (*GetLabelNoExplodeObjectResponse, error)
+	GetLabelNoExplodeObjectWithResponse(ctx context.Context, param GetLabelNoExplodeObjectPathParam) (*GetLabelNoExplodeObjectResponse, error)
 
 	// GetMatrixExplodeArray request
-	GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32) (*GetMatrixExplodeArrayResponse, error)
+	GetMatrixExplodeArrayWithResponse(ctx context.Context, id GetMatrixExplodeArrayPathId) (*GetMatrixExplodeArrayResponse, error)
 
 	// GetMatrixExplodeObject request
-	GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object) (*GetMatrixExplodeObjectResponse, error)
+	GetMatrixExplodeObjectWithResponse(ctx context.Context, id GetMatrixExplodeObjectPathId) (*GetMatrixExplodeObjectResponse, error)
 
 	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32) (*GetMatrixNoExplodeArrayResponse, error)
+	GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id GetMatrixNoExplodeArrayPathId) (*GetMatrixNoExplodeArrayResponse, error)
 
 	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object) (*GetMatrixNoExplodeObjectResponse, error)
+	GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id GetMatrixNoExplodeObjectPathId) (*GetMatrixNoExplodeObjectResponse, error)
 
 	// GetPassThrough request
-	GetPassThroughWithResponse(ctx context.Context, param string) (*GetPassThroughResponse, error)
+	GetPassThroughWithResponse(ctx context.Context, param GetPassThroughPathParam) (*GetPassThroughResponse, error)
 
 	// GetDeepObject request
 	GetDeepObjectWithResponse(ctx context.Context, params *GetDeepObjectParams) (*GetDeepObjectResponse, error)
@@ -1684,19 +1870,19 @@ type ClientWithResponsesInterface interface {
 	GetQueryFormWithResponse(ctx context.Context, params *GetQueryFormParams) (*GetQueryFormResponse, error)
 
 	// GetSimpleExplodeArray request
-	GetSimpleExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetSimpleExplodeArrayResponse, error)
+	GetSimpleExplodeArrayWithResponse(ctx context.Context, param GetSimpleExplodeArrayPathParam) (*GetSimpleExplodeArrayResponse, error)
 
 	// GetSimpleExplodeObject request
-	GetSimpleExplodeObjectWithResponse(ctx context.Context, param Object) (*GetSimpleExplodeObjectResponse, error)
+	GetSimpleExplodeObjectWithResponse(ctx context.Context, param GetSimpleExplodeObjectPathParam) (*GetSimpleExplodeObjectResponse, error)
 
 	// GetSimpleNoExplodeArray request
-	GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetSimpleNoExplodeArrayResponse, error)
+	GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param GetSimpleNoExplodeArrayPathParam) (*GetSimpleNoExplodeArrayResponse, error)
 
 	// GetSimpleNoExplodeObject request
-	GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param Object) (*GetSimpleNoExplodeObjectResponse, error)
+	GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param GetSimpleNoExplodeObjectPathParam) (*GetSimpleNoExplodeObjectResponse, error)
 
 	// GetSimplePrimitive request
-	GetSimplePrimitiveWithResponse(ctx context.Context, param int32) (*GetSimplePrimitiveResponse, error)
+	GetSimplePrimitiveWithResponse(ctx context.Context, param GetSimplePrimitivePathParam) (*GetSimplePrimitiveResponse, error)
 }
 
 type GetContentObjectResponse struct {
@@ -2099,7 +2285,7 @@ func (r GetSimplePrimitiveResponse) StatusCode() int {
 }
 
 // GetContentObjectWithResponse request returning *GetContentObjectResponse
-func (c *ClientWithResponses) GetContentObjectWithResponse(ctx context.Context, param ComplexObject) (*GetContentObjectResponse, error) {
+func (c *ClientWithResponses) GetContentObjectWithResponse(ctx context.Context, param GetContentObjectPathParam) (*GetContentObjectResponse, error) {
 	rsp, err := c.GetContentObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2126,7 +2312,7 @@ func (c *ClientWithResponses) GetHeaderWithResponse(ctx context.Context, params 
 }
 
 // GetLabelExplodeArrayWithResponse request returning *GetLabelExplodeArrayResponse
-func (c *ClientWithResponses) GetLabelExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetLabelExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetLabelExplodeArrayWithResponse(ctx context.Context, param GetLabelExplodeArrayPathParam) (*GetLabelExplodeArrayResponse, error) {
 	rsp, err := c.GetLabelExplodeArray(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2135,7 +2321,7 @@ func (c *ClientWithResponses) GetLabelExplodeArrayWithResponse(ctx context.Conte
 }
 
 // GetLabelExplodeObjectWithResponse request returning *GetLabelExplodeObjectResponse
-func (c *ClientWithResponses) GetLabelExplodeObjectWithResponse(ctx context.Context, param Object) (*GetLabelExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetLabelExplodeObjectWithResponse(ctx context.Context, param GetLabelExplodeObjectPathParam) (*GetLabelExplodeObjectResponse, error) {
 	rsp, err := c.GetLabelExplodeObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2144,7 +2330,7 @@ func (c *ClientWithResponses) GetLabelExplodeObjectWithResponse(ctx context.Cont
 }
 
 // GetLabelNoExplodeArrayWithResponse request returning *GetLabelNoExplodeArrayResponse
-func (c *ClientWithResponses) GetLabelNoExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetLabelNoExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetLabelNoExplodeArrayWithResponse(ctx context.Context, param GetLabelNoExplodeArrayPathParam) (*GetLabelNoExplodeArrayResponse, error) {
 	rsp, err := c.GetLabelNoExplodeArray(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2153,7 +2339,7 @@ func (c *ClientWithResponses) GetLabelNoExplodeArrayWithResponse(ctx context.Con
 }
 
 // GetLabelNoExplodeObjectWithResponse request returning *GetLabelNoExplodeObjectResponse
-func (c *ClientWithResponses) GetLabelNoExplodeObjectWithResponse(ctx context.Context, param Object) (*GetLabelNoExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetLabelNoExplodeObjectWithResponse(ctx context.Context, param GetLabelNoExplodeObjectPathParam) (*GetLabelNoExplodeObjectResponse, error) {
 	rsp, err := c.GetLabelNoExplodeObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2162,7 +2348,7 @@ func (c *ClientWithResponses) GetLabelNoExplodeObjectWithResponse(ctx context.Co
 }
 
 // GetMatrixExplodeArrayWithResponse request returning *GetMatrixExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32) (*GetMatrixExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Context, id GetMatrixExplodeArrayPathId) (*GetMatrixExplodeArrayResponse, error) {
 	rsp, err := c.GetMatrixExplodeArray(ctx, id)
 	if err != nil {
 		return nil, err
@@ -2171,7 +2357,7 @@ func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Cont
 }
 
 // GetMatrixExplodeObjectWithResponse request returning *GetMatrixExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object) (*GetMatrixExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Context, id GetMatrixExplodeObjectPathId) (*GetMatrixExplodeObjectResponse, error) {
 	rsp, err := c.GetMatrixExplodeObject(ctx, id)
 	if err != nil {
 		return nil, err
@@ -2180,7 +2366,7 @@ func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Con
 }
 
 // GetMatrixNoExplodeArrayWithResponse request returning *GetMatrixNoExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32) (*GetMatrixNoExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id GetMatrixNoExplodeArrayPathId) (*GetMatrixNoExplodeArrayResponse, error) {
 	rsp, err := c.GetMatrixNoExplodeArray(ctx, id)
 	if err != nil {
 		return nil, err
@@ -2189,7 +2375,7 @@ func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Co
 }
 
 // GetMatrixNoExplodeObjectWithResponse request returning *GetMatrixNoExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object) (*GetMatrixNoExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id GetMatrixNoExplodeObjectPathId) (*GetMatrixNoExplodeObjectResponse, error) {
 	rsp, err := c.GetMatrixNoExplodeObject(ctx, id)
 	if err != nil {
 		return nil, err
@@ -2198,7 +2384,7 @@ func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.C
 }
 
 // GetPassThroughWithResponse request returning *GetPassThroughResponse
-func (c *ClientWithResponses) GetPassThroughWithResponse(ctx context.Context, param string) (*GetPassThroughResponse, error) {
+func (c *ClientWithResponses) GetPassThroughWithResponse(ctx context.Context, param GetPassThroughPathParam) (*GetPassThroughResponse, error) {
 	rsp, err := c.GetPassThrough(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2225,7 +2411,7 @@ func (c *ClientWithResponses) GetQueryFormWithResponse(ctx context.Context, para
 }
 
 // GetSimpleExplodeArrayWithResponse request returning *GetSimpleExplodeArrayResponse
-func (c *ClientWithResponses) GetSimpleExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetSimpleExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetSimpleExplodeArrayWithResponse(ctx context.Context, param GetSimpleExplodeArrayPathParam) (*GetSimpleExplodeArrayResponse, error) {
 	rsp, err := c.GetSimpleExplodeArray(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2234,7 +2420,7 @@ func (c *ClientWithResponses) GetSimpleExplodeArrayWithResponse(ctx context.Cont
 }
 
 // GetSimpleExplodeObjectWithResponse request returning *GetSimpleExplodeObjectResponse
-func (c *ClientWithResponses) GetSimpleExplodeObjectWithResponse(ctx context.Context, param Object) (*GetSimpleExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetSimpleExplodeObjectWithResponse(ctx context.Context, param GetSimpleExplodeObjectPathParam) (*GetSimpleExplodeObjectResponse, error) {
 	rsp, err := c.GetSimpleExplodeObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2243,7 +2429,7 @@ func (c *ClientWithResponses) GetSimpleExplodeObjectWithResponse(ctx context.Con
 }
 
 // GetSimpleNoExplodeArrayWithResponse request returning *GetSimpleNoExplodeArrayResponse
-func (c *ClientWithResponses) GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetSimpleNoExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param GetSimpleNoExplodeArrayPathParam) (*GetSimpleNoExplodeArrayResponse, error) {
 	rsp, err := c.GetSimpleNoExplodeArray(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2252,7 +2438,7 @@ func (c *ClientWithResponses) GetSimpleNoExplodeArrayWithResponse(ctx context.Co
 }
 
 // GetSimpleNoExplodeObjectWithResponse request returning *GetSimpleNoExplodeObjectResponse
-func (c *ClientWithResponses) GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param Object) (*GetSimpleNoExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param GetSimpleNoExplodeObjectPathParam) (*GetSimpleNoExplodeObjectResponse, error) {
 	rsp, err := c.GetSimpleNoExplodeObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2261,7 +2447,7 @@ func (c *ClientWithResponses) GetSimpleNoExplodeObjectWithResponse(ctx context.C
 }
 
 // GetSimplePrimitiveWithResponse request returning *GetSimplePrimitiveResponse
-func (c *ClientWithResponses) GetSimplePrimitiveWithResponse(ctx context.Context, param int32) (*GetSimplePrimitiveResponse, error) {
+func (c *ClientWithResponses) GetSimplePrimitiveWithResponse(ctx context.Context, param GetSimplePrimitivePathParam) (*GetSimplePrimitiveResponse, error) {
 	rsp, err := c.GetSimplePrimitive(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2634,7 +2820,7 @@ func ParseGetSimplePrimitiveResponse(rsp *http.Response) (*GetSimplePrimitiveRes
 type ServerInterface interface {
 
 	// (GET /contentObject/{param})
-	GetContentObject(ctx *GetContentObjectContext, param ComplexObject) error
+	GetContentObject(ctx *GetContentObjectContext, param GetContentObjectPathParam) error
 
 	// (GET /cookie)
 	GetCookie(ctx *GetCookieContext, params GetCookieParams) error
@@ -2643,31 +2829,31 @@ type ServerInterface interface {
 	GetHeader(ctx *GetHeaderContext, params GetHeaderParams) error
 
 	// (GET /labelExplodeArray/{.param*})
-	GetLabelExplodeArray(ctx *GetLabelExplodeArrayContext, param []int32) error
+	GetLabelExplodeArray(ctx *GetLabelExplodeArrayContext, param GetLabelExplodeArrayPathParam) error
 
 	// (GET /labelExplodeObject/{.param*})
-	GetLabelExplodeObject(ctx *GetLabelExplodeObjectContext, param Object) error
+	GetLabelExplodeObject(ctx *GetLabelExplodeObjectContext, param GetLabelExplodeObjectPathParam) error
 
 	// (GET /labelNoExplodeArray/{.param})
-	GetLabelNoExplodeArray(ctx *GetLabelNoExplodeArrayContext, param []int32) error
+	GetLabelNoExplodeArray(ctx *GetLabelNoExplodeArrayContext, param GetLabelNoExplodeArrayPathParam) error
 
 	// (GET /labelNoExplodeObject/{.param})
-	GetLabelNoExplodeObject(ctx *GetLabelNoExplodeObjectContext, param Object) error
+	GetLabelNoExplodeObject(ctx *GetLabelNoExplodeObjectContext, param GetLabelNoExplodeObjectPathParam) error
 
 	// (GET /matrixExplodeArray/{.id*})
-	GetMatrixExplodeArray(ctx *GetMatrixExplodeArrayContext, id []int32) error
+	GetMatrixExplodeArray(ctx *GetMatrixExplodeArrayContext, id GetMatrixExplodeArrayPathId) error
 
 	// (GET /matrixExplodeObject/{.id*})
-	GetMatrixExplodeObject(ctx *GetMatrixExplodeObjectContext, id Object) error
+	GetMatrixExplodeObject(ctx *GetMatrixExplodeObjectContext, id GetMatrixExplodeObjectPathId) error
 
 	// (GET /matrixNoExplodeArray/{.id})
-	GetMatrixNoExplodeArray(ctx *GetMatrixNoExplodeArrayContext, id []int32) error
+	GetMatrixNoExplodeArray(ctx *GetMatrixNoExplodeArrayContext, id GetMatrixNoExplodeArrayPathId) error
 
 	// (GET /matrixNoExplodeObject/{.id})
-	GetMatrixNoExplodeObject(ctx *GetMatrixNoExplodeObjectContext, id Object) error
+	GetMatrixNoExplodeObject(ctx *GetMatrixNoExplodeObjectContext, id GetMatrixNoExplodeObjectPathId) error
 
 	// (GET /passThrough/{param})
-	GetPassThrough(ctx *GetPassThroughContext, param string) error
+	GetPassThrough(ctx *GetPassThroughContext, param GetPassThroughPathParam) error
 
 	// (GET /queryDeepObject)
 	GetDeepObject(ctx *GetDeepObjectContext, params GetDeepObjectParams) error
@@ -2676,19 +2862,19 @@ type ServerInterface interface {
 	GetQueryForm(ctx *GetQueryFormContext, params GetQueryFormParams) error
 
 	// (GET /simpleExplodeArray/{param*})
-	GetSimpleExplodeArray(ctx *GetSimpleExplodeArrayContext, param []int32) error
+	GetSimpleExplodeArray(ctx *GetSimpleExplodeArrayContext, param GetSimpleExplodeArrayPathParam) error
 
 	// (GET /simpleExplodeObject/{param*})
-	GetSimpleExplodeObject(ctx *GetSimpleExplodeObjectContext, param Object) error
+	GetSimpleExplodeObject(ctx *GetSimpleExplodeObjectContext, param GetSimpleExplodeObjectPathParam) error
 
 	// (GET /simpleNoExplodeArray/{param})
-	GetSimpleNoExplodeArray(ctx *GetSimpleNoExplodeArrayContext, param []int32) error
+	GetSimpleNoExplodeArray(ctx *GetSimpleNoExplodeArrayContext, param GetSimpleNoExplodeArrayPathParam) error
 
 	// (GET /simpleNoExplodeObject/{param})
-	GetSimpleNoExplodeObject(ctx *GetSimpleNoExplodeObjectContext, param Object) error
+	GetSimpleNoExplodeObject(ctx *GetSimpleNoExplodeObjectContext, param GetSimpleNoExplodeObjectPathParam) error
 
 	// (GET /simplePrimitive/{param})
-	GetSimplePrimitive(ctx *GetSimplePrimitiveContext, param int32) error
+	GetSimplePrimitive(ctx *GetSimplePrimitiveContext, param GetSimplePrimitivePathParam) error
 }
 
 // GetContentObjectContext is a context customized for GetContentObject (GET /contentObject/{param}).
@@ -2795,7 +2981,7 @@ type ServerInterfaceWrapper struct {
 func (w *ServerInterfaceWrapper) GetContentObject(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param ComplexObject
+	var param GetContentObjectPathParam
 
 	err = json.Unmarshal([]byte(ctx.Param("param")), &param)
 	if err != nil {
@@ -3028,7 +3214,7 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetLabelExplodeArray(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param []int32
+	var param GetLabelExplodeArrayPathParam
 
 	err = runtime.BindStyledParameter("label", true, "param", ctx.Param("param"), &param)
 	if err != nil {
@@ -3048,7 +3234,7 @@ func (w *ServerInterfaceWrapper) GetLabelExplodeArray(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetLabelExplodeObject(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param Object
+	var param GetLabelExplodeObjectPathParam
 
 	err = runtime.BindStyledParameter("label", true, "param", ctx.Param("param"), &param)
 	if err != nil {
@@ -3068,7 +3254,7 @@ func (w *ServerInterfaceWrapper) GetLabelExplodeObject(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetLabelNoExplodeArray(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param []int32
+	var param GetLabelNoExplodeArrayPathParam
 
 	err = runtime.BindStyledParameter("label", false, "param", ctx.Param("param"), &param)
 	if err != nil {
@@ -3088,7 +3274,7 @@ func (w *ServerInterfaceWrapper) GetLabelNoExplodeArray(ctx echo.Context) error 
 func (w *ServerInterfaceWrapper) GetLabelNoExplodeObject(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param Object
+	var param GetLabelNoExplodeObjectPathParam
 
 	err = runtime.BindStyledParameter("label", false, "param", ctx.Param("param"), &param)
 	if err != nil {
@@ -3108,7 +3294,7 @@ func (w *ServerInterfaceWrapper) GetLabelNoExplodeObject(ctx echo.Context) error
 func (w *ServerInterfaceWrapper) GetMatrixExplodeArray(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id []int32
+	var id GetMatrixExplodeArrayPathId
 
 	err = runtime.BindStyledParameter("matrix", true, "id", ctx.Param("id"), &id)
 	if err != nil {
@@ -3128,7 +3314,7 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeArray(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetMatrixExplodeObject(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id Object
+	var id GetMatrixExplodeObjectPathId
 
 	err = runtime.BindStyledParameter("matrix", true, "id", ctx.Param("id"), &id)
 	if err != nil {
@@ -3148,7 +3334,7 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeObject(ctx echo.Context) error 
 func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id []int32
+	var id GetMatrixNoExplodeArrayPathId
 
 	err = runtime.BindStyledParameter("matrix", false, "id", ctx.Param("id"), &id)
 	if err != nil {
@@ -3168,7 +3354,7 @@ func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray(ctx echo.Context) error
 func (w *ServerInterfaceWrapper) GetMatrixNoExplodeObject(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id Object
+	var id GetMatrixNoExplodeObjectPathId
 
 	err = runtime.BindStyledParameter("matrix", false, "id", ctx.Param("id"), &id)
 	if err != nil {
@@ -3188,7 +3374,7 @@ func (w *ServerInterfaceWrapper) GetMatrixNoExplodeObject(ctx echo.Context) erro
 func (w *ServerInterfaceWrapper) GetPassThrough(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param string
+	var param GetPassThroughPathParam
 
 	param = ctx.Param("param")
 
@@ -3315,7 +3501,7 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetSimpleExplodeArray(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param []int32
+	var param GetSimpleExplodeArrayPathParam
 
 	err = runtime.BindStyledParameter("simple", true, "param", ctx.Param("param"), &param)
 	if err != nil {
@@ -3335,7 +3521,7 @@ func (w *ServerInterfaceWrapper) GetSimpleExplodeArray(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetSimpleExplodeObject(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param Object
+	var param GetSimpleExplodeObjectPathParam
 
 	err = runtime.BindStyledParameter("simple", true, "param", ctx.Param("param"), &param)
 	if err != nil {
@@ -3355,7 +3541,7 @@ func (w *ServerInterfaceWrapper) GetSimpleExplodeObject(ctx echo.Context) error 
 func (w *ServerInterfaceWrapper) GetSimpleNoExplodeArray(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param []int32
+	var param GetSimpleNoExplodeArrayPathParam
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
@@ -3375,7 +3561,7 @@ func (w *ServerInterfaceWrapper) GetSimpleNoExplodeArray(ctx echo.Context) error
 func (w *ServerInterfaceWrapper) GetSimpleNoExplodeObject(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param Object
+	var param GetSimpleNoExplodeObjectPathParam
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
@@ -3395,7 +3581,7 @@ func (w *ServerInterfaceWrapper) GetSimpleNoExplodeObject(ctx echo.Context) erro
 func (w *ServerInterfaceWrapper) GetSimplePrimitive(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "param" -------------
-	var param int32
+	var param GetSimplePrimitivePathParam
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
@@ -3454,6 +3640,24 @@ func RegisterHandlers(router EchoRouter, si ServerInterface) {
 	router.GET("/simplePrimitive/:param", wrapper.GetSimplePrimitive)
 
 }
+
+// SecurityScheme represents a security scheme used in the server.
+type SecurityScheme string
+
+// ScopesKey returns the key of the scopes in the Context.
+func (ss SecurityScheme) ScopesKey() string {
+	return string(ss) + ".Scopes"
+}
+
+// Scopes collect the scopes defined in the Context.
+func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
+	val := c.Get(ss.ScopesKey())
+	scopes, ok := val.([]string)
+	return scopes, ok
+}
+
+// All security schemes defined.
+const ()
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
