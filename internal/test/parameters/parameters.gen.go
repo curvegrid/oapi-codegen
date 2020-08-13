@@ -2972,6 +2972,21 @@ type GetSimplePrimitiveContext struct {
 	echo.Context
 }
 
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "query" or "body"
+	Param     string // If ParamType is "path", which field?
+	Err       error
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
+}
+
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
@@ -2991,7 +3006,7 @@ func (w *ServerInterfaceWrapper) handleGetContentObject(ctx echo.Context) error 
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3260,7 +3275,7 @@ func (w *ServerInterfaceWrapper) handleGetLabelExplodeArray(ctx echo.Context) er
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3292,7 +3307,7 @@ func (w *ServerInterfaceWrapper) handleGetLabelExplodeObject(ctx echo.Context) e
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3324,7 +3339,7 @@ func (w *ServerInterfaceWrapper) handleGetLabelNoExplodeArray(ctx echo.Context) 
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3356,7 +3371,7 @@ func (w *ServerInterfaceWrapper) handleGetLabelNoExplodeObject(ctx echo.Context)
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3388,7 +3403,7 @@ func (w *ServerInterfaceWrapper) handleGetMatrixExplodeArray(ctx echo.Context) e
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.Wrapf(err, "field id")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3420,7 +3435,7 @@ func (w *ServerInterfaceWrapper) handleGetMatrixExplodeObject(ctx echo.Context) 
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.Wrapf(err, "field id")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3452,7 +3467,7 @@ func (w *ServerInterfaceWrapper) handleGetMatrixNoExplodeArray(ctx echo.Context)
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.Wrapf(err, "field id")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3484,7 +3499,7 @@ func (w *ServerInterfaceWrapper) handleGetMatrixNoExplodeObject(ctx echo.Context
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.Wrapf(err, "field id")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3513,7 +3528,7 @@ func (w *ServerInterfaceWrapper) handleGetPassThrough(ctx echo.Context) error {
 	param = ctx.Param("param")
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3547,7 +3562,7 @@ func (w *ServerInterfaceWrapper) handleGetDeepObject(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3581,7 +3596,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "a" -------------
 
@@ -3591,7 +3606,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "eo" -------------
 
@@ -3601,7 +3616,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "o" -------------
 
@@ -3611,7 +3626,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "ep" -------------
 
@@ -3621,7 +3636,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "p" -------------
 
@@ -3631,7 +3646,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "co" -------------
 
@@ -3647,7 +3662,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3679,7 +3694,7 @@ func (w *ServerInterfaceWrapper) handleGetSimpleExplodeArray(ctx echo.Context) e
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3711,7 +3726,7 @@ func (w *ServerInterfaceWrapper) handleGetSimpleExplodeObject(ctx echo.Context) 
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3743,7 +3758,7 @@ func (w *ServerInterfaceWrapper) handleGetSimpleNoExplodeArray(ctx echo.Context)
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3775,7 +3790,7 @@ func (w *ServerInterfaceWrapper) handleGetSimpleNoExplodeObject(ctx echo.Context
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3807,7 +3822,7 @@ func (w *ServerInterfaceWrapper) handleGetSimplePrimitive(ctx echo.Context) erro
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.Wrapf(err, "field param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

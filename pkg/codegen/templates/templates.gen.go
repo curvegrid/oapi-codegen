@@ -868,7 +868,7 @@ func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}
         return resp, errors.WithStack(err)
     }
     if err := resp.Validate(); err != nil {
-        return resp, err
+        return resp, ValidationError{ParamType: "body", Err: err}
     }
     return resp, nil
 }
@@ -911,6 +911,21 @@ type {{$respType}} = {{.Schema.GoType}}
 {{- end }}
 {{- end }}
 {{ end }}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+    ParamType string // can be "path", "query" or "body"
+    Param string // If ParamType is "path", which field?
+    Err error 
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+    if v.Param == "" {
+        return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+    }
+    return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
+}
 `,
 	"typedef.tmpl": `{{range .Types}}
 // {{.TypeName}} defines model for {{.JsonName}}.
@@ -1008,7 +1023,7 @@ func (w *ServerInterfaceWrapper) handle{{.OperationId}} (ctx echo.Context) error
     }
 {{end}}
     if err := {{$varName}}.Validate(); err != nil {
-        return errors.Wrapf(err, "field {{$varName}}")
+        return errors.WithStack(ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: err})
     }
 {{end}}
 
@@ -1039,7 +1054,7 @@ func (w *ServerInterfaceWrapper) handle{{.OperationId}} (ctx echo.Context) error
     }{{end}}
     {{end}}
     if err := params.Validate(); err != nil {
-        return err
+        return errors.WithStack(ValidationError{ParamType: "query", Err: err})
     }
 {{end}}
 

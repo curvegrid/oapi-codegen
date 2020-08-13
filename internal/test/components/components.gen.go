@@ -1528,7 +1528,7 @@ func (c *EnsureEverythingIsReferencedContext) ParseJSONBody() (EnsureEverythingI
 		return resp, errors.WithStack(err)
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, err
+		return resp, ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -1578,9 +1578,24 @@ func (c *BodyWithAddPropsContext) ParseJSONBody() (BodyWithAddPropsJSONBody, err
 		return resp, errors.WithStack(err)
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, err
+		return resp, ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
+}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "query" or "body"
+	Param     string // If ParamType is "path", which field?
+	Err       error
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1625,7 +1640,7 @@ func (w *ServerInterfaceWrapper) handleParamsWithAddProps(ctx echo.Context) erro
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Required query parameter "p2" -------------
 
@@ -1635,7 +1650,7 @@ func (w *ServerInterfaceWrapper) handleParamsWithAddProps(ctx echo.Context) erro
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

@@ -60,7 +60,7 @@ func (c *AddPetContext) ParseJSONBody() (AddPetJSONBody, error) {
 		return resp, errors.WithStack(err)
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, err
+		return resp, ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -91,6 +91,21 @@ func (c *FindPetByIdContext) OK(resp Pet) error {
 	return c.JSON(200, resp)
 }
 
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "query" or "body"
+	Param     string // If ParamType is "path", which field?
+	Err       error
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
+}
+
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
@@ -112,7 +127,7 @@ func (w *ServerInterfaceWrapper) handleFindPets(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "limit" -------------
 
@@ -122,7 +137,7 @@ func (w *ServerInterfaceWrapper) handleFindPets(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -175,7 +190,7 @@ func (w *ServerInterfaceWrapper) handleDeletePet(ctx echo.Context) error {
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.Wrapf(err, "field id")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -207,7 +222,7 @@ func (w *ServerInterfaceWrapper) handleFindPetById(ctx echo.Context) error {
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.Wrapf(err, "field id")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

@@ -972,7 +972,7 @@ func (c *PostBothContext) ParseJSONBody() (PostBothJSONBody, error) {
 		return resp, errors.WithStack(err)
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, err
+		return resp, ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -995,7 +995,7 @@ func (c *PostJsonContext) ParseJSONBody() (PostJsonJSONBody, error) {
 		return resp, errors.WithStack(err)
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, err
+		return resp, ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -1020,6 +1020,21 @@ type GetOtherContext struct {
 // GetJsonWithTrailingSlashContext is a context customized for GetJsonWithTrailingSlash (GET /with_trailing_slash/).
 type GetJsonWithTrailingSlashContext struct {
 	echo.Context
+}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "query" or "body"
+	Param     string // If ParamType is "path", which field?
+	Err       error
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.

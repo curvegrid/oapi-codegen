@@ -366,6 +366,21 @@ func (c *ExampleGetContext) OK(resp Document) error {
 	return c.JSON(200, resp)
 }
 
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "query" or "body"
+	Param     string // If ParamType is "path", which field?
+	Err       error
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
+}
+
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface

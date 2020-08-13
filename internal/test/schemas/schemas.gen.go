@@ -1233,7 +1233,7 @@ func (c *Issue185Context) ParseJSONBody() (Issue185JSONBody, error) {
 		return resp, errors.WithStack(err)
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, err
+		return resp, ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -1266,9 +1266,24 @@ func (c *Issue9Context) ParseJSONBody() (Issue9JSONBody, error) {
 		return resp, errors.WithStack(err)
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, err
+		return resp, ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
+}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "query" or "body"
+	Param     string // If ParamType is "path", which field?
+	Err       error
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1353,7 +1368,7 @@ func (w *ServerInterfaceWrapper) handleIssue209(ctx echo.Context) error {
 	}
 
 	if err := str.Validate(); err != nil {
-		return errors.Wrapf(err, "field str")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "str", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1385,7 +1400,7 @@ func (w *ServerInterfaceWrapper) handleIssue30(ctx echo.Context) error {
 	}
 
 	if err := pFallthrough.Validate(); err != nil {
-		return errors.Wrapf(err, "field pFallthrough")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "fallthrough", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1417,7 +1432,7 @@ func (w *ServerInterfaceWrapper) handleIssue41(ctx echo.Context) error {
 	}
 
 	if err := n1param.Validate(); err != nil {
-		return errors.Wrapf(err, "field n1param")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "1param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1451,7 +1466,7 @@ func (w *ServerInterfaceWrapper) handleIssue9(ctx echo.Context) error {
 	}
 
 	if err := params.Validate(); err != nil {
-		return err
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
