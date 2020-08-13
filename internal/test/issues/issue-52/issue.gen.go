@@ -369,15 +369,29 @@ func (c *ExampleGetContext) OK(resp Document) error {
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	middlewares []echo.MiddlewareFunc
 }
 
-// ExampleGet converts echo context to params.
-func (w *ServerInterfaceWrapper) ExampleGet(ctx echo.Context) error {
+// handleExampleGet converts echo context to params.
+func (w *ServerInterfaceWrapper) handleExampleGet(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ExampleGet(&ExampleGetContext{ctx})
 	return err
+}
+
+// ExampleGet creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) ExampleGet() echo.HandlerFunc {
+	securityReqs := BindSecurityRequirements()
+	// Wrap handler in middlewares
+	handler := echo.HandlerFunc(w.handleExampleGet)
+	for i := len(w.middlewares); i > 0; i-- {
+		handler = w.middlewares[i-1](handler)
+	}
+	// Put securityReqs on top
+	return securityReqs(handler)
 }
 
 // This is a simple interface which specifies echo.Route addition functions which
@@ -396,13 +410,15 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
+func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
 		Handler: si,
+
+		middlewares: middlewares,
 	}
 
-	router.GET("/example", wrapper.ExampleGet)
+	router.GET("/example", wrapper.ExampleGet())
 
 }
 
@@ -419,6 +435,24 @@ func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
 	val := c.Get(ss.ScopesKey())
 	scopes, ok := val.([]string)
 	return scopes, ok
+}
+
+// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
+type SecurityRequirement struct {
+	Scheme SecurityScheme
+	Scopes []string
+}
+
+// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
+func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
+	return func(h echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			for _, req := range reqs {
+				ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
+			}
+			return h(ctx)
+		}
+	}
 }
 
 // All security schemes defined.

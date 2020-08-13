@@ -13,6 +13,24 @@ func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
     return scopes, ok
 }
 
+// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
+type SecurityRequirement struct {
+    Scheme SecurityScheme
+    Scopes []string
+}
+
+// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
+func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
+    return func(h echo.HandlerFunc) echo.HandlerFunc {
+        return func(ctx echo.Context) error {
+            for _, req := range reqs {
+                ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
+            }
+            return h(ctx)
+        }
+    }
+}
+
 // All security schemes defined.
 const (
     {{- range . }}

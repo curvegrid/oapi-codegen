@@ -753,13 +753,15 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
+func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
 {{if .}}
     wrapper := ServerInterfaceWrapper{
         Handler: si,
+
+        middlewares: middlewares,
     }
 {{end}}
-{{range .}}router.{{.Method}}("{{.Path | swaggerUriToEchoUri}}", wrapper.{{.OperationId}})
+{{range .}}router.{{.Method}}("{{.Path | swaggerUriToEchoUri}}", wrapper.{{.OperationId}}())
 {{end}}
 }
 `,
@@ -783,6 +785,24 @@ func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
     val := c.Get(ss.ScopesKey())
     scopes, ok := val.([]string)
     return scopes, ok
+}
+
+// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
+type SecurityRequirement struct {
+    Scheme SecurityScheme
+    Scopes []string
+}
+
+// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
+func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
+    return func(h echo.HandlerFunc) echo.HandlerFunc {
+        return func(ctx echo.Context) error {
+            for _, req := range reqs {
+                ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
+            }
+            return h(ctx)
+        }
+    }
 }
 
 // All security schemes defined.
@@ -963,10 +983,12 @@ validation.In(
 	"wrappers.tmpl": `// ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
     Handler ServerInterface
+
+    middlewares []echo.MiddlewareFunc
 }
 
-{{range .}}{{$opid := .OperationId}}// {{$opid}} converts echo context to params.
-func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
+{{range .}}{{$opid := .OperationId}}// handle{{$opid}} converts echo context to params.
+func (w *ServerInterfaceWrapper) handle{{.OperationId}} (ctx echo.Context) error {
     var err error
 {{range .PathParams}}// ------------- Path parameter "{{.ParamName}}" -------------
     var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}
@@ -988,10 +1010,6 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     if err := {{$varName}}.Validate(); err != nil {
         return errors.Wrapf(err, "field {{$varName}}")
     }
-{{end}}
-
-{{range .SecurityDefinitions}}
-    ctx.Set({{.ProviderName}}.ScopesKey(), {{toStringArray .Scopes}})
 {{end}}
 
 {{if .RequiresParamObject}}
@@ -1093,6 +1111,19 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     err = w.Handler.{{.OperationId}}(&{{.OperationId}}Context{ctx}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
     return err
 }
+
+// {{.OperationId}} creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) {{.OperationId}}() echo.HandlerFunc {
+    securityReqs := BindSecurityRequirements({{range .SecurityDefinitions}}SecurityRequirement{ {{.ProviderName}}, {{toStringArray .Scopes}} }, {{end}})
+    // Wrap handler in middlewares
+    handler := echo.HandlerFunc(w.handle{{.OperationId}})
+    for i := len(w.middlewares); i > 0; i-- {
+        handler = w.middlewares[i - 1](handler)
+    }
+    // Put securityReqs on top 
+    return securityReqs(handler)
+}
+
 {{end}}
 `,
 }

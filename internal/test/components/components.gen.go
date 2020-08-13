@@ -1586,10 +1586,12 @@ func (c *BodyWithAddPropsContext) ParseJSONBody() (BodyWithAddPropsJSONBody, err
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	middlewares []echo.MiddlewareFunc
 }
 
-// EnsureEverythingIsReferenced converts echo context to params.
-func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced(ctx echo.Context) error {
+// handleEnsureEverythingIsReferenced converts echo context to params.
+func (w *ServerInterfaceWrapper) handleEnsureEverythingIsReferenced(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1597,8 +1599,20 @@ func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced(ctx echo.Context) 
 	return err
 }
 
-// ParamsWithAddProps converts echo context to params.
-func (w *ServerInterfaceWrapper) ParamsWithAddProps(ctx echo.Context) error {
+// EnsureEverythingIsReferenced creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced() echo.HandlerFunc {
+	securityReqs := BindSecurityRequirements()
+	// Wrap handler in middlewares
+	handler := echo.HandlerFunc(w.handleEnsureEverythingIsReferenced)
+	for i := len(w.middlewares); i > 0; i-- {
+		handler = w.middlewares[i-1](handler)
+	}
+	// Put securityReqs on top
+	return securityReqs(handler)
+}
+
+// handleParamsWithAddProps converts echo context to params.
+func (w *ServerInterfaceWrapper) handleParamsWithAddProps(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -1629,13 +1643,37 @@ func (w *ServerInterfaceWrapper) ParamsWithAddProps(ctx echo.Context) error {
 	return err
 }
 
-// BodyWithAddProps converts echo context to params.
-func (w *ServerInterfaceWrapper) BodyWithAddProps(ctx echo.Context) error {
+// ParamsWithAddProps creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) ParamsWithAddProps() echo.HandlerFunc {
+	securityReqs := BindSecurityRequirements()
+	// Wrap handler in middlewares
+	handler := echo.HandlerFunc(w.handleParamsWithAddProps)
+	for i := len(w.middlewares); i > 0; i-- {
+		handler = w.middlewares[i-1](handler)
+	}
+	// Put securityReqs on top
+	return securityReqs(handler)
+}
+
+// handleBodyWithAddProps converts echo context to params.
+func (w *ServerInterfaceWrapper) handleBodyWithAddProps(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.BodyWithAddProps(&BodyWithAddPropsContext{ctx})
 	return err
+}
+
+// BodyWithAddProps creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) BodyWithAddProps() echo.HandlerFunc {
+	securityReqs := BindSecurityRequirements()
+	// Wrap handler in middlewares
+	handler := echo.HandlerFunc(w.handleBodyWithAddProps)
+	for i := len(w.middlewares); i > 0; i-- {
+		handler = w.middlewares[i-1](handler)
+	}
+	// Put securityReqs on top
+	return securityReqs(handler)
 }
 
 // This is a simple interface which specifies echo.Route addition functions which
@@ -1654,15 +1692,17 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
+func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
 		Handler: si,
+
+		middlewares: middlewares,
 	}
 
-	router.GET("/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced)
-	router.GET("/params_with_add_props", wrapper.ParamsWithAddProps)
-	router.POST("/params_with_add_props", wrapper.BodyWithAddProps)
+	router.GET("/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced())
+	router.GET("/params_with_add_props", wrapper.ParamsWithAddProps())
+	router.POST("/params_with_add_props", wrapper.BodyWithAddProps())
 
 }
 
@@ -1679,6 +1719,24 @@ func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
 	val := c.Get(ss.ScopesKey())
 	scopes, ok := val.([]string)
 	return scopes, ok
+}
+
+// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
+type SecurityRequirement struct {
+	Scheme SecurityScheme
+	Scopes []string
+}
+
+// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
+func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
+	return func(h echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			for _, req := range reqs {
+				ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
+			}
+			return h(ctx)
+		}
+	}
 }
 
 // All security schemes defined.

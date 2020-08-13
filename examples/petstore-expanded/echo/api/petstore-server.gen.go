@@ -94,10 +94,12 @@ func (c *FindPetByIdContext) OK(resp Pet) error {
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	middlewares []echo.MiddlewareFunc
 }
 
-// FindPets converts echo context to params.
-func (w *ServerInterfaceWrapper) FindPets(ctx echo.Context) error {
+// handleFindPets converts echo context to params.
+func (w *ServerInterfaceWrapper) handleFindPets(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -128,8 +130,20 @@ func (w *ServerInterfaceWrapper) FindPets(ctx echo.Context) error {
 	return err
 }
 
-// AddPet converts echo context to params.
-func (w *ServerInterfaceWrapper) AddPet(ctx echo.Context) error {
+// FindPets creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) FindPets() echo.HandlerFunc {
+	securityReqs := BindSecurityRequirements()
+	// Wrap handler in middlewares
+	handler := echo.HandlerFunc(w.handleFindPets)
+	for i := len(w.middlewares); i > 0; i-- {
+		handler = w.middlewares[i-1](handler)
+	}
+	// Put securityReqs on top
+	return securityReqs(handler)
+}
+
+// handleAddPet converts echo context to params.
+func (w *ServerInterfaceWrapper) handleAddPet(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -137,8 +151,20 @@ func (w *ServerInterfaceWrapper) AddPet(ctx echo.Context) error {
 	return err
 }
 
-// DeletePet converts echo context to params.
-func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
+// AddPet creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) AddPet() echo.HandlerFunc {
+	securityReqs := BindSecurityRequirements()
+	// Wrap handler in middlewares
+	handler := echo.HandlerFunc(w.handleAddPet)
+	for i := len(w.middlewares); i > 0; i-- {
+		handler = w.middlewares[i-1](handler)
+	}
+	// Put securityReqs on top
+	return securityReqs(handler)
+}
+
+// handleDeletePet converts echo context to params.
+func (w *ServerInterfaceWrapper) handleDeletePet(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id DeletePetPathId
@@ -157,8 +183,20 @@ func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 	return err
 }
 
-// FindPetById converts echo context to params.
-func (w *ServerInterfaceWrapper) FindPetById(ctx echo.Context) error {
+// DeletePet creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) DeletePet() echo.HandlerFunc {
+	securityReqs := BindSecurityRequirements()
+	// Wrap handler in middlewares
+	handler := echo.HandlerFunc(w.handleDeletePet)
+	for i := len(w.middlewares); i > 0; i-- {
+		handler = w.middlewares[i-1](handler)
+	}
+	// Put securityReqs on top
+	return securityReqs(handler)
+}
+
+// handleFindPetById converts echo context to params.
+func (w *ServerInterfaceWrapper) handleFindPetById(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id FindPetByIdPathId
@@ -177,6 +215,18 @@ func (w *ServerInterfaceWrapper) FindPetById(ctx echo.Context) error {
 	return err
 }
 
+// FindPetById creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) FindPetById() echo.HandlerFunc {
+	securityReqs := BindSecurityRequirements()
+	// Wrap handler in middlewares
+	handler := echo.HandlerFunc(w.handleFindPetById)
+	for i := len(w.middlewares); i > 0; i-- {
+		handler = w.middlewares[i-1](handler)
+	}
+	// Put securityReqs on top
+	return securityReqs(handler)
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -193,16 +243,18 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
+func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
 		Handler: si,
+
+		middlewares: middlewares,
 	}
 
-	router.GET("/pets", wrapper.FindPets)
-	router.POST("/pets", wrapper.AddPet)
-	router.DELETE("/pets/:id", wrapper.DeletePet)
-	router.GET("/pets/:id", wrapper.FindPetById)
+	router.GET("/pets", wrapper.FindPets())
+	router.POST("/pets", wrapper.AddPet())
+	router.DELETE("/pets/:id", wrapper.DeletePet())
+	router.GET("/pets/:id", wrapper.FindPetById())
 
 }
 
@@ -219,6 +271,24 @@ func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
 	val := c.Get(ss.ScopesKey())
 	scopes, ok := val.([]string)
 	return scopes, ok
+}
+
+// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
+type SecurityRequirement struct {
+	Scheme SecurityScheme
+	Scopes []string
+}
+
+// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
+func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
+	return func(h echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			for _, req := range reqs {
+				ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
+			}
+			return h(ctx)
+		}
+	}
 }
 
 // All security schemes defined.

@@ -1,10 +1,12 @@
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
     Handler ServerInterface
+
+    middlewares []echo.MiddlewareFunc
 }
 
-{{range .}}{{$opid := .OperationId}}// {{$opid}} converts echo context to params.
-func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
+{{range .}}{{$opid := .OperationId}}// handle{{$opid}} converts echo context to params.
+func (w *ServerInterfaceWrapper) handle{{.OperationId}} (ctx echo.Context) error {
     var err error
 {{range .PathParams}}// ------------- Path parameter "{{.ParamName}}" -------------
     var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}
@@ -26,10 +28,6 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     if err := {{$varName}}.Validate(); err != nil {
         return errors.Wrapf(err, "field {{$varName}}")
     }
-{{end}}
-
-{{range .SecurityDefinitions}}
-    ctx.Set({{.ProviderName}}.ScopesKey(), {{toStringArray .Scopes}})
 {{end}}
 
 {{if .RequiresParamObject}}
@@ -131,4 +129,17 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     err = w.Handler.{{.OperationId}}(&{{.OperationId}}Context{ctx}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
     return err
 }
+
+// {{.OperationId}} creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) {{.OperationId}}() echo.HandlerFunc {
+    securityReqs := BindSecurityRequirements({{range .SecurityDefinitions}}SecurityRequirement{ {{.ProviderName}}, {{toStringArray .Scopes}} }, {{end}})
+    // Wrap handler in middlewares
+    handler := echo.HandlerFunc(w.handle{{.OperationId}})
+    for i := len(w.middlewares); i > 0; i-- {
+        handler = w.middlewares[i - 1](handler)
+    }
+    // Put securityReqs on top 
+    return securityReqs(handler)
+}
+
 {{end}}

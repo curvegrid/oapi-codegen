@@ -299,10 +299,12 @@ type GetFooResponseOK = string
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	middlewares []echo.MiddlewareFunc
 }
 
-// GetFoo converts echo context to params.
-func (w *ServerInterfaceWrapper) GetFoo(ctx echo.Context) error {
+// handleGetFoo converts echo context to params.
+func (w *ServerInterfaceWrapper) handleGetFoo(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -345,6 +347,18 @@ func (w *ServerInterfaceWrapper) GetFoo(ctx echo.Context) error {
 	return err
 }
 
+// GetFoo creates a handler function for the endpoint.
+func (w *ServerInterfaceWrapper) GetFoo() echo.HandlerFunc {
+	securityReqs := BindSecurityRequirements()
+	// Wrap handler in middlewares
+	handler := echo.HandlerFunc(w.handleGetFoo)
+	for i := len(w.middlewares); i > 0; i-- {
+		handler = w.middlewares[i-1](handler)
+	}
+	// Put securityReqs on top
+	return securityReqs(handler)
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -361,13 +375,15 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
+func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
 		Handler: si,
+
+		middlewares: middlewares,
 	}
 
-	router.GET("/foo", wrapper.GetFoo)
+	router.GET("/foo", wrapper.GetFoo())
 
 }
 
@@ -384,6 +400,24 @@ func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
 	val := c.Get(ss.ScopesKey())
 	scopes, ok := val.([]string)
 	return scopes, ok
+}
+
+// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
+type SecurityRequirement struct {
+	Scheme SecurityScheme
+	Scopes []string
+}
+
+// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
+func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
+	return func(h echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			for _, req := range reqs {
+				ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
+			}
+			return h(ctx)
+		}
+	}
 }
 
 // All security schemes defined.
