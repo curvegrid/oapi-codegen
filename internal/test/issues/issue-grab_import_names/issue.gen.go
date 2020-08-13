@@ -14,6 +14,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -298,8 +299,8 @@ type GetFooResponseOK = string
 
 // ValidationError is the special validation error type, returned from failed validation runs.
 type ValidationError struct {
-	ParamType string // can be "path", "query" or "body"
-	Param     string // If ParamType is "path", which field?
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
 	Err       error
 }
 
@@ -331,12 +332,12 @@ func (w *ServerInterfaceWrapper) handleGetFoo(ctx echo.Context) error {
 		var Foo string
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for Foo, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "Foo", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "Foo", valueList[0], &Foo)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter Foo: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "Foo", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.Foo = &Foo
@@ -346,12 +347,12 @@ func (w *ServerInterfaceWrapper) handleGetFoo(ctx echo.Context) error {
 		var Bar string
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for Bar, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "Bar", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "Bar", valueList[0], &Bar)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter Bar: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "Bar", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.Bar = &Bar

@@ -40,7 +40,7 @@ func (s Bar) Validate() error {
 	return validation.Validate(
 		(string)(s),
 		validation.In(
-			"1Foo", " Foo", " Foo ", "_Foo_", "Foo", "Bar", "Foo Bar", "Foo-Bar",
+			"Foo Bar", "Foo-Bar", "1Foo", " Foo", " Foo ", "_Foo_", "Foo", "Bar",
 		),
 	)
 
@@ -277,8 +277,8 @@ type GetFooResponseOK = []Bar
 
 // ValidationError is the special validation error type, returned from failed validation runs.
 type ValidationError struct {
-	ParamType string // can be "path", "query" or "body"
-	Param     string // If ParamType is "path", which field?
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
 	Err       error
 }
 

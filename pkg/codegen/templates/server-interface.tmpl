@@ -20,7 +20,7 @@ type {{.OperationId}}Context struct {
 func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}}{{.NameTag}}Body, error) {
     var resp {{$op.OperationId}}{{.NameTag}}Body
     if err := c.Bind(&resp); err != nil {
-        return resp, errors.WithStack(err)
+        return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
     }
     if err := resp.Validate(); err != nil {
         return resp, ValidationError{ParamType: "body", Err: err}
@@ -69,8 +69,8 @@ type {{$respType}} = {{.Schema.GoType}}
 
 // ValidationError is the special validation error type, returned from failed validation runs.
 type ValidationError struct {
-    ParamType string // can be "path", "query" or "body"
-    Param string // If ParamType is "path", which field?
+    ParamType string // can be "path", "cookie", "header", "query" or "body"
+    Param string // which field? can be omitted, when we parse the entire struct at once
     Err error 
 }
 

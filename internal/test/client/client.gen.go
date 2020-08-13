@@ -969,7 +969,7 @@ type PostBothContext struct {
 func (c *PostBothContext) ParseJSONBody() (PostBothJSONBody, error) {
 	var resp PostBothJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, errors.WithStack(err)
+		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
 		return resp, ValidationError{ParamType: "body", Err: err}
@@ -992,7 +992,7 @@ type PostJsonContext struct {
 func (c *PostJsonContext) ParseJSONBody() (PostJsonJSONBody, error) {
 	var resp PostJsonJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, errors.WithStack(err)
+		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
 		return resp, ValidationError{ParamType: "body", Err: err}
@@ -1024,8 +1024,8 @@ type GetJsonWithTrailingSlashContext struct {
 
 // ValidationError is the special validation error type, returned from failed validation runs.
 type ValidationError struct {
-	ParamType string // can be "path", "query" or "body"
-	Param     string // If ParamType is "path", which field?
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
 	Err       error
 }
 

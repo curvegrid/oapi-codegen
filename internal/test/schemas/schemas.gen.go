@@ -1230,7 +1230,7 @@ type Issue185Context struct {
 func (c *Issue185Context) ParseJSONBody() (Issue185JSONBody, error) {
 	var resp Issue185JSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, errors.WithStack(err)
+		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
 		return resp, ValidationError{ParamType: "body", Err: err}
@@ -1263,7 +1263,7 @@ type Issue9Context struct {
 func (c *Issue9Context) ParseJSONBody() (Issue9JSONBody, error) {
 	var resp Issue9JSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, errors.WithStack(err)
+		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
 		return resp, ValidationError{ParamType: "body", Err: err}
@@ -1273,8 +1273,8 @@ func (c *Issue9Context) ParseJSONBody() (Issue9JSONBody, error) {
 
 // ValidationError is the special validation error type, returned from failed validation runs.
 type ValidationError struct {
-	ParamType string // can be "path", "query" or "body"
-	Param     string // If ParamType is "path", which field?
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
 	Err       error
 }
 
@@ -1364,7 +1364,7 @@ func (w *ServerInterfaceWrapper) handleIssue209(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "str", ctx.Param("str"), &str)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter str: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "str", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := str.Validate(); err != nil {
@@ -1396,7 +1396,7 @@ func (w *ServerInterfaceWrapper) handleIssue30(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "fallthrough", ctx.Param("fallthrough"), &pFallthrough)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter fallthrough: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "fallthrough", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := pFallthrough.Validate(); err != nil {
@@ -1428,7 +1428,7 @@ func (w *ServerInterfaceWrapper) handleIssue41(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "1param", ctx.Param("1param"), &n1param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter 1param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "1param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := n1param.Validate(); err != nil {
@@ -1462,7 +1462,7 @@ func (w *ServerInterfaceWrapper) handleIssue9(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, true, "foo", ctx.QueryParams(), &params.Foo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter foo: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {

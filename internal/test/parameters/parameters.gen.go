@@ -2974,8 +2974,8 @@ type GetSimplePrimitiveContext struct {
 
 // ValidationError is the special validation error type, returned from failed validation runs.
 type ValidationError struct {
-	ParamType string // can be "path", "query" or "body"
-	Param     string // If ParamType is "path", which field?
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
 	Err       error
 }
 
@@ -3002,7 +3002,7 @@ func (w *ServerInterfaceWrapper) handleGetContentObject(ctx echo.Context) error 
 
 	err = json.Unmarshal([]byte(ctx.Param("param")), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter 'param' as JSON")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "cannot parse as json")})
 	}
 
 	if err := param.Validate(); err != nil {
@@ -3038,7 +3038,7 @@ func (w *ServerInterfaceWrapper) handleGetCookie(ctx echo.Context) error {
 		var value int32
 		err = runtime.BindStyledParameter("simple", false, "p", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "p", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.P = &value
 
@@ -3049,7 +3049,7 @@ func (w *ServerInterfaceWrapper) handleGetCookie(ctx echo.Context) error {
 		var value int32
 		err = runtime.BindStyledParameter("simple", true, "ep", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ep: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "ep", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.Ep = &value
 
@@ -3060,7 +3060,7 @@ func (w *ServerInterfaceWrapper) handleGetCookie(ctx echo.Context) error {
 		var value []int32
 		err = runtime.BindStyledParameter("simple", true, "ea", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ea: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "ea", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.Ea = &value
 
@@ -3071,7 +3071,7 @@ func (w *ServerInterfaceWrapper) handleGetCookie(ctx echo.Context) error {
 		var value []int32
 		err = runtime.BindStyledParameter("simple", false, "a", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter a: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "a", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.A = &value
 
@@ -3082,7 +3082,7 @@ func (w *ServerInterfaceWrapper) handleGetCookie(ctx echo.Context) error {
 		var value Object
 		err = runtime.BindStyledParameter("simple", true, "eo", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter eo: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "eo", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.Eo = &value
 
@@ -3093,7 +3093,7 @@ func (w *ServerInterfaceWrapper) handleGetCookie(ctx echo.Context) error {
 		var value Object
 		err = runtime.BindStyledParameter("simple", false, "o", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter o: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "o", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.O = &value
 
@@ -3105,11 +3105,11 @@ func (w *ServerInterfaceWrapper) handleGetCookie(ctx echo.Context) error {
 		var decoded string
 		decoded, err := url.QueryUnescape(cookie.Value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Error unescaping cookie parameter 'co'")
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "co", Err: err})
 		}
 		err = json.Unmarshal([]byte(decoded), &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter 'co' as JSON")
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "co", Err: errors.Wrap(err, "cannot parse as json")})
 		}
 		params.Co = &value
 
@@ -3145,12 +3145,12 @@ func (w *ServerInterfaceWrapper) handleGetHeader(ctx echo.Context) error {
 		var XPrimitive int32
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Primitive, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "X-Primitive", valueList[0], &XPrimitive)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Primitive: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XPrimitive = &XPrimitive
@@ -3160,12 +3160,12 @@ func (w *ServerInterfaceWrapper) handleGetHeader(ctx echo.Context) error {
 		var XPrimitiveExploded int32
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Primitive-Exploded, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", true, "X-Primitive-Exploded", valueList[0], &XPrimitiveExploded)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Primitive-Exploded: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive-Exploded", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XPrimitiveExploded = &XPrimitiveExploded
@@ -3175,12 +3175,12 @@ func (w *ServerInterfaceWrapper) handleGetHeader(ctx echo.Context) error {
 		var XArrayExploded []int32
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Array-Exploded, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", true, "X-Array-Exploded", valueList[0], &XArrayExploded)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Array-Exploded: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array-Exploded", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XArrayExploded = &XArrayExploded
@@ -3190,12 +3190,12 @@ func (w *ServerInterfaceWrapper) handleGetHeader(ctx echo.Context) error {
 		var XArray []int32
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Array, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "X-Array", valueList[0], &XArray)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Array: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XArray = &XArray
@@ -3205,12 +3205,12 @@ func (w *ServerInterfaceWrapper) handleGetHeader(ctx echo.Context) error {
 		var XObjectExploded Object
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Object-Exploded, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", true, "X-Object-Exploded", valueList[0], &XObjectExploded)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Object-Exploded: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object-Exploded", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XObjectExploded = &XObjectExploded
@@ -3220,12 +3220,12 @@ func (w *ServerInterfaceWrapper) handleGetHeader(ctx echo.Context) error {
 		var XObject Object
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Object, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "X-Object", valueList[0], &XObject)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Object: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XObject = &XObject
@@ -3235,12 +3235,12 @@ func (w *ServerInterfaceWrapper) handleGetHeader(ctx echo.Context) error {
 		var XComplexObject ComplexObject
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Complex-Object, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Complex-Object", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = json.Unmarshal([]byte(valueList[0]), &XComplexObject)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter 'X-Complex-Object' as JSON")
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Complex-Object", Err: errors.Wrap(err, "cannot parse as json")})
 		}
 
 		params.XComplexObject = &XComplexObject
@@ -3271,7 +3271,7 @@ func (w *ServerInterfaceWrapper) handleGetLabelExplodeArray(ctx echo.Context) er
 
 	err = runtime.BindStyledParameter("label", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
@@ -3303,7 +3303,7 @@ func (w *ServerInterfaceWrapper) handleGetLabelExplodeObject(ctx echo.Context) e
 
 	err = runtime.BindStyledParameter("label", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
@@ -3335,7 +3335,7 @@ func (w *ServerInterfaceWrapper) handleGetLabelNoExplodeArray(ctx echo.Context) 
 
 	err = runtime.BindStyledParameter("label", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
@@ -3367,7 +3367,7 @@ func (w *ServerInterfaceWrapper) handleGetLabelNoExplodeObject(ctx echo.Context)
 
 	err = runtime.BindStyledParameter("label", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
@@ -3399,7 +3399,7 @@ func (w *ServerInterfaceWrapper) handleGetMatrixExplodeArray(ctx echo.Context) e
 
 	err = runtime.BindStyledParameter("matrix", true, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
@@ -3431,7 +3431,7 @@ func (w *ServerInterfaceWrapper) handleGetMatrixExplodeObject(ctx echo.Context) 
 
 	err = runtime.BindStyledParameter("matrix", true, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
@@ -3463,7 +3463,7 @@ func (w *ServerInterfaceWrapper) handleGetMatrixNoExplodeArray(ctx echo.Context)
 
 	err = runtime.BindStyledParameter("matrix", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
@@ -3495,7 +3495,7 @@ func (w *ServerInterfaceWrapper) handleGetMatrixNoExplodeObject(ctx echo.Context
 
 	err = runtime.BindStyledParameter("matrix", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
@@ -3558,7 +3558,7 @@ func (w *ServerInterfaceWrapper) handleGetDeepObject(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("deepObject", true, true, "deepObj", ctx.QueryParams(), &params.DeepObj)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter deepObj: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -3592,7 +3592,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, false, "ea", ctx.QueryParams(), &params.Ea)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ea: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -3602,7 +3602,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", false, false, "a", ctx.QueryParams(), &params.A)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter a: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -3612,7 +3612,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, false, "eo", ctx.QueryParams(), &params.Eo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter eo: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -3622,7 +3622,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", false, false, "o", ctx.QueryParams(), &params.O)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter o: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -3632,7 +3632,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, false, "ep", ctx.QueryParams(), &params.Ep)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ep: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -3642,7 +3642,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", false, false, "p", ctx.QueryParams(), &params.P)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -3655,7 +3655,7 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 		var value ComplexObject
 		err = json.Unmarshal([]byte(paramValue), &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter 'co' as JSON")
+			return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "cannot parse as json")})
 		}
 		params.Co = &value
 
@@ -3690,7 +3690,7 @@ func (w *ServerInterfaceWrapper) handleGetSimpleExplodeArray(ctx echo.Context) e
 
 	err = runtime.BindStyledParameter("simple", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
@@ -3722,7 +3722,7 @@ func (w *ServerInterfaceWrapper) handleGetSimpleExplodeObject(ctx echo.Context) 
 
 	err = runtime.BindStyledParameter("simple", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
@@ -3754,7 +3754,7 @@ func (w *ServerInterfaceWrapper) handleGetSimpleNoExplodeArray(ctx echo.Context)
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
@@ -3786,7 +3786,7 @@ func (w *ServerInterfaceWrapper) handleGetSimpleNoExplodeObject(ctx echo.Context
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
@@ -3818,7 +3818,7 @@ func (w *ServerInterfaceWrapper) handleGetSimplePrimitive(ctx echo.Context) erro
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {

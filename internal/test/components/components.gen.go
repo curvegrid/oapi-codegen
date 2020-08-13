@@ -1525,7 +1525,7 @@ type EnsureEverythingIsReferencedContext struct {
 func (c *EnsureEverythingIsReferencedContext) ParseJSONBody() (EnsureEverythingIsReferencedJSONBody, error) {
 	var resp EnsureEverythingIsReferencedJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, errors.WithStack(err)
+		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
 		return resp, ValidationError{ParamType: "body", Err: err}
@@ -1575,7 +1575,7 @@ type BodyWithAddPropsContext struct {
 func (c *BodyWithAddPropsContext) ParseJSONBody() (BodyWithAddPropsJSONBody, error) {
 	var resp BodyWithAddPropsJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, errors.WithStack(err)
+		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
 		return resp, ValidationError{ParamType: "body", Err: err}
@@ -1585,8 +1585,8 @@ func (c *BodyWithAddPropsContext) ParseJSONBody() (BodyWithAddPropsJSONBody, err
 
 // ValidationError is the special validation error type, returned from failed validation runs.
 type ValidationError struct {
-	ParamType string // can be "path", "query" or "body"
-	Param     string // If ParamType is "path", which field?
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
 	Err       error
 }
 
@@ -1636,7 +1636,7 @@ func (w *ServerInterfaceWrapper) handleParamsWithAddProps(ctx echo.Context) erro
 
 	err = runtime.BindQueryParameter("simple", true, true, "p1", ctx.QueryParams(), &params.P1)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p1: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -1646,7 +1646,7 @@ func (w *ServerInterfaceWrapper) handleParamsWithAddProps(ctx echo.Context) erro
 
 	err = runtime.BindQueryParameter("form", true, true, "p2", ctx.QueryParams(), &params.P2)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p2: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {

@@ -12,7 +12,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"net/http"
 	"strings"
 )
 
@@ -57,7 +56,7 @@ type AddPetContext struct {
 func (c *AddPetContext) ParseJSONBody() (AddPetJSONBody, error) {
 	var resp AddPetJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, errors.WithStack(err)
+		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
 		return resp, ValidationError{ParamType: "body", Err: err}
@@ -93,8 +92,8 @@ func (c *FindPetByIdContext) OK(resp Pet) error {
 
 // ValidationError is the special validation error type, returned from failed validation runs.
 type ValidationError struct {
-	ParamType string // can be "path", "query" or "body"
-	Param     string // If ParamType is "path", which field?
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
 	Err       error
 }
 
@@ -123,7 +122,7 @@ func (w *ServerInterfaceWrapper) handleFindPets(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, false, "tags", ctx.QueryParams(), &params.Tags)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -133,7 +132,7 @@ func (w *ServerInterfaceWrapper) handleFindPets(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
@@ -186,7 +185,7 @@ func (w *ServerInterfaceWrapper) handleDeletePet(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
@@ -218,7 +217,7 @@ func (w *ServerInterfaceWrapper) handleFindPetById(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
