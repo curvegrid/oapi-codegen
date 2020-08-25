@@ -343,7 +343,7 @@ func (s GetWithContentTypePathContentType) Validate() error {
 	return validation.Validate(
 		(string)(s),
 		validation.In(
-			"text", "json",
+			"json", "text",
 		),
 	)
 
