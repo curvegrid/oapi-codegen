@@ -3,6 +3,7 @@ package codegen
 import (
 	"bufio"
 	"bytes"
+	"sort"
 	"text/template"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -37,6 +38,7 @@ func GenerateSecuritySchemes(t *template.Template, schemes map[string]*openapi3.
 			Spec: scheme.Value,
 		})
 	}
+	sort.Slice(ss, func(i, j int) bool { return ss[i].Name < ss[j].Name })
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 
