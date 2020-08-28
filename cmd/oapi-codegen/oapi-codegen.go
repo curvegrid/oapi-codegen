@@ -43,7 +43,7 @@ func main() {
 		excludeSchemas string
 	)
 	flag.StringVar(&packageName, "package", "", "The package name for generated code")
-	flag.StringVar(&generate, "generate", "types,client,server,spec",
+	flag.StringVar(&generate, "generate", "types,client,typed-client,server,spec",
 		`Comma-separated list of code to generate; valid options: "types", "client", "test-client", "typed-client", "chi-server", "server", "spec", "skip-fmt", "skip-prune"`)
 	flag.StringVar(&outputFile, "o", "", "Where to output generated code, stdout is default")
 	flag.StringVar(&includeTags, "include-tags", "", "Only include operations with the given tags. Comma-separated list of tags.")
