@@ -43,9 +43,6 @@ func (c *FindPetsContext) OK(resp FindPetsResponseOK) error {
 	return c.JSON(200, resp)
 }
 
-// FindPetsResponseOK is the response type for FindPets's "200" response.
-type FindPetsResponseOK = []Pet
-
 // AddPetContext is a context customized for AddPet (POST /pets).
 type AddPetContext struct {
 	echo.Context
@@ -67,7 +64,7 @@ func (c *AddPetContext) ParseJSONBody() (AddPetJSONBody, error) {
 // Responses
 
 // OK responses with the appropriate code and the JSON response.
-func (c *AddPetContext) OK(resp Pet) error {
+func (c *AddPetContext) OK(resp AddPetResponseOK) error {
 	return c.JSON(200, resp)
 }
 
@@ -86,7 +83,7 @@ type FindPetByIdContext struct {
 // Responses
 
 // OK responses with the appropriate code and the JSON response.
-func (c *FindPetByIdContext) OK(resp Pet) error {
+func (c *FindPetByIdContext) OK(resp FindPetByIdResponseOK) error {
 	return c.JSON(200, resp)
 }
 

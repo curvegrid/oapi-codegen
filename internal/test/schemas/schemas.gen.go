@@ -126,6 +126,39 @@ func (s StringInPath) Validate() error {
 
 }
 
+// EnsureEverythingIsReferencedResponseOK defines parameters for EnsureEverythingIsReferenced.
+type EnsureEverythingIsReferencedResponseOK struct {
+	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
+
+	// This should be an interface{}
+	AnyType2         *AnyType2         `json:"anyType2,omitempty"`
+	CustomStringType *CustomStringType `json:"customStringType,omitempty"`
+}
+
+// Validate perform validation on the EnsureEverythingIsReferencedResponseOK
+func (s EnsureEverythingIsReferencedResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.AnyType1,
+		),
+		validation.Field(
+			&s.AnyType2,
+		),
+		validation.Field(
+			&s.CustomStringType,
+		),
+	)
+
+}
+
+// Issue127ResponseOK defines parameters for Issue127.
+type Issue127ResponseOK = GenericObject
+
+// Issue127ResponseDefault defines parameters for Issue127.
+type Issue127ResponseDefault = GenericObject
+
 // Issue185JSONBody defines parameters for Issue185.
 type Issue185JSONBody NullableProperties
 
@@ -1189,15 +1222,6 @@ func (c *EnsureEverythingIsReferencedContext) OK(resp EnsureEverythingIsReferenc
 	return c.JSON(200, resp)
 }
 
-// EnsureEverythingIsReferencedResponseOK is the response type for EnsureEverythingIsReferenced's "200" response.
-type EnsureEverythingIsReferencedResponseOK = struct {
-	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
-
-	// This should be an interface{}
-	AnyType2         *AnyType2         `json:"anyType2,omitempty"`
-	CustomStringType *CustomStringType `json:"customStringType,omitempty"`
-}
-
 // Issue127Context is a context customized for Issue127 (GET /issues/127).
 type Issue127Context struct {
 	echo.Context
@@ -1206,17 +1230,7 @@ type Issue127Context struct {
 // Responses
 
 // OK responses with the appropriate code and the JSON response.
-func (c *Issue127Context) OK(resp GenericObject) error {
-	return c.JSON(200, resp)
-}
-
-// OK responses with the appropriate code and the JSON response.
-func (c *Issue127Context) OK(resp GenericObject) error {
-	return c.JSON(200, resp)
-}
-
-// OK responses with the appropriate code and the JSON response.
-func (c *Issue127Context) OK(resp GenericObject) error {
+func (c *Issue127Context) OK(resp Issue127ResponseOK) error {
 	return c.JSON(200, resp)
 }
 

@@ -17,6 +17,8 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
 	"unicode"
@@ -260,6 +262,62 @@ func (o *OperationDefinition) SummaryAsComment() string {
 		parts[i] = "// " + p
 	}
 	return strings.Join(parts, "\n")
+}
+
+// Produces a list of type definitions for a given Operation for the response
+// types which we know how to parse. These will be turned into fields on a
+// response object for automatic deserialization of responses in the generated
+// Client code. See "client-with-responses.tmpl".
+// This produces one type definition for each JSON response body.
+func (o *OperationDefinition) GetResponseIndependentTypeDefinitions() ([]TypeDefinition, error) {
+	var tds []TypeDefinition
+
+	responses := o.Spec.Responses
+	sortedResponsesKeys := SortedResponsesKeys(responses)
+	for _, responseName := range sortedResponsesKeys {
+		responseRef := responses[responseName]
+		responseCode := responseName
+
+		if num, err := strconv.Atoi(responseName); err == nil {
+			responseName = http.StatusText(num)
+		}
+
+		// We can only generate a type if we have a value:
+		if responseRef.Value == nil {
+			continue
+		}
+		// JSON-only first
+		contentType, ok := responseRef.Value.Content["application/json"]
+		if !ok {
+			continue
+		}
+		// We can only generate a type if we have a schema:
+		if contentType.Schema != nil {
+			responseSchema, err := GenerateGoSchema(contentType.Schema, []string{o.OperationId, responseName})
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("Unable to determine Go type for %s/%s", o.OperationId, responseName))
+			}
+
+			typeName := fmt.Sprintf("%sResponse%s", ToCamelCase(o.OperationId), ToCamelCase(responseName))
+
+			td := TypeDefinition{
+				TypeName:     typeName,
+				Schema:       responseSchema,
+				ResponseName: responseCode,
+			}
+			if contentType.Schema.Ref != "" {
+				td.IsAlias = true
+				refType, err := RefPathToGoType(contentType.Schema.Ref)
+				if err != nil {
+					return nil, errors.Wrap(err, "error dereferencing response Ref")
+				}
+				td.Schema.RefType = refType
+			}
+			tds = append(tds, td)
+		}
+	}
+
+	return tds, nil
 }
 
 // Produces a list of type definitions for a given Operation for the response
@@ -583,6 +641,14 @@ func GenerateTypeDefsForOperation(op OperationDefinition) []TypeDefinition {
 	for _, body := range op.Bodies {
 		typeDefs = append(typeDefs, body.Schema.GetAdditionalTypeDefs()...)
 	}
+
+	// Responses too
+	resps, err := op.GetResponseIndependentTypeDefinitions()
+	if err != nil {
+		panic(err)
+	}
+	typeDefs = append(typeDefs, resps...)
+
 	return typeDefs
 }
 

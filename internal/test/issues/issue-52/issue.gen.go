@@ -87,6 +87,9 @@ func (s Value) Validate() error {
 
 }
 
+// ExampleGetResponseOK defines parameters for ExampleGet.
+type ExampleGetResponseOK = Document
+
 // Getter for additional properties for Document_Fields. Returns the specified
 // element and whether it was found
 func (a Document_Fields) Get(fieldName string) (value Value, found bool) {
@@ -362,7 +365,7 @@ type ExampleGetContext struct {
 // Responses
 
 // OK responses with the appropriate code and the JSON response.
-func (c *ExampleGetContext) OK(resp Document) error {
+func (c *ExampleGetContext) OK(resp ExampleGetResponseOK) error {
 	return c.JSON(200, resp)
 }
 

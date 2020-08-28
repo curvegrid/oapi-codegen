@@ -46,6 +46,19 @@ func (s Bar) Validate() error {
 
 }
 
+// GetFooResponseOK defines parameters for GetFoo.
+type GetFooResponseOK []Bar
+
+// Validate perform validation on the GetFooResponseOK
+func (s GetFooResponseOK) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]Bar)(s),
+		validation.Each(),
+	)
+
+}
+
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -271,9 +284,6 @@ type GetFooContext struct {
 func (c *GetFooContext) OK(resp GetFooResponseOK) error {
 	return c.JSON(200, resp)
 }
-
-// GetFooResponseOK is the response type for GetFoo's "200" response.
-type GetFooResponseOK = []Bar
 
 // ValidationError is the special validation error type, returned from failed validation runs.
 type ValidationError struct {

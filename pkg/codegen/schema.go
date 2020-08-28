@@ -111,6 +111,7 @@ type TypeDefinition struct {
 	JsonName     string
 	ResponseName string
 	Schema       Schema
+	IsAlias      bool
 }
 
 func PropertiesEqual(a, b Property) bool {

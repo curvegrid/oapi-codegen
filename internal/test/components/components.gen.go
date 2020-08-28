@@ -241,6 +241,71 @@ func (s RequestBody) Validate() error {
 
 }
 
+// EnsureEverythingIsReferencedResponseOK defines parameters for EnsureEverythingIsReferenced.
+type EnsureEverythingIsReferencedResponseOK struct {
+
+	// Has additional properties with schema for dictionaries
+	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
+
+	// Has anonymous field which has additional properties
+	Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
+	JsonField *ObjectWithJsonField         `json:"jsonField,omitempty"`
+
+	// Has additional properties of type int
+	One *AdditionalPropertiesObject1 `json:"one,omitempty"`
+
+	// Allows any additional property
+	Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
+
+	// Does not allow additional properties
+	Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
+}
+
+// Validate perform validation on the EnsureEverythingIsReferencedResponseOK
+func (s EnsureEverythingIsReferencedResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Five,
+		),
+		validation.Field(
+			&s.Four,
+		),
+		validation.Field(
+			&s.JsonField,
+		),
+		validation.Field(
+			&s.One,
+		),
+		validation.Field(
+			&s.Three,
+		),
+		validation.Field(
+			&s.Two,
+		),
+	)
+
+}
+
+// EnsureEverythingIsReferencedResponseDefault defines parameters for EnsureEverythingIsReferenced.
+type EnsureEverythingIsReferencedResponseDefault struct {
+	Field SchemaObject `json:"Field"`
+}
+
+// Validate perform validation on the EnsureEverythingIsReferencedResponseDefault
+func (s EnsureEverythingIsReferencedResponseDefault) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Field,
+			validation.Required,
+		),
+	)
+
+}
+
 // ParamsWithAddPropsParams_P1 defines parameters for ParamsWithAddProps.
 type ParamsWithAddPropsParams_P1 struct {
 	AdditionalProperties map[string]interface{} `json:"-"`
@@ -1538,26 +1603,6 @@ func (c *EnsureEverythingIsReferencedContext) ParseJSONBody() (EnsureEverythingI
 // OK responses with the appropriate code and the JSON response.
 func (c *EnsureEverythingIsReferencedContext) OK(resp EnsureEverythingIsReferencedResponseOK) error {
 	return c.JSON(200, resp)
-}
-
-// EnsureEverythingIsReferencedResponseOK is the response type for EnsureEverythingIsReferenced's "200" response.
-type EnsureEverythingIsReferencedResponseOK = struct {
-
-	// Has additional properties with schema for dictionaries
-	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
-
-	// Has anonymous field which has additional properties
-	Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
-	JsonField *ObjectWithJsonField         `json:"jsonField,omitempty"`
-
-	// Has additional properties of type int
-	One *AdditionalPropertiesObject1 `json:"one,omitempty"`
-
-	// Allows any additional property
-	Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
-
-	// Does not allow additional properties
-	Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
 }
 
 // ParamsWithAddPropsContext is a context customized for ParamsWithAddProps (GET /params_with_add_props).
