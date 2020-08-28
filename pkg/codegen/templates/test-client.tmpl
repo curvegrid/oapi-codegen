@@ -82,7 +82,7 @@ func (c *{{$op.OperationId}}TestResponse) {{$respName}}() {{$respType}} {
 {{end}}
 
 func (tc *TestClient) parseJSONResponse(t *testing.T, resp *http.Response, target validation.Validatable) {
-    defer resp.Close()
+    defer resp.Body.Close()
     decoder := json.NewDecoder(resp.Body)
     if err := decoder.Decode(target); err != nil {
         t.Fatalf("Failed to decode response body as JSON: %v", err)
