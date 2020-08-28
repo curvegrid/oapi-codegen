@@ -917,6 +917,100 @@ func (v ValidationError) Error() string {
     return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 `,
+	"test-client.tmpl": `// TestClient is a client that is used mainly for testing.
+type TestClient struct {
+    // The generated client.
+    Client ClientInterface
+}
+
+{{/* Generate client methods */}}
+{{range . -}}
+{{$hasParams := .RequiresParamObject -}}
+{{$pathParams := .PathParams -}}
+{{$opid := .OperationId -}}
+{{$op := . -}}
+
+// {{$opid}}{{if .HasBody}}WithBody{{end}} calls the endpoints, asserts that there are no errors, and return the TestResponse.
+func (tc *TestClient) {{$opid}}{{if .HasBody}}WithBody{{end}}(t *testing.T{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}) {{$opid}}TestResponse {
+    ctx := context.Background()
+    resp, err := tc.Client.{{$opid}}{{if .HasBody}}WithBody{{end}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}{{if .HasBody}}, contentType, body{{end}})
+    if err != nil {
+        t.Fatal(err)
+    }
+    return {{$opid}}TestResponse{resp, t, tc}
+}
+
+{{range .Bodies}}
+// {{$opid}}{{.Suffix}} calls the endpoints, asserts that there are no errors, and return the TestResponse.
+func (tc *TestClient) {{$opid}}{{.Suffix}}(t *testing.T{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody) {{$opid}}TestResponse {
+    ctx := context.Background()
+    resp, err := tc.Client.{{$opid}}{{.Suffix}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}, body)
+    if err != nil {
+        t.Fatal(err)
+    }
+    return {{$opid}}TestResponse{resp, t, tc}
+
+}
+{{end}}{{/* range .Bodies */}}
+
+{{/* Response handlers */}}
+// {{$opid}}TestResponse provides a facility for asserting response bodies.
+type {{$opid}}TestResponse struct {
+    *http.Response
+
+    t *testing.T
+    tc *TestClient
+}
+
+{{ if $op.HasEmptySuccess }}
+// OK asserts a successful response with no body.
+func (c *{{$op.OperationId}}TestResponse) OK() {
+    if c.StatusCode != 200 {
+        c.t.Fatalf("Expected status code 200, got %d", c.StatusCode)
+    }
+    if c.ContentLength != 0 {
+        c.t.Fatalf("Expected zero content length, got %d", c.ContentLength)
+    }
+}
+{{- end }}
+{{- range .GetResponseIndependentTypeDefinitions }}
+{{ $respType := .TypeName }}
+{{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
+// Respond{{.ResponseName}} asserts a response with the given code in range and the defined JSON type.
+func (c *{{$op.OperationId}}TestResponse) Respond{{.ResponseName}}(code int) {{$respType}} {
+    if c.StatusCode != code {
+        c.t.Fatalf("Expected status code %d, got %d", code, c.StatusCode)
+    }
+    var resp {{$respType}}
+    c.tc.parseJSONResponse(c.t, c.Response, &resp)
+    return resp
+}
+{{- else if (ne .ResponseName "default") }}
+{{ $respName := statusText .ResponseName | camelCase | title }}
+// {{$respName}} asserts a response with the appropriate code and the defined JSON type.
+func (c *{{$op.OperationId}}TestResponse) {{$respName}}() {{$respType}} {
+    if c.StatusCode != {{.ResponseName}} {
+        c.t.Fatalf("Expected status code {{.ResponseName}}, got %d", c.StatusCode)
+    }
+    var resp {{$respType}}
+    c.tc.parseJSONResponse(c.t, c.Response, &resp)
+    return resp
+}
+{{- end }}
+{{- end }}
+{{end}}
+
+func (tc *TestClient) parseJSONResponse(t *testing.T, resp *http.Response, target validation.Validatable) {
+    defer resp.Close()
+    decoder := json.NewDecoder(resp.Body)
+    if err := decoder.Decode(target); err != nil {
+        t.Fatalf("Failed to decode response body as JSON: %v", err)
+    }
+    if err := target.Validate(); err != nil {
+        t.Fatalf("Response validation failed: %v", err)
+    }
+}
+`,
 	"typedef.tmpl": `{{range .Types}}
 // {{.TypeName}} defines model for {{.JsonName}}.
 type {{.TypeName}} {{ if .IsAlias }}={{ end }} {{.Schema.TypeDecl}}

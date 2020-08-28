@@ -857,6 +857,24 @@ func GenerateClient(t *template.Template, ops []OperationDefinition) (string, er
 	return buf.String(), nil
 }
 
+// Uses the template engine to generate the function which registers our wrappers
+// as Echo path handlers.
+func GenerateTestClient(t *template.Template, ops []OperationDefinition) (string, error) {
+	var buf bytes.Buffer
+	w := bufio.NewWriter(&buf)
+
+	err := t.ExecuteTemplate(w, "test-client.tmpl", ops)
+
+	if err != nil {
+		return "", fmt.Errorf("error generating test client bindings: %s", err)
+	}
+	err = w.Flush()
+	if err != nil {
+		return "", fmt.Errorf("error flushing output buffer for client: %s", err)
+	}
+	return buf.String(), nil
+}
+
 // This generates a client which extends the basic client which does response
 // unmarshaling.
 func GenerateClientWithResponses(t *template.Template, ops []OperationDefinition) (string, error) {
