@@ -12,25 +12,24 @@ type TestClient struct {
 {{$op := . -}}
 
 // {{$opid}}{{if .HasBody}}WithBody{{end}} calls the endpoints, asserts that there are no errors, and return the TestResponse.
-func (tc *TestClient) {{$opid}}{{if .HasBody}}WithBody{{end}}(t *testing.T{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}, reqEditors... RequestEditorFn) {{$opid}}TestResponse {
+func (tc *TestClient) {{$opid}}{{if .HasBody}}WithBody{{end}}(t *testing.T{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}, reqEditors... RequestEditorFn) *{{$opid}}TestResponse {
     ctx := context.Background()
     resp, err := tc.Client.{{$opid}}{{if .HasBody}}WithBody{{end}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}{{if .HasBody}}, contentType, body{{end}}, reqEditors...)
     if err != nil {
         t.Fatal(err)
     }
-    return {{$opid}}TestResponse{resp, t, tc}
+    return &{{$opid}}TestResponse{resp, t, tc}
 }
 
 {{range .Bodies}}
 // {{$opid}}{{.Suffix}} calls the endpoints, asserts that there are no errors, and return the TestResponse.
-func (tc *TestClient) {{$opid}}{{.Suffix}}(t *testing.T{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody, reqEditors... RequestEditorFn) {{$opid}}TestResponse {
+func (tc *TestClient) {{$opid}}{{.Suffix}}(t *testing.T{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody, reqEditors... RequestEditorFn) *{{$opid}}TestResponse {
     ctx := context.Background()
     resp, err := tc.Client.{{$opid}}{{.Suffix}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}, body, reqEditors...)
     if err != nil {
         t.Fatal(err)
     }
-    return {{$opid}}TestResponse{resp, t, tc}
-
+    return &{{$opid}}TestResponse{resp, t, tc}
 }
 {{end}}{{/* range .Bodies */}}
 
