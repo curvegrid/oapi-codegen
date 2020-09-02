@@ -16,7 +16,9 @@ package codegen
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -276,4 +278,11 @@ var TemplateFunctions = template.FuncMap{
 	"lower":                      strings.ToLower,
 	"title":                      strings.Title,
 	"stripNewLines":              stripNewLines,
+	"statusText": func(s string) (string, error) {
+		v, err := strconv.Atoi(s)
+		if err != nil {
+			return "", err
+		}
+		return http.StatusText(v), nil
+	},
 }
