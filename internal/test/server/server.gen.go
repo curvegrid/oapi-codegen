@@ -5,12 +5,13 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/go-chi/chi"
-	"github.com/go-ozzo/ozzo-validation/v4"
-	"net/http"
-	"time"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // EveryTypeOptional defines model for EveryTypeOptional.
