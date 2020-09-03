@@ -8,12 +8,13 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi"
-	"github.com/go-ozzo/ozzo-validation/v4"
-	"net/http"
-	"strings"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // Error defines model for Error.

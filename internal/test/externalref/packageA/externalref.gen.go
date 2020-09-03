@@ -5,7 +5,7 @@ package packageA
 
 import (
 	externalRef0 "github.com/deepmap/oapi-codegen/internal/test/externalref/packageB"
-	"github.com/go-ozzo/ozzo-validation/v4"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // ObjectA defines model for ObjectA.

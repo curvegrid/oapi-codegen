@@ -8,13 +8,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/deepmap/oapi-codegen/pkg/runtime"
-	"github.com/go-ozzo/ozzo-validation/v4"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/deepmap/oapi-codegen/pkg/runtime"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // Error defines model for Error.
