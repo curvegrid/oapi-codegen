@@ -2,12 +2,40 @@
 type ServerInterfaceWrapper struct {
     Handler ServerInterface
 
-    middlewares []echo.MiddlewareFunc
+    securityHandler SecurityHandler
 }
 
-{{range .}}{{$opid := .OperationId}}// handle{{$opid}} converts echo context to params.
-func (w *ServerInterfaceWrapper) handle{{.OperationId}} (ctx echo.Context) error {
+type (
+    // SecurityScheme is a security scheme name
+    SecurityScheme string
+
+    // SecurityScopes is a list of security scopes
+    SecurityScopes []string
+
+    // SecurityReq is a map of security scheme names and their respective scopes
+    SecurityReq map[SecurityScheme]SecurityScopes
+
+    // SecurityHandler defines a function to handle the security requirements
+    // defined in the OpenAPI specification.
+    SecurityHandler func(echo.Context, SecurityReq) error
+)
+
+{{range .}}{{$opid := .OperationId}}// {{$opid}} converts echo context to params.
+func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     var err error
+
+{{if .SecurityDefinitions}}
+    securityReq := SecurityReq{
+    {{range .SecurityDefinitions -}}
+        "{{.ProviderName}}": {{if .Scopes}}{{toStringArray .Scopes}}{{else}}nil{{end}},
+    {{end}}
+    }
+    err = w.securityHandler(ctx, securityReq)
+    if err != nil {
+        return err
+    }
+{{end}}
+
 {{range .PathParams}}// ------------- Path parameter "{{.ParamName}}" -------------
     var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}
 {{if .IsPassThrough}}
@@ -129,17 +157,4 @@ func (w *ServerInterfaceWrapper) handle{{.OperationId}} (ctx echo.Context) error
     err = w.Handler.{{.OperationId}}(&{{.OperationId}}Context{ctx}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
     return err
 }
-
-// {{.OperationId}} creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) {{.OperationId}}() echo.HandlerFunc {
-    securityReqs := BindSecurityRequirements({{range .SecurityDefinitions}}SecurityRequirement{ {{.ProviderName}}, {{toStringArray .Scopes}} }, {{end}})
-    // Wrap handler in middlewares
-    handler := echo.HandlerFunc(w.handle{{.OperationId}})
-    for i := len(w.middlewares); i > 0; i-- {
-        handler = w.middlewares[i - 1](handler)
-    }
-    // Put securityReqs on top 
-    return securityReqs(handler)
-}
-
 {{end}}

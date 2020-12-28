@@ -2994,12 +2994,28 @@ func (v ValidationError) Error() string {
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 
-	middlewares []echo.MiddlewareFunc
+	securityHandler SecurityHandler
 }
 
-// handleGetContentObject converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetContentObject(ctx echo.Context) error {
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
+
+// GetContentObject converts echo context to params.
+func (w *ServerInterfaceWrapper) GetContentObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetContentObjectPathParam
 
@@ -3017,20 +3033,8 @@ func (w *ServerInterfaceWrapper) handleGetContentObject(ctx echo.Context) error 
 	return err
 }
 
-// GetContentObject creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetContentObject() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetContentObject)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetCookie converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetCookie(ctx echo.Context) error {
+// GetCookie converts echo context to params.
+func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -3123,20 +3127,8 @@ func (w *ServerInterfaceWrapper) handleGetCookie(ctx echo.Context) error {
 	return err
 }
 
-// GetCookie creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetCookie() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetCookie)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetHeader converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetHeader(ctx echo.Context) error {
+// GetHeader converts echo context to params.
+func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -3254,21 +3246,10 @@ func (w *ServerInterfaceWrapper) handleGetHeader(ctx echo.Context) error {
 	return err
 }
 
-// GetHeader creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetHeader() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetHeader)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetLabelExplodeArray converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetLabelExplodeArray(ctx echo.Context) error {
+// GetLabelExplodeArray converts echo context to params.
+func (w *ServerInterfaceWrapper) GetLabelExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetLabelExplodeArrayPathParam
 
@@ -3286,21 +3267,10 @@ func (w *ServerInterfaceWrapper) handleGetLabelExplodeArray(ctx echo.Context) er
 	return err
 }
 
-// GetLabelExplodeArray creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetLabelExplodeArray() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetLabelExplodeArray)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetLabelExplodeObject converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetLabelExplodeObject(ctx echo.Context) error {
+// GetLabelExplodeObject converts echo context to params.
+func (w *ServerInterfaceWrapper) GetLabelExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetLabelExplodeObjectPathParam
 
@@ -3318,21 +3288,10 @@ func (w *ServerInterfaceWrapper) handleGetLabelExplodeObject(ctx echo.Context) e
 	return err
 }
 
-// GetLabelExplodeObject creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetLabelExplodeObject() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetLabelExplodeObject)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetLabelNoExplodeArray converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetLabelNoExplodeArray(ctx echo.Context) error {
+// GetLabelNoExplodeArray converts echo context to params.
+func (w *ServerInterfaceWrapper) GetLabelNoExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetLabelNoExplodeArrayPathParam
 
@@ -3350,21 +3309,10 @@ func (w *ServerInterfaceWrapper) handleGetLabelNoExplodeArray(ctx echo.Context) 
 	return err
 }
 
-// GetLabelNoExplodeArray creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetLabelNoExplodeArray() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetLabelNoExplodeArray)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetLabelNoExplodeObject converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetLabelNoExplodeObject(ctx echo.Context) error {
+// GetLabelNoExplodeObject converts echo context to params.
+func (w *ServerInterfaceWrapper) GetLabelNoExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetLabelNoExplodeObjectPathParam
 
@@ -3382,21 +3330,10 @@ func (w *ServerInterfaceWrapper) handleGetLabelNoExplodeObject(ctx echo.Context)
 	return err
 }
 
-// GetLabelNoExplodeObject creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetLabelNoExplodeObject() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetLabelNoExplodeObject)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetMatrixExplodeArray converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetMatrixExplodeArray(ctx echo.Context) error {
+// GetMatrixExplodeArray converts echo context to params.
+func (w *ServerInterfaceWrapper) GetMatrixExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
 	var id GetMatrixExplodeArrayPathId
 
@@ -3414,21 +3351,10 @@ func (w *ServerInterfaceWrapper) handleGetMatrixExplodeArray(ctx echo.Context) e
 	return err
 }
 
-// GetMatrixExplodeArray creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetMatrixExplodeArray() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetMatrixExplodeArray)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetMatrixExplodeObject converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetMatrixExplodeObject(ctx echo.Context) error {
+// GetMatrixExplodeObject converts echo context to params.
+func (w *ServerInterfaceWrapper) GetMatrixExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
 	var id GetMatrixExplodeObjectPathId
 
@@ -3446,21 +3372,10 @@ func (w *ServerInterfaceWrapper) handleGetMatrixExplodeObject(ctx echo.Context) 
 	return err
 }
 
-// GetMatrixExplodeObject creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetMatrixExplodeObject() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetMatrixExplodeObject)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetMatrixNoExplodeArray converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetMatrixNoExplodeArray(ctx echo.Context) error {
+// GetMatrixNoExplodeArray converts echo context to params.
+func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
 	var id GetMatrixNoExplodeArrayPathId
 
@@ -3478,21 +3393,10 @@ func (w *ServerInterfaceWrapper) handleGetMatrixNoExplodeArray(ctx echo.Context)
 	return err
 }
 
-// GetMatrixNoExplodeArray creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetMatrixNoExplodeArray)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetMatrixNoExplodeObject converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetMatrixNoExplodeObject(ctx echo.Context) error {
+// GetMatrixNoExplodeObject converts echo context to params.
+func (w *ServerInterfaceWrapper) GetMatrixNoExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
 	var id GetMatrixNoExplodeObjectPathId
 
@@ -3510,21 +3414,10 @@ func (w *ServerInterfaceWrapper) handleGetMatrixNoExplodeObject(ctx echo.Context
 	return err
 }
 
-// GetMatrixNoExplodeObject creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetMatrixNoExplodeObject() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetMatrixNoExplodeObject)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetPassThrough converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetPassThrough(ctx echo.Context) error {
+// GetPassThrough converts echo context to params.
+func (w *ServerInterfaceWrapper) GetPassThrough(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetPassThroughPathParam
 
@@ -3539,20 +3432,8 @@ func (w *ServerInterfaceWrapper) handleGetPassThrough(ctx echo.Context) error {
 	return err
 }
 
-// GetPassThrough creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetPassThrough() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetPassThrough)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetDeepObject converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetDeepObject(ctx echo.Context) error {
+// GetDeepObject converts echo context to params.
+func (w *ServerInterfaceWrapper) GetDeepObject(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -3573,20 +3454,8 @@ func (w *ServerInterfaceWrapper) handleGetDeepObject(ctx echo.Context) error {
 	return err
 }
 
-// GetDeepObject creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetDeepObject() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetDeepObject)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetQueryForm converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
+// GetQueryForm converts echo context to params.
+func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -3673,21 +3542,10 @@ func (w *ServerInterfaceWrapper) handleGetQueryForm(ctx echo.Context) error {
 	return err
 }
 
-// GetQueryForm creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetQueryForm() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetQueryForm)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetSimpleExplodeArray converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetSimpleExplodeArray(ctx echo.Context) error {
+// GetSimpleExplodeArray converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSimpleExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetSimpleExplodeArrayPathParam
 
@@ -3705,21 +3563,10 @@ func (w *ServerInterfaceWrapper) handleGetSimpleExplodeArray(ctx echo.Context) e
 	return err
 }
 
-// GetSimpleExplodeArray creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetSimpleExplodeArray() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetSimpleExplodeArray)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetSimpleExplodeObject converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetSimpleExplodeObject(ctx echo.Context) error {
+// GetSimpleExplodeObject converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSimpleExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetSimpleExplodeObjectPathParam
 
@@ -3737,21 +3584,10 @@ func (w *ServerInterfaceWrapper) handleGetSimpleExplodeObject(ctx echo.Context) 
 	return err
 }
 
-// GetSimpleExplodeObject creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetSimpleExplodeObject() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetSimpleExplodeObject)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetSimpleNoExplodeArray converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetSimpleNoExplodeArray(ctx echo.Context) error {
+// GetSimpleNoExplodeArray converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSimpleNoExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetSimpleNoExplodeArrayPathParam
 
@@ -3769,21 +3605,10 @@ func (w *ServerInterfaceWrapper) handleGetSimpleNoExplodeArray(ctx echo.Context)
 	return err
 }
 
-// GetSimpleNoExplodeArray creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetSimpleNoExplodeArray() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetSimpleNoExplodeArray)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetSimpleNoExplodeObject converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetSimpleNoExplodeObject(ctx echo.Context) error {
+// GetSimpleNoExplodeObject converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSimpleNoExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetSimpleNoExplodeObjectPathParam
 
@@ -3801,21 +3626,10 @@ func (w *ServerInterfaceWrapper) handleGetSimpleNoExplodeObject(ctx echo.Context
 	return err
 }
 
-// GetSimpleNoExplodeObject creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetSimpleNoExplodeObject() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetSimpleNoExplodeObject)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetSimplePrimitive converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetSimplePrimitive(ctx echo.Context) error {
+// GetSimplePrimitive converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSimplePrimitive(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
 	var param GetSimplePrimitivePathParam
 
@@ -3831,18 +3645,6 @@ func (w *ServerInterfaceWrapper) handleGetSimplePrimitive(ctx echo.Context) erro
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetSimplePrimitive(&GetSimplePrimitiveContext{ctx}, param)
 	return err
-}
-
-// GetSimplePrimitive creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetSimplePrimitive() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetSimplePrimitive)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
 }
 
 // This is a simple interface which specifies echo.Route addition functions which
@@ -3861,77 +3663,40 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
-	RegisterHandlersWithBaseURL(router, si, "", middlewares...)
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler) {
+	RegisterHandlersWithBaseURL(router, si, sh, "")
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, middlewares ...echo.MiddlewareFunc) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, sh SecurityHandler, baseURL string) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
-
-		middlewares: middlewares,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.GET(baseURL+"/contentObject/:param", wrapper.GetContentObject())
-	router.GET(baseURL+"/cookie", wrapper.GetCookie())
-	router.GET(baseURL+"/header", wrapper.GetHeader())
-	router.GET(baseURL+"/labelExplodeArray/:param", wrapper.GetLabelExplodeArray())
-	router.GET(baseURL+"/labelExplodeObject/:param", wrapper.GetLabelExplodeObject())
-	router.GET(baseURL+"/labelNoExplodeArray/:param", wrapper.GetLabelNoExplodeArray())
-	router.GET(baseURL+"/labelNoExplodeObject/:param", wrapper.GetLabelNoExplodeObject())
-	router.GET(baseURL+"/matrixExplodeArray/:id", wrapper.GetMatrixExplodeArray())
-	router.GET(baseURL+"/matrixExplodeObject/:id", wrapper.GetMatrixExplodeObject())
-	router.GET(baseURL+"/matrixNoExplodeArray/:id", wrapper.GetMatrixNoExplodeArray())
-	router.GET(baseURL+"/matrixNoExplodeObject/:id", wrapper.GetMatrixNoExplodeObject())
-	router.GET(baseURL+"/passThrough/:param", wrapper.GetPassThrough())
-	router.GET(baseURL+"/queryDeepObject", wrapper.GetDeepObject())
-	router.GET(baseURL+"/queryForm", wrapper.GetQueryForm())
-	router.GET(baseURL+"/simpleExplodeArray/:param", wrapper.GetSimpleExplodeArray())
-	router.GET(baseURL+"/simpleExplodeObject/:param", wrapper.GetSimpleExplodeObject())
-	router.GET(baseURL+"/simpleNoExplodeArray/:param", wrapper.GetSimpleNoExplodeArray())
-	router.GET(baseURL+"/simpleNoExplodeObject/:param", wrapper.GetSimpleNoExplodeObject())
-	router.GET(baseURL+"/simplePrimitive/:param", wrapper.GetSimplePrimitive())
+	router.GET(baseURL+"/contentObject/:param", wrapper.GetContentObject)
+	router.GET(baseURL+"/cookie", wrapper.GetCookie)
+	router.GET(baseURL+"/header", wrapper.GetHeader)
+	router.GET(baseURL+"/labelExplodeArray/:param", wrapper.GetLabelExplodeArray)
+	router.GET(baseURL+"/labelExplodeObject/:param", wrapper.GetLabelExplodeObject)
+	router.GET(baseURL+"/labelNoExplodeArray/:param", wrapper.GetLabelNoExplodeArray)
+	router.GET(baseURL+"/labelNoExplodeObject/:param", wrapper.GetLabelNoExplodeObject)
+	router.GET(baseURL+"/matrixExplodeArray/:id", wrapper.GetMatrixExplodeArray)
+	router.GET(baseURL+"/matrixExplodeObject/:id", wrapper.GetMatrixExplodeObject)
+	router.GET(baseURL+"/matrixNoExplodeArray/:id", wrapper.GetMatrixNoExplodeArray)
+	router.GET(baseURL+"/matrixNoExplodeObject/:id", wrapper.GetMatrixNoExplodeObject)
+	router.GET(baseURL+"/passThrough/:param", wrapper.GetPassThrough)
+	router.GET(baseURL+"/queryDeepObject", wrapper.GetDeepObject)
+	router.GET(baseURL+"/queryForm", wrapper.GetQueryForm)
+	router.GET(baseURL+"/simpleExplodeArray/:param", wrapper.GetSimpleExplodeArray)
+	router.GET(baseURL+"/simpleExplodeObject/:param", wrapper.GetSimpleExplodeObject)
+	router.GET(baseURL+"/simpleNoExplodeArray/:param", wrapper.GetSimpleNoExplodeArray)
+	router.GET(baseURL+"/simpleNoExplodeObject/:param", wrapper.GetSimpleNoExplodeObject)
+	router.GET(baseURL+"/simplePrimitive/:param", wrapper.GetSimplePrimitive)
 
 }
-
-// SecurityScheme represents a security scheme used in the server.
-type SecurityScheme string
-
-// ScopesKey returns the key of the scopes in the Context.
-func (ss SecurityScheme) ScopesKey() string {
-	return string(ss) + ".Scopes"
-}
-
-// Scopes collect the scopes defined in the Context.
-func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
-	val := c.Get(ss.ScopesKey())
-	scopes, ok := val.([]string)
-	return scopes, ok
-}
-
-// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
-type SecurityRequirement struct {
-	Scheme SecurityScheme
-	Scopes []string
-}
-
-// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
-func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
-	return func(h echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
-			for _, req := range reqs {
-				ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
-			}
-			return h(ctx)
-		}
-	}
-}
-
-// All security schemes defined.
-const ()
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{

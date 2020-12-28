@@ -187,7 +187,7 @@ func DescribeSecurityDefinition(securityRequirements openapi3.SecurityRequiremen
 
 	for _, sr := range securityRequirements {
 		for k, v := range sr {
-			outDefs = append(outDefs, SecurityDefinition{ProviderName: "SecurityScheme" + ToCamelCase(k), Scopes: v})
+			outDefs = append(outDefs, SecurityDefinition{ProviderName: k, Scopes: v})
 		}
 	}
 

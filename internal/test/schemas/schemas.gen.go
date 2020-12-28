@@ -1294,11 +1294,26 @@ func (v ValidationError) Error() string {
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 
-	middlewares []echo.MiddlewareFunc
+	securityHandler SecurityHandler
 }
 
-// handleEnsureEverythingIsReferenced converts echo context to params.
-func (w *ServerInterfaceWrapper) handleEnsureEverythingIsReferenced(ctx echo.Context) error {
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
+
+// EnsureEverythingIsReferenced converts echo context to params.
+func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1306,20 +1321,8 @@ func (w *ServerInterfaceWrapper) handleEnsureEverythingIsReferenced(ctx echo.Con
 	return err
 }
 
-// EnsureEverythingIsReferenced creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleEnsureEverythingIsReferenced)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleIssue127 converts echo context to params.
-func (w *ServerInterfaceWrapper) handleIssue127(ctx echo.Context) error {
+// Issue127 converts echo context to params.
+func (w *ServerInterfaceWrapper) Issue127(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1327,20 +1330,8 @@ func (w *ServerInterfaceWrapper) handleIssue127(ctx echo.Context) error {
 	return err
 }
 
-// Issue127 creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) Issue127() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleIssue127)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleIssue185 converts echo context to params.
-func (w *ServerInterfaceWrapper) handleIssue185(ctx echo.Context) error {
+// Issue185 converts echo context to params.
+func (w *ServerInterfaceWrapper) Issue185(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1348,21 +1339,10 @@ func (w *ServerInterfaceWrapper) handleIssue185(ctx echo.Context) error {
 	return err
 }
 
-// Issue185 creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) Issue185() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleIssue185)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleIssue209 converts echo context to params.
-func (w *ServerInterfaceWrapper) handleIssue209(ctx echo.Context) error {
+// Issue209 converts echo context to params.
+func (w *ServerInterfaceWrapper) Issue209(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "str" -------------
 	var str StringInPath
 
@@ -1380,21 +1360,10 @@ func (w *ServerInterfaceWrapper) handleIssue209(ctx echo.Context) error {
 	return err
 }
 
-// Issue209 creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) Issue209() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleIssue209)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleIssue30 converts echo context to params.
-func (w *ServerInterfaceWrapper) handleIssue30(ctx echo.Context) error {
+// Issue30 converts echo context to params.
+func (w *ServerInterfaceWrapper) Issue30(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "fallthrough" -------------
 	var pFallthrough Issue30PathFallthrough
 
@@ -1412,21 +1381,10 @@ func (w *ServerInterfaceWrapper) handleIssue30(ctx echo.Context) error {
 	return err
 }
 
-// Issue30 creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) Issue30() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleIssue30)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleIssue41 converts echo context to params.
-func (w *ServerInterfaceWrapper) handleIssue41(ctx echo.Context) error {
+// Issue41 converts echo context to params.
+func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "1param" -------------
 	var n1param Issue41Path1param
 
@@ -1444,20 +1402,8 @@ func (w *ServerInterfaceWrapper) handleIssue41(ctx echo.Context) error {
 	return err
 }
 
-// Issue41 creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) Issue41() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleIssue41)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleIssue9 converts echo context to params.
-func (w *ServerInterfaceWrapper) handleIssue9(ctx echo.Context) error {
+// Issue9 converts echo context to params.
+func (w *ServerInterfaceWrapper) Issue9(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -1478,18 +1424,6 @@ func (w *ServerInterfaceWrapper) handleIssue9(ctx echo.Context) error {
 	return err
 }
 
-// Issue9 creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) Issue9() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleIssue9)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -1506,65 +1440,28 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
-	RegisterHandlersWithBaseURL(router, si, "", middlewares...)
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler) {
+	RegisterHandlersWithBaseURL(router, si, sh, "")
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, middlewares ...echo.MiddlewareFunc) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, sh SecurityHandler, baseURL string) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
-
-		middlewares: middlewares,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.GET(baseURL+"/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced())
-	router.GET(baseURL+"/issues/127", wrapper.Issue127())
-	router.GET(baseURL+"/issues/185", wrapper.Issue185())
-	router.GET(baseURL+"/issues/209/$:str", wrapper.Issue209())
-	router.GET(baseURL+"/issues/30/:fallthrough", wrapper.Issue30())
-	router.GET(baseURL+"/issues/41/:1param", wrapper.Issue41())
-	router.GET(baseURL+"/issues/9", wrapper.Issue9())
+	router.GET(baseURL+"/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced)
+	router.GET(baseURL+"/issues/127", wrapper.Issue127)
+	router.GET(baseURL+"/issues/185", wrapper.Issue185)
+	router.GET(baseURL+"/issues/209/$:str", wrapper.Issue209)
+	router.GET(baseURL+"/issues/30/:fallthrough", wrapper.Issue30)
+	router.GET(baseURL+"/issues/41/:1param", wrapper.Issue41)
+	router.GET(baseURL+"/issues/9", wrapper.Issue9)
 
 }
-
-// SecurityScheme represents a security scheme used in the server.
-type SecurityScheme string
-
-// ScopesKey returns the key of the scopes in the Context.
-func (ss SecurityScheme) ScopesKey() string {
-	return string(ss) + ".Scopes"
-}
-
-// Scopes collect the scopes defined in the Context.
-func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
-	val := c.Get(ss.ScopesKey())
-	scopes, ok := val.([]string)
-	return scopes, ok
-}
-
-// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
-type SecurityRequirement struct {
-	Scheme SecurityScheme
-	Scopes []string
-}
-
-// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
-func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
-	return func(h echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
-			for _, req := range reqs {
-				ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
-			}
-			return h(ctx)
-		}
-	}
-}
-
-// All security schemes defined.
-const ()
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
