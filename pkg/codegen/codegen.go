@@ -149,11 +149,6 @@ func Generate(swagger *openapi3.Swagger, packageName string, opts Options) (stri
 		if err != nil {
 			return "", errors.Wrap(err, "error generating Go handlers for Paths")
 		}
-		security, err := GenerateSecuritySchemes(t, swagger.Components.SecuritySchemes)
-		if err != nil {
-			return "", errors.Wrap(err, "error generating security schemes")
-		}
-		echoServerOut += "\n" + security
 	}
 
 	var chiServerOut string

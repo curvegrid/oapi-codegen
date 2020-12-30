@@ -5,7 +5,7 @@ This package contains a set of utilities for generating Go boilerplate code for
 services based on
 [OpenAPI 3.0](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md)
 API definitions. When working with services, it's important to have an API
-contract which servers and clients both imprement to minimize the chances of
+contract which servers and clients both implement to minimize the chances of
 incompatibilities. It's tedious to generate Go models which precisely correspond to
 OpenAPI specifications, so let our code generator do that work for you, so that
 you can focus on implementing the business logic for your service.
@@ -469,6 +469,27 @@ a comma separated list of schema names. For instance, `--exclude-schemas=Pet,New
 will exclude from generation schemas `Pet` and `NewPet`. This allow to have a
 in the same package a manually defined structure or interface and refer to it
 in the openapi spec.
+
+Since `go generate` commands must be a single line, all the options above can make
+them pretty unwieldy, so you can specify all of the options in a configuration
+file via the `--config` option. Please see the test under
+[`/internal/test/externalref/`](https://github.com/deepmap/oapi-codegen/blob/master/internal/test/externalref/externalref.cfg.yaml)
+for an example. The structure of the file is as follows:
+    
+```yaml
+output:
+  externalref.gen.go
+package: externalref
+generate:
+  - types
+  - skip-prune
+import-mapping:
+  ./packageA/spec.yaml: github.com/deepmap/oapi-codegen/internal/test/externalref/packageA
+  ./packageB/spec.yaml: github.com/deepmap/oapi-codegen/internal/test/externalref/packageB
+```
+
+Have a look at [`cmd/oapi-codegen/oapi-codegen.go`](https://github.com/deepmap/oapi-codegen/blob/master/cmd/oapi-codegen/oapi-codegen.go#L48) 
+to see all the fields on the configuration structure.
 
 ### Import Mappings
 
