@@ -88,7 +88,9 @@ type HttpRequestDoer interface {
 // Client which conforms to the OpenAPI3 specification for this service.
 type Client struct {
 	// The endpoint of the server conforming to this interface, with scheme,
-	// https://api.deepmap.com for example.
+	// https://api.deepmap.com for example. This can contain a path relative
+	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// paths in the swagger spec will be appended to the server.
 	Server string
 
 	// Doer for performing requests, typically a *http.Client with any
@@ -1021,11 +1023,26 @@ func (v ValidationError) Error() string {
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 
-	middlewares []echo.MiddlewareFunc
+	securityHandler SecurityHandler
 }
 
-// handlePostBoth converts echo context to params.
-func (w *ServerInterfaceWrapper) handlePostBoth(ctx echo.Context) error {
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
+
+// PostBoth converts echo context to params.
+func (w *ServerInterfaceWrapper) PostBoth(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1033,20 +1050,8 @@ func (w *ServerInterfaceWrapper) handlePostBoth(ctx echo.Context) error {
 	return err
 }
 
-// PostBoth creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) PostBoth() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handlePostBoth)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetBoth converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetBoth(ctx echo.Context) error {
+// GetBoth converts echo context to params.
+func (w *ServerInterfaceWrapper) GetBoth(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1054,20 +1059,8 @@ func (w *ServerInterfaceWrapper) handleGetBoth(ctx echo.Context) error {
 	return err
 }
 
-// GetBoth creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetBoth() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetBoth)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handlePostJson converts echo context to params.
-func (w *ServerInterfaceWrapper) handlePostJson(ctx echo.Context) error {
+// PostJson converts echo context to params.
+func (w *ServerInterfaceWrapper) PostJson(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1075,41 +1068,25 @@ func (w *ServerInterfaceWrapper) handlePostJson(ctx echo.Context) error {
 	return err
 }
 
-// PostJson creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) PostJson() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handlePostJson)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetJson converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetJson(ctx echo.Context) error {
+// GetJson converts echo context to params.
+func (w *ServerInterfaceWrapper) GetJson(ctx echo.Context) error {
 	var err error
+
+	securityReq := SecurityReq{
+		"OpenId": []string{"json.read", "json.admin"},
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetJson(&GetJsonContext{ctx})
 	return err
 }
 
-// GetJson creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetJson() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements(SecurityRequirement{SecuritySchemeOpenId, []string{"json.read", "json.admin"}})
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetJson)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handlePostOther converts echo context to params.
-func (w *ServerInterfaceWrapper) handlePostOther(ctx echo.Context) error {
+// PostOther converts echo context to params.
+func (w *ServerInterfaceWrapper) PostOther(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1117,20 +1094,8 @@ func (w *ServerInterfaceWrapper) handlePostOther(ctx echo.Context) error {
 	return err
 }
 
-// PostOther creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) PostOther() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handlePostOther)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetOther converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetOther(ctx echo.Context) error {
+// GetOther converts echo context to params.
+func (w *ServerInterfaceWrapper) GetOther(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1138,37 +1103,21 @@ func (w *ServerInterfaceWrapper) handleGetOther(ctx echo.Context) error {
 	return err
 }
 
-// GetOther creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetOther() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetOther)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleGetJsonWithTrailingSlash converts echo context to params.
-func (w *ServerInterfaceWrapper) handleGetJsonWithTrailingSlash(ctx echo.Context) error {
+// GetJsonWithTrailingSlash converts echo context to params.
+func (w *ServerInterfaceWrapper) GetJsonWithTrailingSlash(ctx echo.Context) error {
 	var err error
+
+	securityReq := SecurityReq{
+		"OpenId": []string{"json.read", "json.admin"},
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetJsonWithTrailingSlash(&GetJsonWithTrailingSlashContext{ctx})
 	return err
-}
-
-// GetJsonWithTrailingSlash creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) GetJsonWithTrailingSlash() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements(SecurityRequirement{SecuritySchemeOpenId, []string{"json.read", "json.admin"}})
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleGetJsonWithTrailingSlash)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
 }
 
 // This is a simple interface which specifies echo.Route addition functions which
@@ -1187,59 +1136,28 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler) {
+	RegisterHandlersWithBaseURL(router, si, sh, "")
+}
+
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, sh SecurityHandler, baseURL string) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
-
-		middlewares: middlewares,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.POST("/with_both_bodies", wrapper.PostBoth())
-	router.GET("/with_both_responses", wrapper.GetBoth())
-	router.POST("/with_json_body", wrapper.PostJson())
-	router.GET("/with_json_response", wrapper.GetJson())
-	router.POST("/with_other_body", wrapper.PostOther())
-	router.GET("/with_other_response", wrapper.GetOther())
-	router.GET("/with_trailing_slash/", wrapper.GetJsonWithTrailingSlash())
+	router.POST(baseURL+"/with_both_bodies", wrapper.PostBoth)
+	router.GET(baseURL+"/with_both_responses", wrapper.GetBoth)
+	router.POST(baseURL+"/with_json_body", wrapper.PostJson)
+	router.GET(baseURL+"/with_json_response", wrapper.GetJson)
+	router.POST(baseURL+"/with_other_body", wrapper.PostOther)
+	router.GET(baseURL+"/with_other_response", wrapper.GetOther)
+	router.GET(baseURL+"/with_trailing_slash/", wrapper.GetJsonWithTrailingSlash)
 
 }
-
-// SecurityScheme represents a security scheme used in the server.
-type SecurityScheme string
-
-// ScopesKey returns the key of the scopes in the Context.
-func (ss SecurityScheme) ScopesKey() string {
-	return string(ss) + ".Scopes"
-}
-
-// Scopes collect the scopes defined in the Context.
-func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
-	val := c.Get(ss.ScopesKey())
-	scopes, ok := val.([]string)
-	return scopes, ok
-}
-
-// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
-type SecurityRequirement struct {
-	Scheme SecurityScheme
-	Scopes []string
-}
-
-// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
-func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
-	return func(h echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
-			for _, req := range reqs {
-				ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
-			}
-			return h(ctx)
-		}
-	}
-}
-
-// All security schemes defined.
-const ()
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{

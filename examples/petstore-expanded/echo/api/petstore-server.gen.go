@@ -107,11 +107,26 @@ func (v ValidationError) Error() string {
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 
-	middlewares []echo.MiddlewareFunc
+	securityHandler SecurityHandler
 }
 
-// handleFindPets converts echo context to params.
-func (w *ServerInterfaceWrapper) handleFindPets(ctx echo.Context) error {
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
+
+// FindPets converts echo context to params.
+func (w *ServerInterfaceWrapper) FindPets(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -142,20 +157,8 @@ func (w *ServerInterfaceWrapper) handleFindPets(ctx echo.Context) error {
 	return err
 }
 
-// FindPets creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) FindPets() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleFindPets)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleAddPet converts echo context to params.
-func (w *ServerInterfaceWrapper) handleAddPet(ctx echo.Context) error {
+// AddPet converts echo context to params.
+func (w *ServerInterfaceWrapper) AddPet(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -163,21 +166,10 @@ func (w *ServerInterfaceWrapper) handleAddPet(ctx echo.Context) error {
 	return err
 }
 
-// AddPet creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) AddPet() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleAddPet)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleDeletePet converts echo context to params.
-func (w *ServerInterfaceWrapper) handleDeletePet(ctx echo.Context) error {
+// DeletePet converts echo context to params.
+func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
 	var id DeletePetPathId
 
@@ -195,21 +187,10 @@ func (w *ServerInterfaceWrapper) handleDeletePet(ctx echo.Context) error {
 	return err
 }
 
-// DeletePet creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) DeletePet() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleDeletePet)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
-}
-
-// handleFindPetById converts echo context to params.
-func (w *ServerInterfaceWrapper) handleFindPetById(ctx echo.Context) error {
+// FindPetById converts echo context to params.
+func (w *ServerInterfaceWrapper) FindPetById(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
 	var id FindPetByIdPathId
 
@@ -225,18 +206,6 @@ func (w *ServerInterfaceWrapper) handleFindPetById(ctx echo.Context) error {
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.FindPetById(&FindPetByIdContext{ctx}, id)
 	return err
-}
-
-// FindPetById creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) FindPetById() echo.HandlerFunc {
-	securityReqs := BindSecurityRequirements()
-	// Wrap handler in middlewares
-	handler := echo.HandlerFunc(w.handleFindPetById)
-	for i := len(w.middlewares); i > 0; i-- {
-		handler = w.middlewares[i-1](handler)
-	}
-	// Put securityReqs on top
-	return securityReqs(handler)
 }
 
 // This is a simple interface which specifies echo.Route addition functions which
@@ -255,56 +224,25 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler) {
+	RegisterHandlersWithBaseURL(router, si, sh, "")
+}
+
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, sh SecurityHandler, baseURL string) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
-
-		middlewares: middlewares,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.GET("/pets", wrapper.FindPets())
-	router.POST("/pets", wrapper.AddPet())
-	router.DELETE("/pets/:id", wrapper.DeletePet())
-	router.GET("/pets/:id", wrapper.FindPetById())
+	router.GET(baseURL+"/pets", wrapper.FindPets)
+	router.POST(baseURL+"/pets", wrapper.AddPet)
+	router.DELETE(baseURL+"/pets/:id", wrapper.DeletePet)
+	router.GET(baseURL+"/pets/:id", wrapper.FindPetById)
 
 }
-
-// SecurityScheme represents a security scheme used in the server.
-type SecurityScheme string
-
-// ScopesKey returns the key of the scopes in the Context.
-func (ss SecurityScheme) ScopesKey() string {
-	return string(ss) + ".Scopes"
-}
-
-// Scopes collect the scopes defined in the Context.
-func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
-	val := c.Get(ss.ScopesKey())
-	scopes, ok := val.([]string)
-	return scopes, ok
-}
-
-// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
-type SecurityRequirement struct {
-	Scheme SecurityScheme
-	Scopes []string
-}
-
-// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
-func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
-	return func(h echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
-			for _, req := range reqs {
-				ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
-			}
-			return h(ctx)
-		}
-	}
-}
-
-// All security schemes defined.
-const ()
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{

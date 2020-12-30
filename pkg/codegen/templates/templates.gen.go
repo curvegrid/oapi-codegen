@@ -80,12 +80,16 @@ func Handler(si ServerInterface) http.Handler {
 
 // HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
 func HandlerFromMux(si ServerInterface, r chi.Router) http.Handler {
+    return HandlerFromMuxWithBaseURL(si, r, "")
+}
+
+func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string) http.Handler {
 {{if .}}wrapper := ServerInterfaceWrapper{
         Handler: si,
     }
 {{end}}
 {{range .}}r.Group(func(r chi.Router) {
-  r.{{.Method | lower | title }}("{{.Path | swaggerUriToChiUri}}", wrapper.{{.OperationId}})
+  r.{{.Method | lower | title }}(baseURL+"{{.Path | swaggerUriToChiUri}}", wrapper.{{.OperationId}})
 })
 {{end}}
   return r
@@ -396,7 +400,9 @@ type HttpRequestDoer interface {
 // Client which conforms to the OpenAPI3 specification for this service.
 type Client struct {
 	// The endpoint of the server conforming to this interface, with scheme,
-	// https://api.deepmap.com for example.
+	// https://api.deepmap.com for example. This can contain a path relative
+	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// paths in the swagger spec will be appended to the server.
 	Server string
 
 	// Doer for performing requests, typically a *http.Client with any
@@ -785,15 +791,20 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo.MiddlewareFunc) {
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler) {
+    RegisterHandlersWithBaseURL(router, si, sh, "")
+}
+
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, sh SecurityHandler, baseURL string) {
 {{if .}}
     wrapper := ServerInterfaceWrapper{
         Handler: si,
-
-        middlewares: middlewares,
+        securityHandler: sh,
     }
 {{end}}
-{{range .}}router.{{.Method}}("{{.Path | swaggerUriToEchoUri}}", wrapper.{{.OperationId}}())
+{{range .}}router.{{.Method}}(baseURL + "{{.Path | swaggerUriToEchoUri}}", wrapper.{{.OperationId}})
 {{end}}
 }
 `,
@@ -803,77 +814,6 @@ func RegisterHandlers(router EchoRouter, si ServerInterface, middlewares ...echo
 type {{$opid}}{{.NameTag}}RequestBody {{.TypeDef}}
 {{end}}
 {{end}}
-`,
-	"security.tmpl": `// SecurityScheme represents a security scheme used in the server.
-type SecurityScheme string
-
-// ScopesKey returns the key of the scopes in the Context.
-func (ss SecurityScheme) ScopesKey() string {
-    return string(ss) + ".Scopes"
-}
-
-// Scopes collect the scopes defined in the Context.
-func (ss SecurityScheme) Scopes(c echo.Context) ([]string, bool) {
-    val := c.Get(ss.ScopesKey())
-    scopes, ok := val.([]string)
-    return scopes, ok
-}
-
-// SecurityRequirement is a requirement of an endpoint on the allowed scopes a scheme can be used.
-type SecurityRequirement struct {
-    Scheme SecurityScheme
-    Scopes []string
-}
-
-// BindSecurityRequirements returns an echo middleware that sets the scopes of the security schemes.
-func BindSecurityRequirements(reqs ...SecurityRequirement) echo.MiddlewareFunc {
-    return func(h echo.HandlerFunc) echo.HandlerFunc {
-        return func(ctx echo.Context) error {
-            for _, req := range reqs {
-                ctx.Set(req.Scheme.ScopesKey(), req.Scopes)
-            }
-            return h(ctx)
-        }
-    }
-}
-
-// All security schemes defined.
-const (
-    {{- range . }}
-    {{.Name}} SecurityScheme = "{{.Name}}"
-    {{- end }}
-)
-
-{{ range . }}
-{{ if .IsStandardBearer }}
-// Parse{{.Name}} returns a bearer token for {{.Name}} from the context.
-func Parse{{.Name}}(c echo.Context) (string, bool) {
-    const bearerPrefix = "Bearer "
-    header := c.Request().Header.Get("Authorization")
-    if !strings.HasPrefix(header, bearerPrefix) {
-        return "", false
-    }
-    return header[len(bearerPrefix):], true
-}
-{{- end }}
-{{ if .IsAPIKey }}
-// Parse{{.Name}} returns an API key for {{.Name}} from the context.
-func Parse{{.Name}}(c echo.Context) (string, bool) {
-    {{ if eq .Spec.In "query" }}
-    token := c.QueryParam("{{.Spec.Name}}")
-    {{- else if eq .Spec.In "header" }}
-    token := c.Request().Header.Get("{{.Spec.Name}}")
-    {{- else }}
-    cookie, err := c.Cookie("{{.Spec.Name}}")
-    if err != nil {
-        return "", false
-    }
-    token := cookie.Value
-    {{- end }}
-    return token, token != ""
-}
-{{- end }}
-{{- end }}
 `,
 	"server-interface.tmpl": `// ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -1139,12 +1079,40 @@ validation.In(
 type ServerInterfaceWrapper struct {
     Handler ServerInterface
 
-    middlewares []echo.MiddlewareFunc
+    securityHandler SecurityHandler
 }
 
-{{range .}}{{$opid := .OperationId}}// handle{{$opid}} converts echo context to params.
-func (w *ServerInterfaceWrapper) handle{{.OperationId}} (ctx echo.Context) error {
+type (
+    // SecurityScheme is a security scheme name
+    SecurityScheme string
+
+    // SecurityScopes is a list of security scopes
+    SecurityScopes []string
+
+    // SecurityReq is a map of security scheme names and their respective scopes
+    SecurityReq map[SecurityScheme]SecurityScopes
+
+    // SecurityHandler defines a function to handle the security requirements
+    // defined in the OpenAPI specification.
+    SecurityHandler func(echo.Context, SecurityReq) error
+)
+
+{{range .}}{{$opid := .OperationId}}// {{$opid}} converts echo context to params.
+func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     var err error
+
+{{if .SecurityDefinitions}}
+    securityReq := SecurityReq{
+    {{range .SecurityDefinitions -}}
+        "{{.ProviderName}}": {{if .Scopes}}{{toStringArray .Scopes}}{{else}}nil{{end}},
+    {{end}}
+    }
+    err = w.securityHandler(ctx, securityReq)
+    if err != nil {
+        return err
+    }
+{{end}}
+
 {{range .PathParams}}// ------------- Path parameter "{{.ParamName}}" -------------
     var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}
 {{if .IsPassThrough}}
@@ -1266,19 +1234,6 @@ func (w *ServerInterfaceWrapper) handle{{.OperationId}} (ctx echo.Context) error
     err = w.Handler.{{.OperationId}}(&{{.OperationId}}Context{ctx}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
     return err
 }
-
-// {{.OperationId}} creates a handler function for the endpoint.
-func (w *ServerInterfaceWrapper) {{.OperationId}}() echo.HandlerFunc {
-    securityReqs := BindSecurityRequirements({{range .SecurityDefinitions}}SecurityRequirement{ {{.ProviderName}}, {{toStringArray .Scopes}} }, {{end}})
-    // Wrap handler in middlewares
-    handler := echo.HandlerFunc(w.handle{{.OperationId}})
-    for i := len(w.middlewares); i > 0; i-- {
-        handler = w.middlewares[i - 1](handler)
-    }
-    // Put securityReqs on top 
-    return securityReqs(handler)
-}
-
 {{end}}
 `,
 }
