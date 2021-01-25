@@ -1440,26 +1440,26 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler) {
-	RegisterHandlersWithBaseURL(router, si, sh, "")
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler, m ...echo.MiddlewareFunc) {
+	RegisterHandlersWithBaseURL(router, si, "", sh, m...)
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, sh SecurityHandler, baseURL string) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, sh SecurityHandler, m ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
 		Handler:         si,
 		securityHandler: sh,
 	}
 
-	router.GET(baseURL+"/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced)
-	router.GET(baseURL+"/issues/127", wrapper.Issue127)
-	router.GET(baseURL+"/issues/185", wrapper.Issue185)
-	router.GET(baseURL+"/issues/209/$:str", wrapper.Issue209)
-	router.GET(baseURL+"/issues/30/:fallthrough", wrapper.Issue30)
-	router.GET(baseURL+"/issues/41/:1param", wrapper.Issue41)
-	router.GET(baseURL+"/issues/9", wrapper.Issue9)
+	router.GET(baseURL+"/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced, m...)
+	router.GET(baseURL+"/issues/127", wrapper.Issue127, m...)
+	router.GET(baseURL+"/issues/185", wrapper.Issue185, m...)
+	router.GET(baseURL+"/issues/209/$:str", wrapper.Issue209, m...)
+	router.GET(baseURL+"/issues/30/:fallthrough", wrapper.Issue30, m...)
+	router.GET(baseURL+"/issues/41/:1param", wrapper.Issue41, m...)
+	router.GET(baseURL+"/issues/9", wrapper.Issue9, m...)
 
 }
 

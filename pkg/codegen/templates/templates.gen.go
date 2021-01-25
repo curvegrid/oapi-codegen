@@ -783,20 +783,20 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler) {
-    RegisterHandlersWithBaseURL(router, si, sh, "")
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler, m ...echo.MiddlewareFunc) {
+    RegisterHandlersWithBaseURL(router, si, "", sh, m...)
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, sh SecurityHandler, baseURL string) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, sh SecurityHandler, m ...echo.MiddlewareFunc) {
 {{if .}}
     wrapper := ServerInterfaceWrapper{
         Handler: si,
         securityHandler: sh,
     }
 {{end}}
-{{range .}}router.{{.Method}}(baseURL + "{{.Path | swaggerUriToEchoUri}}", wrapper.{{.OperationId}})
+{{range .}}router.{{.Method}}(baseURL + "{{.Path | swaggerUriToEchoUri}}", wrapper.{{.OperationId}}, m...)
 {{end}}
 }
 `,

@@ -1157,26 +1157,26 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler) {
-	RegisterHandlersWithBaseURL(router, si, sh, "")
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler, m ...echo.MiddlewareFunc) {
+	RegisterHandlersWithBaseURL(router, si, "", sh, m...)
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, sh SecurityHandler, baseURL string) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, sh SecurityHandler, m ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
 		Handler:         si,
 		securityHandler: sh,
 	}
 
-	router.POST(baseURL+"/with_both_bodies", wrapper.PostBoth)
-	router.GET(baseURL+"/with_both_responses", wrapper.GetBoth)
-	router.POST(baseURL+"/with_json_body", wrapper.PostJson)
-	router.GET(baseURL+"/with_json_response", wrapper.GetJson)
-	router.POST(baseURL+"/with_other_body", wrapper.PostOther)
-	router.GET(baseURL+"/with_other_response", wrapper.GetOther)
-	router.GET(baseURL+"/with_trailing_slash/", wrapper.GetJsonWithTrailingSlash)
+	router.POST(baseURL+"/with_both_bodies", wrapper.PostBoth, m...)
+	router.GET(baseURL+"/with_both_responses", wrapper.GetBoth, m...)
+	router.POST(baseURL+"/with_json_body", wrapper.PostJson, m...)
+	router.GET(baseURL+"/with_json_response", wrapper.GetJson, m...)
+	router.POST(baseURL+"/with_other_body", wrapper.PostOther, m...)
+	router.GET(baseURL+"/with_other_response", wrapper.GetOther, m...)
+	router.GET(baseURL+"/with_trailing_slash/", wrapper.GetJsonWithTrailingSlash, m...)
 
 }
 
