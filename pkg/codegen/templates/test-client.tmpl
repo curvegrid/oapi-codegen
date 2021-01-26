@@ -1,3 +1,11 @@
+// APIErrorCode represents an API error code and its corresponding HTTP error code
+type APIErrorCode interface {
+    // HTTPStatus returns the HTTP status code
+	HTTPStatus() int
+    // AppCode returns the application error code
+	AppCode() string
+}
+
 // TestClient is a client that is used mainly for testing.
 type TestClient struct {
     // The generated client.
@@ -55,7 +63,7 @@ func (c *{{$op.OperationId}}TestResponse) OK() {
 {{- end }}
 {{- range .GetResponseIndependentTypeDefinitions }}
 {{ $respType := .TypeName }}
-{{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
+{{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") }}
 // Respond{{.ResponseName}} asserts a response with the given code in range and the defined JSON type.
 func (c *{{$op.OperationId}}TestResponse) Respond{{.ResponseName}}(code int) {{$respType}} {
     if c.StatusCode != code {
@@ -63,6 +71,21 @@ func (c *{{$op.OperationId}}TestResponse) Respond{{.ResponseName}}(code int) {{$
     }
     var resp {{$respType}}
     c.tc.parseJSONResponse(c.t, c.Response, &resp)
+    return resp
+}
+{{- else if or (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
+// Error{{.ResponseName}} asserts an error response with the given API error code
+func (c *{{$op.OperationId}}TestResponse) Error{{.ResponseName}}(code APIErrorCode) {{$respType}} {
+    if c.StatusCode != code.HTTPStatus() {
+        c.t.Fatalf("Expected status code %d, got %d", code.HTTPStatus(), code)
+    }
+    var resp {{$respType}}
+    c.tc.parseJSONResponse(c.t, c.Response, &resp)
+
+    if resp.Code != code.AppCode() {
+        c.t.Fatalf("Expected error code %s, got %s", code.AppCode(), resp.Code)
+    }
+
     return resp
 }
 {{- else if (ne .ResponseName "default") }}
