@@ -2,6 +2,8 @@ package codegen
 
 import (
 	"fmt"
+	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -13,14 +15,44 @@ type Schema struct {
 	GoType  string // The Go type needed to represent the schema
 	RefType string // If the type has a type name, this is set
 
+	IsExternal  bool // Whether it was defined externally, i.e. "x-go-type"
+	Validations Validations
+
 	EnumValues map[string]string // Enum values
 
+	ItemType *Schema // For an array, the item's schema.
+
+	EmbeddedFields           []string         // For an allOf struct
 	Properties               []Property       // For an object, the fields with names
 	HasAdditionalProperties  bool             // Whether we support additional properties
 	AdditionalPropertiesType *Schema          // And if we do, their type
 	AdditionalTypes          []TypeDefinition // We may need to generate auxiliary helper types, stored here
 
 	SkipOptionalPointer bool // Some types don't need a * in front when they're optional
+}
+
+// Validations describes validations for a schema.
+type Validations struct {
+	// String
+	MinLength uint64
+	MaxLength *uint64
+	Pattern   string
+	Values    []string
+
+	// Number
+	Min          *float64
+	ExclusiveMin bool
+	Max          *float64
+	ExclusiveMax bool
+	MultipleOf   *float64
+
+	// Array
+	MinItems uint64
+	MaxItems *uint64
+
+	// Additional Properties
+	MinProps uint64
+	MaxProps *uint64
 }
 
 func (s Schema) IsRef() bool {
@@ -112,6 +144,20 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 		}, nil
 	}
 
+	outSchema := Schema{
+		RefType: refType,
+	}
+	// Check for custom Go type extension
+	if extension, ok := schema.Extensions[extPropGoType]; ok {
+		typeName, err := extTypeName(extension)
+		if err != nil {
+			return outSchema, errors.Wrapf(err, "invalid value for %q", extPropGoType)
+		}
+		outSchema.GoType = typeName
+		outSchema.IsExternal = true
+		return outSchema, nil
+	}
+
 	// We can't support this in any meaningful way
 	if schema.AnyOf != nil {
 		return Schema{GoType: "interface{}", RefType: refType}, nil
@@ -132,20 +178,6 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 		}
 		mergedSchema.RefType = refType
 		return mergedSchema, nil
-	}
-
-	outSchema := Schema{
-		RefType: refType,
-	}
-
-	// Check for custom Go type extension
-	if extension, ok := schema.Extensions[extPropGoType]; ok {
-		typeName, err := extTypeName(extension)
-		if err != nil {
-			return outSchema, errors.Wrapf(err, "invalid value for %q", extPropGoType)
-		}
-		outSchema.GoType = typeName
-		return outSchema, nil
 	}
 
 	// Schema type and format, eg. string / binary
@@ -219,6 +251,9 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 					return Schema{}, errors.Wrap(err, "error generating type for additional properties")
 				}
 				outSchema.AdditionalPropertiesType = &additionalSchema
+				// Validation rules:
+				outSchema.Validations.MinProps = schema.MinProps
+				outSchema.Validations.MaxProps = schema.MaxProps
 			}
 
 			outSchema.GoType = GenStructFromSchema(outSchema)
@@ -237,6 +272,9 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			}
 			outSchema.GoType = "[]" + arrayType.TypeDecl()
 			outSchema.Properties = arrayType.Properties
+			outSchema.Validations.MinItems = schema.MinItems
+			outSchema.Validations.MaxItems = schema.MaxItems
+			outSchema.ItemType = &arrayType
 		case "integer":
 			// We default to int if format doesn't ask for something else.
 			if f == "int64" {
@@ -252,6 +290,11 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			} else {
 				return Schema{}, fmt.Errorf("invalid integer format: %s", f)
 			}
+			outSchema.Validations.Min = schema.Min
+			outSchema.Validations.ExclusiveMin = schema.ExclusiveMin
+			outSchema.Validations.Max = schema.Max
+			outSchema.Validations.ExclusiveMax = schema.ExclusiveMax
+			outSchema.Validations.MultipleOf = schema.MultipleOf
 		case "number":
 			// We default to float for "number"
 			if f == "double" {
@@ -261,6 +304,8 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			} else {
 				return Schema{}, fmt.Errorf("invalid number format: %s", f)
 			}
+			outSchema.Validations.Min = schema.Min
+			outSchema.Validations.Max = schema.Max
 		case "boolean":
 			if f != "" {
 				return Schema{}, fmt.Errorf("invalid format (%s) for boolean", f)
@@ -275,8 +320,14 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 					return Schema{}, fmt.Errorf("expected enum to contain strings, found a %T", enumValue)
 				}
 			}
-
 			outSchema.EnumValues = SanitizeEnumNames(enumValues)
+			if len(outSchema.EnumValues) > 0 {
+				outSchema.Validations.Values = make([]string, 0, len(outSchema.EnumValues))
+				for _, value := range outSchema.EnumValues {
+					outSchema.Validations.Values = append(outSchema.Validations.Values, value)
+				}
+				sort.Sort(sort.StringSlice(outSchema.Validations.Values))
+			}
 
 			// Special case string formats here.
 			switch f {
@@ -294,6 +345,14 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			default:
 				// All unrecognized formats are simply a regular string.
 				outSchema.GoType = "string"
+				outSchema.Validations.MinLength = schema.MinLength
+				outSchema.Validations.MaxLength = schema.MaxLength
+				if schema.Pattern != "" {
+					// Try to compile it first
+					if _, err := regexp.Compile(schema.Pattern); err == nil {
+						outSchema.Validations.Pattern = schema.Pattern
+					}
+				}
 			}
 		default:
 			return Schema{}, fmt.Errorf("unhandled Schema type: %s", t)
@@ -372,6 +431,7 @@ func MergeSchemas(allOf []*openapi3.SchemaRef, path []string) (Schema, error) {
 			if err != nil {
 				return Schema{}, errors.Wrap(err, "error converting reference path to a go type")
 			}
+			outSchema.EmbeddedFields = append(outSchema.EmbeddedFields, refType)
 		}
 
 		schema, err := GenerateGoSchema(schemaOrRef, path)
