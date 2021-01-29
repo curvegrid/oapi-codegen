@@ -42,7 +42,7 @@ func TestExamplePetStoreCodeGeneration(t *testing.T) {
 	assert.Contains(t, code, "package api")
 
 	// Check that the client method signatures return response structs:
-	assert.Contains(t, code, "func (c *Client) FindPetById(ctx context.Context, id int64) (*http.Response, error) {")
+	assert.Contains(t, code, "func (c *Client) FindPetById(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {")
 
 	// Check that the property comments were generated
 	assert.Contains(t, code, "// Unique id of the pet")
@@ -146,11 +146,11 @@ func TestExampleOpenAPICodeGeneration(t *testing.T) {
 type GetTestByNameResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]Test
-	XML200       *[]Test
-	JSON422      *[]interface{}
-	XML422       *[]interface{}
-	JSONDefault  *Error
+	JSON200      *GetTestByNameResponseJSON200
+	XML200       *GetTestByNameResponseXML200
+	JSON422      *GetTestByNameResponseJSON422
+	XML422       *GetTestByNameResponseXML422
+	JSONDefault  *GetTestByNameResponseJSONDefault
 }`)
 
 	// Check that the helper methods are generated correctly:
@@ -161,7 +161,7 @@ type GetTestByNameResponse struct {
 	// Check the client method signatures:
 	assert.Contains(t, code, "type GetTestByNameParams struct {")
 	assert.Contains(t, code, "Top *int `json:\"$top,omitempty\"`")
-	assert.Contains(t, code, "func (c *Client) GetTestByName(ctx context.Context, name string, params *GetTestByNameParams) (*http.Response, error) {")
+	assert.Contains(t, code, "func (c *Client) GetTestByName(ctx context.Context, name string, params *GetTestByNameParams, reqEditors ...RequestEditorFn) (*http.Response, error) {")
 	assert.Contains(t, code, "func (c *ClientWithResponses) GetTestByNameWithResponse(ctx context.Context, name string, params *GetTestByNameParams) (*GetTestByNameResponse, error) {")
 
 	// Make sure the generated code is valid:

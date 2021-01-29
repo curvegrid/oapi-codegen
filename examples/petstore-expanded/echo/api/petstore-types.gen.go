@@ -61,7 +61,7 @@ func (s NewPet) Validate() error {
 // Pet defines model for Pet.
 type Pet struct {
 	// Embedded struct due to allOf(#/components/schemas/NewPet)
-	NewPet
+	NewPet `yaml:",inline"`
 	// Embedded fields due to inline allOf schema
 
 	// Unique id of the pet
@@ -175,5 +175,5 @@ type FindPetByIdResponseOK = Pet
 // FindPetByIdResponseDefault defines parameters for FindPetById.
 type FindPetByIdResponseDefault = Error
 
-// AddPetRequestBody defines body for AddPet for application/json ContentType.
+// AddPetJSONRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody

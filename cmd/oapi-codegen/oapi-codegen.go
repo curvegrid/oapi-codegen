@@ -43,6 +43,7 @@ var (
 	flagImportMapping  string
 	flagExcludeSchemas string
 	flagConfigFile     string
+	flagAliasTypes     bool
 )
 
 type configuration struct {
@@ -67,6 +68,7 @@ func main() {
 	flag.StringVar(&flagImportMapping, "import-mapping", "", "A dict from the external reference to golang package path")
 	flag.StringVar(&flagExcludeSchemas, "exclude-schemas", "", "A comma separated list of schemas which must be excluded from generation")
 	flag.StringVar(&flagConfigFile, "config", "", "a YAML config file that controls oapi-codegen behavior")
+	flag.BoolVar(&flagAliasTypes, "alias-types", false, "Alias type declarations of possible")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -86,7 +88,9 @@ func main() {
 		cfg.PackageName = codegen.ToCamelCase(nameParts[0])
 	}
 
-	opts := codegen.Options{}
+	opts := codegen.Options{
+		AliasTypes: flagAliasTypes,
+	}
 	for _, g := range cfg.GenerateTargets {
 		switch g {
 		case "client":

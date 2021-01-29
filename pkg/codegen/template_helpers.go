@@ -157,7 +157,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 					" return nil, err \n"+
 					"}\n"+
 					"response.%s = &dest",
-					typeDefinition.Schema.TypeDecl(),
+					op.OperationId+"Response"+typeDefinition.TypeName,
 					typeDefinition.TypeName)
 
 				caseKey, caseClause := buildUnmarshalCase(typeDefinition, caseAction, "json")
@@ -171,7 +171,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 					" return nil, err \n"+
 					"}\n"+
 					"response.%s = &dest",
-					typeDefinition.Schema.TypeDecl(),
+					op.OperationId+"Response"+typeDefinition.TypeName,
 					typeDefinition.TypeName)
 				caseKey, caseClause := buildUnmarshalCase(typeDefinition, caseAction, "yaml")
 				handledCaseClauses[caseKey] = caseClause
@@ -184,7 +184,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 					" return nil, err \n"+
 					"}\n"+
 					"response.%s = &dest",
-					typeDefinition.Schema.TypeDecl(),
+					op.OperationId+"Response"+typeDefinition.TypeName,
 					typeDefinition.TypeName)
 				caseKey, caseClause := buildUnmarshalCase(typeDefinition, caseAction, "xml")
 				handledCaseClauses[caseKey] = caseClause

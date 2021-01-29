@@ -18,6 +18,8 @@ type Schema struct {
 	IsExternal  bool // Whether it was defined externally, i.e. "x-go-type"
 	Validations Validations
 
+	ArrayType *Schema // The schema of array element
+
 	EnumValues map[string]string // Enum values
 
 	ItemType *Schema // For an array, the item's schema.
@@ -112,6 +114,11 @@ type TypeDefinition struct {
 	ResponseName string
 	Schema       Schema
 	IsAlias      bool
+}
+
+func (t *TypeDefinition) CanAlias() bool {
+	return t.Schema.IsRef() || /* actual reference */
+		(t.Schema.ArrayType != nil && t.Schema.ArrayType.IsRef()) /* array to ref */
 }
 
 func PropertiesEqual(a, b Property) bool {
@@ -271,6 +278,7 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			if err != nil {
 				return Schema{}, errors.Wrap(err, "error generating type for array")
 			}
+			outSchema.ArrayType = &arrayType
 			outSchema.GoType = "[]" + arrayType.TypeDecl()
 			outSchema.Properties = arrayType.Properties
 			outSchema.Validations.MinItems = schema.MinItems
@@ -314,8 +322,12 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			outSchema.GoType = "bool"
 		case "string":
 			enumValues := make([]string, len(schema.Enum))
+			var ok bool
 			for i, enumValue := range schema.Enum {
-				enumValues[i] = enumValue.(string)
+				enumValues[i], ok = enumValue.(string)
+				if !ok {
+					return Schema{}, fmt.Errorf("expected enum to contain strings, found a %T", enumValue)
+				}
 			}
 			outSchema.EnumValues = SanitizeEnumNames(enumValues)
 			if len(outSchema.EnumValues) > 0 {
@@ -491,7 +503,7 @@ func GenStructFromAllOf(allOf []*openapi3.SchemaRef, path []string) (string, err
 			objectParts = append(objectParts,
 				fmt.Sprintf("   // Embedded struct due to allOf(%s)", ref))
 			objectParts = append(objectParts,
-				fmt.Sprintf("   %s", goType))
+				fmt.Sprintf("   %s `yaml:\",inline\"`", goType))
 		} else {
 			// Inline all the fields from the schema into the output struct,
 			// just like in the simple case of generating an object.
