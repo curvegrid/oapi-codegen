@@ -1,6 +1,36 @@
 {{range .}}{{$opid := .OperationId}}
 {{range .TypeDefinitions}}
 // {{.TypeName}} defines parameters for {{$opid}}.
-type {{.TypeName}} {{if and (opts.AliasTypes) (.CanAlias)}}={{end}} {{.Schema.TypeDecl}}
+type {{.TypeName}} {{ if .IsAlias }}={{ end }} {{.Schema.TypeDecl}}
+
+{{ if not .Schema.RefType }}
+// Validate perform validation on the {{.TypeName}}
+func (s {{.TypeName}}) Validate() error {
+    {{- $v := .Schema.Validations -}}
+    {{ if eq (len .Schema.Properties) 0 }}
+    // Run validate on a scalar
+    return validation.Validate(
+        ({{.Schema.GoType}})(s),
+        {{- template "validateRules" .Schema -}}
+    )
+    {{ else }}
+    // Run validate on a struct
+    return validation.ValidateStruct(
+        &s,
+        {{- range .Schema.EmbeddedFields }}validation.Field(&s.{{.}}),{{ end }}
+        {{- range .Schema.Properties }}
+        validation.Field(
+            &s.{{.GoFieldName}},
+            {{ if and .Required (not .Nullable) }}validation.Required,{{ end }}
+            {{- template "validateRules" .Schema -}}
+        ),
+        {{- end }}
+        {{- if .Schema.HasAdditionalProperties }}
+        validation.Field(&s.AdditionalProperties, {{ template "validateRules" .Schema.AdditionalPropertiesType }}),
+        {{ end }}
+    )
+    {{ end }}
+}
+{{ end }}
 {{end}}
 {{end}}

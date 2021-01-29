@@ -17,7 +17,9 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // SchemaObject defines model for SchemaObject.
@@ -26,11 +28,46 @@ type SchemaObject struct {
 	Role      string `json:"role"`
 }
 
+// Validate perform validation on the SchemaObject
+func (s SchemaObject) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.FirstName,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Role,
+			validation.Required,
+		),
+	)
+
+}
+
 // PostBothJSONBody defines parameters for PostBoth.
 type PostBothJSONBody SchemaObject
 
+// Validate perform validation on the PostBothJSONBody
+func (s PostBothJSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(SchemaObject)(s),
+	)
+
+}
+
 // PostJsonJSONBody defines parameters for PostJson.
 type PostJsonJSONBody SchemaObject
+
+// Validate perform validation on the PostJsonJSONBody
+func (s PostJsonJSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(SchemaObject)(s),
+	)
+
+}
 
 // PostBothJSONRequestBody defines body for PostBoth for application/json ContentType.
 type PostBothJSONRequestBody PostBothJSONBody
@@ -883,38 +920,133 @@ func ParseGetJsonWithTrailingSlashResponse(rsp *http.Response) (*GetJsonWithTrai
 type ServerInterface interface {
 
 	// (POST /with_both_bodies)
-	PostBoth(ctx echo.Context) error
+	PostBoth(ctx *PostBothContext) error
 
 	// (GET /with_both_responses)
-	GetBoth(ctx echo.Context) error
+	GetBoth(ctx *GetBothContext) error
 
 	// (POST /with_json_body)
-	PostJson(ctx echo.Context) error
+	PostJson(ctx *PostJsonContext) error
 
 	// (GET /with_json_response)
-	GetJson(ctx echo.Context) error
+	GetJson(ctx *GetJsonContext) error
 
 	// (POST /with_other_body)
-	PostOther(ctx echo.Context) error
+	PostOther(ctx *PostOtherContext) error
 
 	// (GET /with_other_response)
-	GetOther(ctx echo.Context) error
+	GetOther(ctx *GetOtherContext) error
 
 	// (GET /with_trailing_slash/)
-	GetJsonWithTrailingSlash(ctx echo.Context) error
+	GetJsonWithTrailingSlash(ctx *GetJsonWithTrailingSlashContext) error
+}
+
+// PostBothContext is a context customized for PostBoth (POST /with_both_bodies).
+type PostBothContext struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *PostBothContext) ParseJSONBody() (PostBothJSONBody, error) {
+	var resp PostBothJSONBody
+	if err := c.Bind(&resp); err != nil {
+		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+	}
+	if err := resp.Validate(); err != nil {
+		return resp, ValidationError{ParamType: "body", Err: err}
+	}
+	return resp, nil
+}
+
+// GetBothContext is a context customized for GetBoth (GET /with_both_responses).
+type GetBothContext struct {
+	echo.Context
+}
+
+// PostJsonContext is a context customized for PostJson (POST /with_json_body).
+type PostJsonContext struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *PostJsonContext) ParseJSONBody() (PostJsonJSONBody, error) {
+	var resp PostJsonJSONBody
+	if err := c.Bind(&resp); err != nil {
+		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+	}
+	if err := resp.Validate(); err != nil {
+		return resp, ValidationError{ParamType: "body", Err: err}
+	}
+	return resp, nil
+}
+
+// GetJsonContext is a context customized for GetJson (GET /with_json_response).
+type GetJsonContext struct {
+	echo.Context
+}
+
+// PostOtherContext is a context customized for PostOther (POST /with_other_body).
+type PostOtherContext struct {
+	echo.Context
+}
+
+// The body parsers
+
+// GetOtherContext is a context customized for GetOther (GET /with_other_response).
+type GetOtherContext struct {
+	echo.Context
+}
+
+// GetJsonWithTrailingSlashContext is a context customized for GetJsonWithTrailingSlash (GET /with_trailing_slash/).
+type GetJsonWithTrailingSlashContext struct {
+	echo.Context
+}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
+	Err       error
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	securityHandler SecurityHandler
 }
+
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
 
 // PostBoth converts echo context to params.
 func (w *ServerInterfaceWrapper) PostBoth(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostBoth(ctx)
+	err = w.Handler.PostBoth(&PostBothContext{ctx})
 	return err
 }
 
@@ -923,7 +1055,7 @@ func (w *ServerInterfaceWrapper) GetBoth(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetBoth(ctx)
+	err = w.Handler.GetBoth(&GetBothContext{ctx})
 	return err
 }
 
@@ -932,7 +1064,7 @@ func (w *ServerInterfaceWrapper) PostJson(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostJson(ctx)
+	err = w.Handler.PostJson(&PostJsonContext{ctx})
 	return err
 }
 
@@ -940,10 +1072,16 @@ func (w *ServerInterfaceWrapper) PostJson(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetJson(ctx echo.Context) error {
 	var err error
 
-	ctx.Set("OpenId.Scopes", []string{"json.read", "json.admin"})
+	securityReq := SecurityReq{
+		"OpenId": []string{"json.read", "json.admin"},
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetJson(ctx)
+	err = w.Handler.GetJson(&GetJsonContext{ctx})
 	return err
 }
 
@@ -952,7 +1090,7 @@ func (w *ServerInterfaceWrapper) PostOther(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostOther(ctx)
+	err = w.Handler.PostOther(&PostOtherContext{ctx})
 	return err
 }
 
@@ -961,7 +1099,7 @@ func (w *ServerInterfaceWrapper) GetOther(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetOther(ctx)
+	err = w.Handler.GetOther(&GetOtherContext{ctx})
 	return err
 }
 
@@ -969,10 +1107,16 @@ func (w *ServerInterfaceWrapper) GetOther(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetJsonWithTrailingSlash(ctx echo.Context) error {
 	var err error
 
-	ctx.Set("OpenId.Scopes", []string{"json.read", "json.admin"})
+	securityReq := SecurityReq{
+		"OpenId": []string{"json.read", "json.admin"},
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetJsonWithTrailingSlash(ctx)
+	err = w.Handler.GetJsonWithTrailingSlash(&GetJsonWithTrailingSlashContext{ctx})
 	return err
 }
 
@@ -992,25 +1136,26 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler, m ...echo.MiddlewareFunc) {
+	RegisterHandlersWithBaseURL(router, si, "", sh, m...)
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, sh SecurityHandler, m ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.POST(baseURL+"/with_both_bodies", wrapper.PostBoth)
-	router.GET(baseURL+"/with_both_responses", wrapper.GetBoth)
-	router.POST(baseURL+"/with_json_body", wrapper.PostJson)
-	router.GET(baseURL+"/with_json_response", wrapper.GetJson)
-	router.POST(baseURL+"/with_other_body", wrapper.PostOther)
-	router.GET(baseURL+"/with_other_response", wrapper.GetOther)
-	router.GET(baseURL+"/with_trailing_slash/", wrapper.GetJsonWithTrailingSlash)
+	router.POST(baseURL+"/with_both_bodies", wrapper.PostBoth, m...)
+	router.GET(baseURL+"/with_both_responses", wrapper.GetBoth, m...)
+	router.POST(baseURL+"/with_json_body", wrapper.PostJson, m...)
+	router.GET(baseURL+"/with_json_response", wrapper.GetJson, m...)
+	router.POST(baseURL+"/with_other_body", wrapper.PostOther, m...)
+	router.GET(baseURL+"/with_other_response", wrapper.GetOther, m...)
+	router.GET(baseURL+"/with_trailing_slash/", wrapper.GetJsonWithTrailingSlash, m...)
 
 }
 

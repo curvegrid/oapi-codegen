@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
@@ -23,9 +24,31 @@ import (
 // ArrayValue defines model for ArrayValue.
 type ArrayValue []Value
 
+// Validate perform validation on the ArrayValue
+func (s ArrayValue) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]Value)(s),
+		validation.Each(),
+	)
+
+}
+
 // Document defines model for Document.
 type Document struct {
 	Fields *Document_Fields `json:"fields,omitempty"`
+}
+
+// Validate perform validation on the Document
+func (s Document) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Fields,
+		),
+	)
+
 }
 
 // Document_Fields defines model for Document.Fields.
@@ -33,11 +56,40 @@ type Document_Fields struct {
 	AdditionalProperties map[string]Value `json:"-"`
 }
 
+// Validate perform validation on the Document_Fields
+func (s Document_Fields) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(struct {
+			AdditionalProperties map[string]Value `json:"-"`
+		})(s),
+	)
+
+}
+
 // Value defines model for Value.
 type Value struct {
 	ArrayValue  *ArrayValue `json:"arrayValue,omitempty"`
 	StringValue *string     `json:"stringValue,omitempty"`
 }
+
+// Validate perform validation on the Value
+func (s Value) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.ArrayValue,
+		),
+		validation.Field(
+			&s.StringValue,
+		),
+	)
+
+}
+
+// ExampleGetResponseOK defines parameters for ExampleGet.
+type ExampleGetResponseOK = Document
 
 // Getter for additional properties for Document_Fields. Returns the specified
 // element and whether it was found
@@ -318,20 +370,64 @@ func ParseExampleGetResponse(rsp *http.Response) (*ExampleGetResponse, error) {
 type ServerInterface interface {
 
 	// (GET /example)
-	ExampleGet(ctx echo.Context) error
+	ExampleGet(ctx *ExampleGetContext) error
+}
+
+// ExampleGetContext is a context customized for ExampleGet (GET /example).
+type ExampleGetContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *ExampleGetContext) OK(resp ExampleGetResponseOK) error {
+	return c.JSON(200, resp)
+}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
+	Err       error
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	securityHandler SecurityHandler
 }
+
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
 
 // ExampleGet converts echo context to params.
 func (w *ServerInterfaceWrapper) ExampleGet(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.ExampleGet(ctx)
+	err = w.Handler.ExampleGet(&ExampleGetContext{ctx})
 	return err
 }
 
@@ -351,19 +447,20 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler, m ...echo.MiddlewareFunc) {
+	RegisterHandlersWithBaseURL(router, si, "", sh, m...)
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, sh SecurityHandler, m ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.GET(baseURL+"/example", wrapper.ExampleGet)
+	router.GET(baseURL+"/example", wrapper.ExampleGet, m...)
 
 }
 

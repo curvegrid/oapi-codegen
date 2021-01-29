@@ -17,7 +17,9 @@ import (
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // ComplexObject defines model for ComplexObject.
@@ -27,10 +29,60 @@ type ComplexObject struct {
 	Object  Object `json:"Object"`
 }
 
+// Validate perform validation on the ComplexObject
+func (s ComplexObject) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Id,
+			validation.Required,
+		),
+		validation.Field(
+			&s.IsAdmin,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Object,
+			validation.Required,
+		),
+	)
+
+}
+
 // Object defines model for Object.
 type Object struct {
 	FirstName string `json:"firstName"`
 	Role      string `json:"role"`
+}
+
+// Validate perform validation on the Object
+func (s Object) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.FirstName,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Role,
+			validation.Required,
+		),
+	)
+
+}
+
+// GetContentObjectPathParam defines parameters for GetContentObject.
+type GetContentObjectPathParam ComplexObject
+
+// Validate perform validation on the GetContentObjectPathParam
+func (s GetContentObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(ComplexObject)(s),
+	)
+
 }
 
 // GetCookieParams defines parameters for GetCookie.
@@ -58,6 +110,40 @@ type GetCookieParams struct {
 	Co *ComplexObject `json:"co,omitempty"`
 }
 
+// Validate perform validation on the GetCookieParams
+func (s GetCookieParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.P,
+		),
+		validation.Field(
+			&s.Ep,
+		),
+		validation.Field(
+			&s.Ea,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.A,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.Eo,
+		),
+		validation.Field(
+			&s.O,
+		),
+		validation.Field(
+			&s.Co,
+		),
+	)
+
+}
+
 // GetHeaderParams defines parameters for GetHeader.
 type GetHeaderParams struct {
 
@@ -83,11 +169,170 @@ type GetHeaderParams struct {
 	XComplexObject *ComplexObject `json:"X-Complex-Object,omitempty"`
 }
 
+// Validate perform validation on the GetHeaderParams
+func (s GetHeaderParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.XPrimitive,
+		),
+		validation.Field(
+			&s.XPrimitiveExploded,
+		),
+		validation.Field(
+			&s.XArrayExploded,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.XArray,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.XObjectExploded,
+		),
+		validation.Field(
+			&s.XObject,
+		),
+		validation.Field(
+			&s.XComplexObject,
+		),
+	)
+
+}
+
+// GetLabelExplodeArrayPathParam defines parameters for GetLabelExplodeArray.
+type GetLabelExplodeArrayPathParam []int32
+
+// Validate perform validation on the GetLabelExplodeArrayPathParam
+func (s GetLabelExplodeArrayPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetLabelExplodeObjectPathParam defines parameters for GetLabelExplodeObject.
+type GetLabelExplodeObjectPathParam Object
+
+// Validate perform validation on the GetLabelExplodeObjectPathParam
+func (s GetLabelExplodeObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetLabelNoExplodeArrayPathParam defines parameters for GetLabelNoExplodeArray.
+type GetLabelNoExplodeArrayPathParam []int32
+
+// Validate perform validation on the GetLabelNoExplodeArrayPathParam
+func (s GetLabelNoExplodeArrayPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetLabelNoExplodeObjectPathParam defines parameters for GetLabelNoExplodeObject.
+type GetLabelNoExplodeObjectPathParam Object
+
+// Validate perform validation on the GetLabelNoExplodeObjectPathParam
+func (s GetLabelNoExplodeObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetMatrixExplodeArrayPathId defines parameters for GetMatrixExplodeArray.
+type GetMatrixExplodeArrayPathId []int32
+
+// Validate perform validation on the GetMatrixExplodeArrayPathId
+func (s GetMatrixExplodeArrayPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetMatrixExplodeObjectPathId defines parameters for GetMatrixExplodeObject.
+type GetMatrixExplodeObjectPathId Object
+
+// Validate perform validation on the GetMatrixExplodeObjectPathId
+func (s GetMatrixExplodeObjectPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetMatrixNoExplodeArrayPathId defines parameters for GetMatrixNoExplodeArray.
+type GetMatrixNoExplodeArrayPathId []int32
+
+// Validate perform validation on the GetMatrixNoExplodeArrayPathId
+func (s GetMatrixNoExplodeArrayPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetMatrixNoExplodeObjectPathId defines parameters for GetMatrixNoExplodeObject.
+type GetMatrixNoExplodeObjectPathId Object
+
+// Validate perform validation on the GetMatrixNoExplodeObjectPathId
+func (s GetMatrixNoExplodeObjectPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetPassThroughPathParam defines parameters for GetPassThrough.
+type GetPassThroughPathParam string
+
+// Validate perform validation on the GetPassThroughPathParam
+func (s GetPassThroughPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+	)
+
+}
+
 // GetDeepObjectParams defines parameters for GetDeepObject.
 type GetDeepObjectParams struct {
 
 	// deep object
 	DeepObj ComplexObject `json:"deepObj"`
+}
+
+// Validate perform validation on the GetDeepObjectParams
+func (s GetDeepObjectParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.DeepObj,
+			validation.Required,
+		),
+	)
+
 }
 
 // GetQueryFormParams defines parameters for GetQueryForm.
@@ -113,6 +358,102 @@ type GetQueryFormParams struct {
 
 	// complex object
 	Co *ComplexObject `json:"co,omitempty"`
+}
+
+// Validate perform validation on the GetQueryFormParams
+func (s GetQueryFormParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Ea,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.A,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.Eo,
+		),
+		validation.Field(
+			&s.O,
+		),
+		validation.Field(
+			&s.Ep,
+		),
+		validation.Field(
+			&s.P,
+		),
+		validation.Field(
+			&s.Co,
+		),
+	)
+
+}
+
+// GetSimpleExplodeArrayPathParam defines parameters for GetSimpleExplodeArray.
+type GetSimpleExplodeArrayPathParam []int32
+
+// Validate perform validation on the GetSimpleExplodeArrayPathParam
+func (s GetSimpleExplodeArrayPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetSimpleExplodeObjectPathParam defines parameters for GetSimpleExplodeObject.
+type GetSimpleExplodeObjectPathParam Object
+
+// Validate perform validation on the GetSimpleExplodeObjectPathParam
+func (s GetSimpleExplodeObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetSimpleNoExplodeArrayPathParam defines parameters for GetSimpleNoExplodeArray.
+type GetSimpleNoExplodeArrayPathParam []int32
+
+// Validate perform validation on the GetSimpleNoExplodeArrayPathParam
+func (s GetSimpleNoExplodeArrayPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]int32)(s),
+		validation.Each(),
+	)
+
+}
+
+// GetSimpleNoExplodeObjectPathParam defines parameters for GetSimpleNoExplodeObject.
+type GetSimpleNoExplodeObjectPathParam Object
+
+// Validate perform validation on the GetSimpleNoExplodeObjectPathParam
+func (s GetSimpleNoExplodeObjectPathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Object)(s),
+	)
+
+}
+
+// GetSimplePrimitivePathParam defines parameters for GetSimplePrimitive.
+type GetSimplePrimitivePathParam int32
+
+// Validate perform validation on the GetSimplePrimitivePathParam
+func (s GetSimplePrimitivePathParam) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int32)(s),
+	)
+
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -189,7 +530,7 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 	// GetContentObject request
-	GetContentObject(ctx context.Context, param ComplexObject, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetContentObject(ctx context.Context, param GetContentObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCookie request
 	GetCookie(ctx context.Context, params *GetCookieParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -198,31 +539,31 @@ type ClientInterface interface {
 	GetHeader(ctx context.Context, params *GetHeaderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetLabelExplodeArray request
-	GetLabelExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetLabelExplodeArray(ctx context.Context, param GetLabelExplodeArrayPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetLabelExplodeObject request
-	GetLabelExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetLabelExplodeObject(ctx context.Context, param GetLabelExplodeObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetLabelNoExplodeArray request
-	GetLabelNoExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetLabelNoExplodeArray(ctx context.Context, param GetLabelNoExplodeArrayPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetLabelNoExplodeObject request
-	GetLabelNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetLabelNoExplodeObject(ctx context.Context, param GetLabelNoExplodeObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixExplodeArray request
-	GetMatrixExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixExplodeArray(ctx context.Context, id GetMatrixExplodeArrayPathId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixExplodeObject request
-	GetMatrixExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixExplodeObject(ctx context.Context, id GetMatrixExplodeObjectPathId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixNoExplodeArray(ctx context.Context, id GetMatrixNoExplodeArrayPathId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixNoExplodeObject(ctx context.Context, id GetMatrixNoExplodeObjectPathId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPassThrough request
-	GetPassThrough(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetPassThrough(ctx context.Context, param GetPassThroughPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetDeepObject request
 	GetDeepObject(ctx context.Context, params *GetDeepObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -231,22 +572,22 @@ type ClientInterface interface {
 	GetQueryForm(ctx context.Context, params *GetQueryFormParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSimpleExplodeArray request
-	GetSimpleExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetSimpleExplodeArray(ctx context.Context, param GetSimpleExplodeArrayPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSimpleExplodeObject request
-	GetSimpleExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetSimpleExplodeObject(ctx context.Context, param GetSimpleExplodeObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSimpleNoExplodeArray request
-	GetSimpleNoExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetSimpleNoExplodeArray(ctx context.Context, param GetSimpleNoExplodeArrayPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSimpleNoExplodeObject request
-	GetSimpleNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetSimpleNoExplodeObject(ctx context.Context, param GetSimpleNoExplodeObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSimplePrimitive request
-	GetSimplePrimitive(ctx context.Context, param int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetSimplePrimitive(ctx context.Context, param GetSimplePrimitivePathParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) GetContentObject(ctx context.Context, param ComplexObject, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetContentObject(ctx context.Context, param GetContentObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetContentObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -279,7 +620,7 @@ func (c *Client) GetHeader(ctx context.Context, params *GetHeaderParams, reqEdit
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLabelExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetLabelExplodeArray(ctx context.Context, param GetLabelExplodeArrayPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetLabelExplodeArrayRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -290,7 +631,7 @@ func (c *Client) GetLabelExplodeArray(ctx context.Context, param []int32, reqEdi
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLabelExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetLabelExplodeObject(ctx context.Context, param GetLabelExplodeObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetLabelExplodeObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -301,7 +642,7 @@ func (c *Client) GetLabelExplodeObject(ctx context.Context, param Object, reqEdi
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLabelNoExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetLabelNoExplodeArray(ctx context.Context, param GetLabelNoExplodeArrayPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetLabelNoExplodeArrayRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -312,7 +653,7 @@ func (c *Client) GetLabelNoExplodeArray(ctx context.Context, param []int32, reqE
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLabelNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetLabelNoExplodeObject(ctx context.Context, param GetLabelNoExplodeObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetLabelNoExplodeObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -323,7 +664,7 @@ func (c *Client) GetLabelNoExplodeObject(ctx context.Context, param Object, reqE
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetMatrixExplodeArray(ctx context.Context, id GetMatrixExplodeArrayPathId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetMatrixExplodeArrayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -334,7 +675,7 @@ func (c *Client) GetMatrixExplodeArray(ctx context.Context, id []int32, reqEdito
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetMatrixExplodeObject(ctx context.Context, id GetMatrixExplodeObjectPathId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetMatrixExplodeObjectRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -345,7 +686,7 @@ func (c *Client) GetMatrixExplodeObject(ctx context.Context, id Object, reqEdito
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, id GetMatrixNoExplodeArrayPathId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetMatrixNoExplodeArrayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -356,7 +697,7 @@ func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, id []int32, reqEdi
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, id GetMatrixNoExplodeObjectPathId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetMatrixNoExplodeObjectRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -367,7 +708,7 @@ func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, id Object, reqEdi
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetPassThrough(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetPassThrough(ctx context.Context, param GetPassThroughPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetPassThroughRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -400,7 +741,7 @@ func (c *Client) GetQueryForm(ctx context.Context, params *GetQueryFormParams, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimpleExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetSimpleExplodeArray(ctx context.Context, param GetSimpleExplodeArrayPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSimpleExplodeArrayRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -411,7 +752,7 @@ func (c *Client) GetSimpleExplodeArray(ctx context.Context, param []int32, reqEd
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimpleExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetSimpleExplodeObject(ctx context.Context, param GetSimpleExplodeObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSimpleExplodeObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -422,7 +763,7 @@ func (c *Client) GetSimpleExplodeObject(ctx context.Context, param Object, reqEd
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimpleNoExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetSimpleNoExplodeArray(ctx context.Context, param GetSimpleNoExplodeArrayPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSimpleNoExplodeArrayRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -433,7 +774,7 @@ func (c *Client) GetSimpleNoExplodeArray(ctx context.Context, param []int32, req
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimpleNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetSimpleNoExplodeObject(ctx context.Context, param GetSimpleNoExplodeObjectPathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSimpleNoExplodeObjectRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -444,7 +785,7 @@ func (c *Client) GetSimpleNoExplodeObject(ctx context.Context, param Object, req
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSimplePrimitive(ctx context.Context, param int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetSimplePrimitive(ctx context.Context, param GetSimplePrimitivePathParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSimplePrimitiveRequest(c.Server, param)
 	if err != nil {
 		return nil, err
@@ -456,7 +797,7 @@ func (c *Client) GetSimplePrimitive(ctx context.Context, param int32, reqEditors
 }
 
 // NewGetContentObjectRequest generates requests for GetContentObject
-func NewGetContentObjectRequest(server string, param ComplexObject) (*http.Request, error) {
+func NewGetContentObjectRequest(server string, param GetContentObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -732,7 +1073,7 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 }
 
 // NewGetLabelExplodeArrayRequest generates requests for GetLabelExplodeArray
-func NewGetLabelExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
+func NewGetLabelExplodeArrayRequest(server string, param GetLabelExplodeArrayPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -766,7 +1107,7 @@ func NewGetLabelExplodeArrayRequest(server string, param []int32) (*http.Request
 }
 
 // NewGetLabelExplodeObjectRequest generates requests for GetLabelExplodeObject
-func NewGetLabelExplodeObjectRequest(server string, param Object) (*http.Request, error) {
+func NewGetLabelExplodeObjectRequest(server string, param GetLabelExplodeObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -800,7 +1141,7 @@ func NewGetLabelExplodeObjectRequest(server string, param Object) (*http.Request
 }
 
 // NewGetLabelNoExplodeArrayRequest generates requests for GetLabelNoExplodeArray
-func NewGetLabelNoExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
+func NewGetLabelNoExplodeArrayRequest(server string, param GetLabelNoExplodeArrayPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -834,7 +1175,7 @@ func NewGetLabelNoExplodeArrayRequest(server string, param []int32) (*http.Reque
 }
 
 // NewGetLabelNoExplodeObjectRequest generates requests for GetLabelNoExplodeObject
-func NewGetLabelNoExplodeObjectRequest(server string, param Object) (*http.Request, error) {
+func NewGetLabelNoExplodeObjectRequest(server string, param GetLabelNoExplodeObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -868,7 +1209,7 @@ func NewGetLabelNoExplodeObjectRequest(server string, param Object) (*http.Reque
 }
 
 // NewGetMatrixExplodeArrayRequest generates requests for GetMatrixExplodeArray
-func NewGetMatrixExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
+func NewGetMatrixExplodeArrayRequest(server string, id GetMatrixExplodeArrayPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -902,7 +1243,7 @@ func NewGetMatrixExplodeArrayRequest(server string, id []int32) (*http.Request, 
 }
 
 // NewGetMatrixExplodeObjectRequest generates requests for GetMatrixExplodeObject
-func NewGetMatrixExplodeObjectRequest(server string, id Object) (*http.Request, error) {
+func NewGetMatrixExplodeObjectRequest(server string, id GetMatrixExplodeObjectPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -936,7 +1277,7 @@ func NewGetMatrixExplodeObjectRequest(server string, id Object) (*http.Request, 
 }
 
 // NewGetMatrixNoExplodeArrayRequest generates requests for GetMatrixNoExplodeArray
-func NewGetMatrixNoExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
+func NewGetMatrixNoExplodeArrayRequest(server string, id GetMatrixNoExplodeArrayPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -970,7 +1311,7 @@ func NewGetMatrixNoExplodeArrayRequest(server string, id []int32) (*http.Request
 }
 
 // NewGetMatrixNoExplodeObjectRequest generates requests for GetMatrixNoExplodeObject
-func NewGetMatrixNoExplodeObjectRequest(server string, id Object) (*http.Request, error) {
+func NewGetMatrixNoExplodeObjectRequest(server string, id GetMatrixNoExplodeObjectPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1004,7 +1345,7 @@ func NewGetMatrixNoExplodeObjectRequest(server string, id Object) (*http.Request
 }
 
 // NewGetPassThroughRequest generates requests for GetPassThrough
-func NewGetPassThroughRequest(server string, param string) (*http.Request, error) {
+func NewGetPassThroughRequest(server string, param GetPassThroughPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1215,7 +1556,7 @@ func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Re
 }
 
 // NewGetSimpleExplodeArrayRequest generates requests for GetSimpleExplodeArray
-func NewGetSimpleExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
+func NewGetSimpleExplodeArrayRequest(server string, param GetSimpleExplodeArrayPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1249,7 +1590,7 @@ func NewGetSimpleExplodeArrayRequest(server string, param []int32) (*http.Reques
 }
 
 // NewGetSimpleExplodeObjectRequest generates requests for GetSimpleExplodeObject
-func NewGetSimpleExplodeObjectRequest(server string, param Object) (*http.Request, error) {
+func NewGetSimpleExplodeObjectRequest(server string, param GetSimpleExplodeObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1283,7 +1624,7 @@ func NewGetSimpleExplodeObjectRequest(server string, param Object) (*http.Reques
 }
 
 // NewGetSimpleNoExplodeArrayRequest generates requests for GetSimpleNoExplodeArray
-func NewGetSimpleNoExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
+func NewGetSimpleNoExplodeArrayRequest(server string, param GetSimpleNoExplodeArrayPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1317,7 +1658,7 @@ func NewGetSimpleNoExplodeArrayRequest(server string, param []int32) (*http.Requ
 }
 
 // NewGetSimpleNoExplodeObjectRequest generates requests for GetSimpleNoExplodeObject
-func NewGetSimpleNoExplodeObjectRequest(server string, param Object) (*http.Request, error) {
+func NewGetSimpleNoExplodeObjectRequest(server string, param GetSimpleNoExplodeObjectPathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1351,7 +1692,7 @@ func NewGetSimpleNoExplodeObjectRequest(server string, param Object) (*http.Requ
 }
 
 // NewGetSimplePrimitiveRequest generates requests for GetSimplePrimitive
-func NewGetSimplePrimitiveRequest(server string, param int32) (*http.Request, error) {
+func NewGetSimplePrimitiveRequest(server string, param GetSimplePrimitivePathParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1429,7 +1770,7 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 	// GetContentObject request
-	GetContentObjectWithResponse(ctx context.Context, param ComplexObject) (*GetContentObjectResponse, error)
+	GetContentObjectWithResponse(ctx context.Context, param GetContentObjectPathParam) (*GetContentObjectResponse, error)
 
 	// GetCookie request
 	GetCookieWithResponse(ctx context.Context, params *GetCookieParams) (*GetCookieResponse, error)
@@ -1438,31 +1779,31 @@ type ClientWithResponsesInterface interface {
 	GetHeaderWithResponse(ctx context.Context, params *GetHeaderParams) (*GetHeaderResponse, error)
 
 	// GetLabelExplodeArray request
-	GetLabelExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetLabelExplodeArrayResponse, error)
+	GetLabelExplodeArrayWithResponse(ctx context.Context, param GetLabelExplodeArrayPathParam) (*GetLabelExplodeArrayResponse, error)
 
 	// GetLabelExplodeObject request
-	GetLabelExplodeObjectWithResponse(ctx context.Context, param Object) (*GetLabelExplodeObjectResponse, error)
+	GetLabelExplodeObjectWithResponse(ctx context.Context, param GetLabelExplodeObjectPathParam) (*GetLabelExplodeObjectResponse, error)
 
 	// GetLabelNoExplodeArray request
-	GetLabelNoExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetLabelNoExplodeArrayResponse, error)
+	GetLabelNoExplodeArrayWithResponse(ctx context.Context, param GetLabelNoExplodeArrayPathParam) (*GetLabelNoExplodeArrayResponse, error)
 
 	// GetLabelNoExplodeObject request
-	GetLabelNoExplodeObjectWithResponse(ctx context.Context, param Object) (*GetLabelNoExplodeObjectResponse, error)
+	GetLabelNoExplodeObjectWithResponse(ctx context.Context, param GetLabelNoExplodeObjectPathParam) (*GetLabelNoExplodeObjectResponse, error)
 
 	// GetMatrixExplodeArray request
-	GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32) (*GetMatrixExplodeArrayResponse, error)
+	GetMatrixExplodeArrayWithResponse(ctx context.Context, id GetMatrixExplodeArrayPathId) (*GetMatrixExplodeArrayResponse, error)
 
 	// GetMatrixExplodeObject request
-	GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object) (*GetMatrixExplodeObjectResponse, error)
+	GetMatrixExplodeObjectWithResponse(ctx context.Context, id GetMatrixExplodeObjectPathId) (*GetMatrixExplodeObjectResponse, error)
 
 	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32) (*GetMatrixNoExplodeArrayResponse, error)
+	GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id GetMatrixNoExplodeArrayPathId) (*GetMatrixNoExplodeArrayResponse, error)
 
 	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object) (*GetMatrixNoExplodeObjectResponse, error)
+	GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id GetMatrixNoExplodeObjectPathId) (*GetMatrixNoExplodeObjectResponse, error)
 
 	// GetPassThrough request
-	GetPassThroughWithResponse(ctx context.Context, param string) (*GetPassThroughResponse, error)
+	GetPassThroughWithResponse(ctx context.Context, param GetPassThroughPathParam) (*GetPassThroughResponse, error)
 
 	// GetDeepObject request
 	GetDeepObjectWithResponse(ctx context.Context, params *GetDeepObjectParams) (*GetDeepObjectResponse, error)
@@ -1471,19 +1812,19 @@ type ClientWithResponsesInterface interface {
 	GetQueryFormWithResponse(ctx context.Context, params *GetQueryFormParams) (*GetQueryFormResponse, error)
 
 	// GetSimpleExplodeArray request
-	GetSimpleExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetSimpleExplodeArrayResponse, error)
+	GetSimpleExplodeArrayWithResponse(ctx context.Context, param GetSimpleExplodeArrayPathParam) (*GetSimpleExplodeArrayResponse, error)
 
 	// GetSimpleExplodeObject request
-	GetSimpleExplodeObjectWithResponse(ctx context.Context, param Object) (*GetSimpleExplodeObjectResponse, error)
+	GetSimpleExplodeObjectWithResponse(ctx context.Context, param GetSimpleExplodeObjectPathParam) (*GetSimpleExplodeObjectResponse, error)
 
 	// GetSimpleNoExplodeArray request
-	GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetSimpleNoExplodeArrayResponse, error)
+	GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param GetSimpleNoExplodeArrayPathParam) (*GetSimpleNoExplodeArrayResponse, error)
 
 	// GetSimpleNoExplodeObject request
-	GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param Object) (*GetSimpleNoExplodeObjectResponse, error)
+	GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param GetSimpleNoExplodeObjectPathParam) (*GetSimpleNoExplodeObjectResponse, error)
 
 	// GetSimplePrimitive request
-	GetSimplePrimitiveWithResponse(ctx context.Context, param int32) (*GetSimplePrimitiveResponse, error)
+	GetSimplePrimitiveWithResponse(ctx context.Context, param GetSimplePrimitivePathParam) (*GetSimplePrimitiveResponse, error)
 }
 
 type GetContentObjectResponse struct {
@@ -1886,7 +2227,7 @@ func (r GetSimplePrimitiveResponse) StatusCode() int {
 }
 
 // GetContentObjectWithResponse request returning *GetContentObjectResponse
-func (c *ClientWithResponses) GetContentObjectWithResponse(ctx context.Context, param ComplexObject) (*GetContentObjectResponse, error) {
+func (c *ClientWithResponses) GetContentObjectWithResponse(ctx context.Context, param GetContentObjectPathParam) (*GetContentObjectResponse, error) {
 	rsp, err := c.GetContentObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -1913,7 +2254,7 @@ func (c *ClientWithResponses) GetHeaderWithResponse(ctx context.Context, params 
 }
 
 // GetLabelExplodeArrayWithResponse request returning *GetLabelExplodeArrayResponse
-func (c *ClientWithResponses) GetLabelExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetLabelExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetLabelExplodeArrayWithResponse(ctx context.Context, param GetLabelExplodeArrayPathParam) (*GetLabelExplodeArrayResponse, error) {
 	rsp, err := c.GetLabelExplodeArray(ctx, param)
 	if err != nil {
 		return nil, err
@@ -1922,7 +2263,7 @@ func (c *ClientWithResponses) GetLabelExplodeArrayWithResponse(ctx context.Conte
 }
 
 // GetLabelExplodeObjectWithResponse request returning *GetLabelExplodeObjectResponse
-func (c *ClientWithResponses) GetLabelExplodeObjectWithResponse(ctx context.Context, param Object) (*GetLabelExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetLabelExplodeObjectWithResponse(ctx context.Context, param GetLabelExplodeObjectPathParam) (*GetLabelExplodeObjectResponse, error) {
 	rsp, err := c.GetLabelExplodeObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -1931,7 +2272,7 @@ func (c *ClientWithResponses) GetLabelExplodeObjectWithResponse(ctx context.Cont
 }
 
 // GetLabelNoExplodeArrayWithResponse request returning *GetLabelNoExplodeArrayResponse
-func (c *ClientWithResponses) GetLabelNoExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetLabelNoExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetLabelNoExplodeArrayWithResponse(ctx context.Context, param GetLabelNoExplodeArrayPathParam) (*GetLabelNoExplodeArrayResponse, error) {
 	rsp, err := c.GetLabelNoExplodeArray(ctx, param)
 	if err != nil {
 		return nil, err
@@ -1940,7 +2281,7 @@ func (c *ClientWithResponses) GetLabelNoExplodeArrayWithResponse(ctx context.Con
 }
 
 // GetLabelNoExplodeObjectWithResponse request returning *GetLabelNoExplodeObjectResponse
-func (c *ClientWithResponses) GetLabelNoExplodeObjectWithResponse(ctx context.Context, param Object) (*GetLabelNoExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetLabelNoExplodeObjectWithResponse(ctx context.Context, param GetLabelNoExplodeObjectPathParam) (*GetLabelNoExplodeObjectResponse, error) {
 	rsp, err := c.GetLabelNoExplodeObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -1949,7 +2290,7 @@ func (c *ClientWithResponses) GetLabelNoExplodeObjectWithResponse(ctx context.Co
 }
 
 // GetMatrixExplodeArrayWithResponse request returning *GetMatrixExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32) (*GetMatrixExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Context, id GetMatrixExplodeArrayPathId) (*GetMatrixExplodeArrayResponse, error) {
 	rsp, err := c.GetMatrixExplodeArray(ctx, id)
 	if err != nil {
 		return nil, err
@@ -1958,7 +2299,7 @@ func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Cont
 }
 
 // GetMatrixExplodeObjectWithResponse request returning *GetMatrixExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object) (*GetMatrixExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Context, id GetMatrixExplodeObjectPathId) (*GetMatrixExplodeObjectResponse, error) {
 	rsp, err := c.GetMatrixExplodeObject(ctx, id)
 	if err != nil {
 		return nil, err
@@ -1967,7 +2308,7 @@ func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Con
 }
 
 // GetMatrixNoExplodeArrayWithResponse request returning *GetMatrixNoExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32) (*GetMatrixNoExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id GetMatrixNoExplodeArrayPathId) (*GetMatrixNoExplodeArrayResponse, error) {
 	rsp, err := c.GetMatrixNoExplodeArray(ctx, id)
 	if err != nil {
 		return nil, err
@@ -1976,7 +2317,7 @@ func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Co
 }
 
 // GetMatrixNoExplodeObjectWithResponse request returning *GetMatrixNoExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object) (*GetMatrixNoExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id GetMatrixNoExplodeObjectPathId) (*GetMatrixNoExplodeObjectResponse, error) {
 	rsp, err := c.GetMatrixNoExplodeObject(ctx, id)
 	if err != nil {
 		return nil, err
@@ -1985,7 +2326,7 @@ func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.C
 }
 
 // GetPassThroughWithResponse request returning *GetPassThroughResponse
-func (c *ClientWithResponses) GetPassThroughWithResponse(ctx context.Context, param string) (*GetPassThroughResponse, error) {
+func (c *ClientWithResponses) GetPassThroughWithResponse(ctx context.Context, param GetPassThroughPathParam) (*GetPassThroughResponse, error) {
 	rsp, err := c.GetPassThrough(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2012,7 +2353,7 @@ func (c *ClientWithResponses) GetQueryFormWithResponse(ctx context.Context, para
 }
 
 // GetSimpleExplodeArrayWithResponse request returning *GetSimpleExplodeArrayResponse
-func (c *ClientWithResponses) GetSimpleExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetSimpleExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetSimpleExplodeArrayWithResponse(ctx context.Context, param GetSimpleExplodeArrayPathParam) (*GetSimpleExplodeArrayResponse, error) {
 	rsp, err := c.GetSimpleExplodeArray(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2021,7 +2362,7 @@ func (c *ClientWithResponses) GetSimpleExplodeArrayWithResponse(ctx context.Cont
 }
 
 // GetSimpleExplodeObjectWithResponse request returning *GetSimpleExplodeObjectResponse
-func (c *ClientWithResponses) GetSimpleExplodeObjectWithResponse(ctx context.Context, param Object) (*GetSimpleExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetSimpleExplodeObjectWithResponse(ctx context.Context, param GetSimpleExplodeObjectPathParam) (*GetSimpleExplodeObjectResponse, error) {
 	rsp, err := c.GetSimpleExplodeObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2030,7 +2371,7 @@ func (c *ClientWithResponses) GetSimpleExplodeObjectWithResponse(ctx context.Con
 }
 
 // GetSimpleNoExplodeArrayWithResponse request returning *GetSimpleNoExplodeArrayResponse
-func (c *ClientWithResponses) GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param []int32) (*GetSimpleNoExplodeArrayResponse, error) {
+func (c *ClientWithResponses) GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param GetSimpleNoExplodeArrayPathParam) (*GetSimpleNoExplodeArrayResponse, error) {
 	rsp, err := c.GetSimpleNoExplodeArray(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2039,7 +2380,7 @@ func (c *ClientWithResponses) GetSimpleNoExplodeArrayWithResponse(ctx context.Co
 }
 
 // GetSimpleNoExplodeObjectWithResponse request returning *GetSimpleNoExplodeObjectResponse
-func (c *ClientWithResponses) GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param Object) (*GetSimpleNoExplodeObjectResponse, error) {
+func (c *ClientWithResponses) GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param GetSimpleNoExplodeObjectPathParam) (*GetSimpleNoExplodeObjectResponse, error) {
 	rsp, err := c.GetSimpleNoExplodeObject(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2048,7 +2389,7 @@ func (c *ClientWithResponses) GetSimpleNoExplodeObjectWithResponse(ctx context.C
 }
 
 // GetSimplePrimitiveWithResponse request returning *GetSimplePrimitiveResponse
-func (c *ClientWithResponses) GetSimplePrimitiveWithResponse(ctx context.Context, param int32) (*GetSimplePrimitiveResponse, error) {
+func (c *ClientWithResponses) GetSimplePrimitiveWithResponse(ctx context.Context, param GetSimplePrimitivePathParam) (*GetSimplePrimitiveResponse, error) {
 	rsp, err := c.GetSimplePrimitive(ctx, param)
 	if err != nil {
 		return nil, err
@@ -2421,81 +2762,213 @@ func ParseGetSimplePrimitiveResponse(rsp *http.Response) (*GetSimplePrimitiveRes
 type ServerInterface interface {
 
 	// (GET /contentObject/{param})
-	GetContentObject(ctx echo.Context, param ComplexObject) error
+	GetContentObject(ctx *GetContentObjectContext, param GetContentObjectPathParam) error
 
 	// (GET /cookie)
-	GetCookie(ctx echo.Context, params GetCookieParams) error
+	GetCookie(ctx *GetCookieContext, params GetCookieParams) error
 
 	// (GET /header)
-	GetHeader(ctx echo.Context, params GetHeaderParams) error
+	GetHeader(ctx *GetHeaderContext, params GetHeaderParams) error
 
 	// (GET /labelExplodeArray/{.param*})
-	GetLabelExplodeArray(ctx echo.Context, param []int32) error
+	GetLabelExplodeArray(ctx *GetLabelExplodeArrayContext, param GetLabelExplodeArrayPathParam) error
 
 	// (GET /labelExplodeObject/{.param*})
-	GetLabelExplodeObject(ctx echo.Context, param Object) error
+	GetLabelExplodeObject(ctx *GetLabelExplodeObjectContext, param GetLabelExplodeObjectPathParam) error
 
 	// (GET /labelNoExplodeArray/{.param})
-	GetLabelNoExplodeArray(ctx echo.Context, param []int32) error
+	GetLabelNoExplodeArray(ctx *GetLabelNoExplodeArrayContext, param GetLabelNoExplodeArrayPathParam) error
 
 	// (GET /labelNoExplodeObject/{.param})
-	GetLabelNoExplodeObject(ctx echo.Context, param Object) error
+	GetLabelNoExplodeObject(ctx *GetLabelNoExplodeObjectContext, param GetLabelNoExplodeObjectPathParam) error
 
 	// (GET /matrixExplodeArray/{.id*})
-	GetMatrixExplodeArray(ctx echo.Context, id []int32) error
+	GetMatrixExplodeArray(ctx *GetMatrixExplodeArrayContext, id GetMatrixExplodeArrayPathId) error
 
 	// (GET /matrixExplodeObject/{.id*})
-	GetMatrixExplodeObject(ctx echo.Context, id Object) error
+	GetMatrixExplodeObject(ctx *GetMatrixExplodeObjectContext, id GetMatrixExplodeObjectPathId) error
 
 	// (GET /matrixNoExplodeArray/{.id})
-	GetMatrixNoExplodeArray(ctx echo.Context, id []int32) error
+	GetMatrixNoExplodeArray(ctx *GetMatrixNoExplodeArrayContext, id GetMatrixNoExplodeArrayPathId) error
 
 	// (GET /matrixNoExplodeObject/{.id})
-	GetMatrixNoExplodeObject(ctx echo.Context, id Object) error
+	GetMatrixNoExplodeObject(ctx *GetMatrixNoExplodeObjectContext, id GetMatrixNoExplodeObjectPathId) error
 
 	// (GET /passThrough/{param})
-	GetPassThrough(ctx echo.Context, param string) error
+	GetPassThrough(ctx *GetPassThroughContext, param GetPassThroughPathParam) error
 
 	// (GET /queryDeepObject)
-	GetDeepObject(ctx echo.Context, params GetDeepObjectParams) error
+	GetDeepObject(ctx *GetDeepObjectContext, params GetDeepObjectParams) error
 
 	// (GET /queryForm)
-	GetQueryForm(ctx echo.Context, params GetQueryFormParams) error
+	GetQueryForm(ctx *GetQueryFormContext, params GetQueryFormParams) error
 
 	// (GET /simpleExplodeArray/{param*})
-	GetSimpleExplodeArray(ctx echo.Context, param []int32) error
+	GetSimpleExplodeArray(ctx *GetSimpleExplodeArrayContext, param GetSimpleExplodeArrayPathParam) error
 
 	// (GET /simpleExplodeObject/{param*})
-	GetSimpleExplodeObject(ctx echo.Context, param Object) error
+	GetSimpleExplodeObject(ctx *GetSimpleExplodeObjectContext, param GetSimpleExplodeObjectPathParam) error
 
 	// (GET /simpleNoExplodeArray/{param})
-	GetSimpleNoExplodeArray(ctx echo.Context, param []int32) error
+	GetSimpleNoExplodeArray(ctx *GetSimpleNoExplodeArrayContext, param GetSimpleNoExplodeArrayPathParam) error
 
 	// (GET /simpleNoExplodeObject/{param})
-	GetSimpleNoExplodeObject(ctx echo.Context, param Object) error
+	GetSimpleNoExplodeObject(ctx *GetSimpleNoExplodeObjectContext, param GetSimpleNoExplodeObjectPathParam) error
 
 	// (GET /simplePrimitive/{param})
-	GetSimplePrimitive(ctx echo.Context, param int32) error
+	GetSimplePrimitive(ctx *GetSimplePrimitiveContext, param GetSimplePrimitivePathParam) error
+}
+
+// GetContentObjectContext is a context customized for GetContentObject (GET /contentObject/{param}).
+type GetContentObjectContext struct {
+	echo.Context
+}
+
+// GetCookieContext is a context customized for GetCookie (GET /cookie).
+type GetCookieContext struct {
+	echo.Context
+}
+
+// GetHeaderContext is a context customized for GetHeader (GET /header).
+type GetHeaderContext struct {
+	echo.Context
+}
+
+// GetLabelExplodeArrayContext is a context customized for GetLabelExplodeArray (GET /labelExplodeArray/{.param*}).
+type GetLabelExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetLabelExplodeObjectContext is a context customized for GetLabelExplodeObject (GET /labelExplodeObject/{.param*}).
+type GetLabelExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetLabelNoExplodeArrayContext is a context customized for GetLabelNoExplodeArray (GET /labelNoExplodeArray/{.param}).
+type GetLabelNoExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetLabelNoExplodeObjectContext is a context customized for GetLabelNoExplodeObject (GET /labelNoExplodeObject/{.param}).
+type GetLabelNoExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetMatrixExplodeArrayContext is a context customized for GetMatrixExplodeArray (GET /matrixExplodeArray/{.id*}).
+type GetMatrixExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetMatrixExplodeObjectContext is a context customized for GetMatrixExplodeObject (GET /matrixExplodeObject/{.id*}).
+type GetMatrixExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetMatrixNoExplodeArrayContext is a context customized for GetMatrixNoExplodeArray (GET /matrixNoExplodeArray/{.id}).
+type GetMatrixNoExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetMatrixNoExplodeObjectContext is a context customized for GetMatrixNoExplodeObject (GET /matrixNoExplodeObject/{.id}).
+type GetMatrixNoExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetPassThroughContext is a context customized for GetPassThrough (GET /passThrough/{param}).
+type GetPassThroughContext struct {
+	echo.Context
+}
+
+// GetDeepObjectContext is a context customized for GetDeepObject (GET /queryDeepObject).
+type GetDeepObjectContext struct {
+	echo.Context
+}
+
+// GetQueryFormContext is a context customized for GetQueryForm (GET /queryForm).
+type GetQueryFormContext struct {
+	echo.Context
+}
+
+// GetSimpleExplodeArrayContext is a context customized for GetSimpleExplodeArray (GET /simpleExplodeArray/{param*}).
+type GetSimpleExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetSimpleExplodeObjectContext is a context customized for GetSimpleExplodeObject (GET /simpleExplodeObject/{param*}).
+type GetSimpleExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetSimpleNoExplodeArrayContext is a context customized for GetSimpleNoExplodeArray (GET /simpleNoExplodeArray/{param}).
+type GetSimpleNoExplodeArrayContext struct {
+	echo.Context
+}
+
+// GetSimpleNoExplodeObjectContext is a context customized for GetSimpleNoExplodeObject (GET /simpleNoExplodeObject/{param}).
+type GetSimpleNoExplodeObjectContext struct {
+	echo.Context
+}
+
+// GetSimplePrimitiveContext is a context customized for GetSimplePrimitive (GET /simplePrimitive/{param}).
+type GetSimplePrimitiveContext struct {
+	echo.Context
+}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
+	Err       error
+}
+
+// Error implements the error interface.
+func (v ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	securityHandler SecurityHandler
 }
+
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
 
 // GetContentObject converts echo context to params.
 func (w *ServerInterfaceWrapper) GetContentObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param ComplexObject
+	var param GetContentObjectPathParam
 
 	err = json.Unmarshal([]byte(ctx.Param("param")), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter 'param' as JSON")
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "cannot parse as json")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetContentObject(ctx, param)
+	err = w.Handler.GetContentObject(&GetContentObjectContext{ctx}, param)
 	return err
 }
 
@@ -2511,7 +2984,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value int32
 		err = runtime.BindStyledParameter("simple", false, "p", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "p", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.P = &value
 
@@ -2522,7 +2995,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value int32
 		err = runtime.BindStyledParameter("simple", true, "ep", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ep: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "ep", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.Ep = &value
 
@@ -2533,7 +3006,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value []int32
 		err = runtime.BindStyledParameter("simple", true, "ea", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ea: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "ea", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.Ea = &value
 
@@ -2544,7 +3017,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value []int32
 		err = runtime.BindStyledParameter("simple", false, "a", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter a: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "a", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.A = &value
 
@@ -2555,7 +3028,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value Object
 		err = runtime.BindStyledParameter("simple", true, "eo", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter eo: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "eo", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.Eo = &value
 
@@ -2566,7 +3039,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value Object
 		err = runtime.BindStyledParameter("simple", false, "o", cookie.Value, &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter o: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "o", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.O = &value
 
@@ -2578,18 +3051,18 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var decoded string
 		decoded, err := url.QueryUnescape(cookie.Value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Error unescaping cookie parameter 'co'")
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "co", Err: err})
 		}
 		err = json.Unmarshal([]byte(decoded), &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter 'co' as JSON")
+			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "co", Err: errors.Wrap(err, "cannot parse as json")})
 		}
 		params.Co = &value
 
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetCookie(ctx, params)
+	err = w.Handler.GetCookie(&GetCookieContext{ctx}, params)
 	return err
 }
 
@@ -2606,12 +3079,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XPrimitive int32
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Primitive, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "X-Primitive", valueList[0], &XPrimitive)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Primitive: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XPrimitive = &XPrimitive
@@ -2621,12 +3094,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XPrimitiveExploded int32
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Primitive-Exploded, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", true, "X-Primitive-Exploded", valueList[0], &XPrimitiveExploded)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Primitive-Exploded: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive-Exploded", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XPrimitiveExploded = &XPrimitiveExploded
@@ -2636,12 +3109,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XArrayExploded []int32
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Array-Exploded, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", true, "X-Array-Exploded", valueList[0], &XArrayExploded)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Array-Exploded: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array-Exploded", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XArrayExploded = &XArrayExploded
@@ -2651,12 +3124,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XArray []int32
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Array, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "X-Array", valueList[0], &XArray)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Array: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XArray = &XArray
@@ -2666,12 +3139,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XObjectExploded Object
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Object-Exploded, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", true, "X-Object-Exploded", valueList[0], &XObjectExploded)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Object-Exploded: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object-Exploded", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XObjectExploded = &XObjectExploded
@@ -2681,12 +3154,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XObject Object
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Object, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "X-Object", valueList[0], &XObject)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Object: %s", err))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XObject = &XObject
@@ -2696,160 +3169,205 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XComplexObject ComplexObject
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Complex-Object, got %d", n))
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Complex-Object", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = json.Unmarshal([]byte(valueList[0]), &XComplexObject)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter 'X-Complex-Object' as JSON")
+			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Complex-Object", Err: errors.Wrap(err, "cannot parse as json")})
 		}
 
 		params.XComplexObject = &XComplexObject
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetHeader(ctx, params)
+	err = w.Handler.GetHeader(&GetHeaderContext{ctx}, params)
 	return err
 }
 
 // GetLabelExplodeArray converts echo context to params.
 func (w *ServerInterfaceWrapper) GetLabelExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param []int32
+	var param GetLabelExplodeArrayPathParam
 
 	err = runtime.BindStyledParameter("label", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetLabelExplodeArray(ctx, param)
+	err = w.Handler.GetLabelExplodeArray(&GetLabelExplodeArrayContext{ctx}, param)
 	return err
 }
 
 // GetLabelExplodeObject converts echo context to params.
 func (w *ServerInterfaceWrapper) GetLabelExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param Object
+	var param GetLabelExplodeObjectPathParam
 
 	err = runtime.BindStyledParameter("label", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetLabelExplodeObject(ctx, param)
+	err = w.Handler.GetLabelExplodeObject(&GetLabelExplodeObjectContext{ctx}, param)
 	return err
 }
 
 // GetLabelNoExplodeArray converts echo context to params.
 func (w *ServerInterfaceWrapper) GetLabelNoExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param []int32
+	var param GetLabelNoExplodeArrayPathParam
 
 	err = runtime.BindStyledParameter("label", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetLabelNoExplodeArray(ctx, param)
+	err = w.Handler.GetLabelNoExplodeArray(&GetLabelNoExplodeArrayContext{ctx}, param)
 	return err
 }
 
 // GetLabelNoExplodeObject converts echo context to params.
 func (w *ServerInterfaceWrapper) GetLabelNoExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param Object
+	var param GetLabelNoExplodeObjectPathParam
 
 	err = runtime.BindStyledParameter("label", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetLabelNoExplodeObject(ctx, param)
+	err = w.Handler.GetLabelNoExplodeObject(&GetLabelNoExplodeObjectContext{ctx}, param)
 	return err
 }
 
 // GetMatrixExplodeArray converts echo context to params.
 func (w *ServerInterfaceWrapper) GetMatrixExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
-	var id []int32
+	var id GetMatrixExplodeArrayPathId
 
 	err = runtime.BindStyledParameter("matrix", true, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := id.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixExplodeArray(ctx, id)
+	err = w.Handler.GetMatrixExplodeArray(&GetMatrixExplodeArrayContext{ctx}, id)
 	return err
 }
 
 // GetMatrixExplodeObject converts echo context to params.
 func (w *ServerInterfaceWrapper) GetMatrixExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
-	var id Object
+	var id GetMatrixExplodeObjectPathId
 
 	err = runtime.BindStyledParameter("matrix", true, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := id.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixExplodeObject(ctx, id)
+	err = w.Handler.GetMatrixExplodeObject(&GetMatrixExplodeObjectContext{ctx}, id)
 	return err
 }
 
 // GetMatrixNoExplodeArray converts echo context to params.
 func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
-	var id []int32
+	var id GetMatrixNoExplodeArrayPathId
 
 	err = runtime.BindStyledParameter("matrix", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := id.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixNoExplodeArray(ctx, id)
+	err = w.Handler.GetMatrixNoExplodeArray(&GetMatrixNoExplodeArrayContext{ctx}, id)
 	return err
 }
 
 // GetMatrixNoExplodeObject converts echo context to params.
 func (w *ServerInterfaceWrapper) GetMatrixNoExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
-	var id Object
+	var id GetMatrixNoExplodeObjectPathId
 
 	err = runtime.BindStyledParameter("matrix", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := id.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixNoExplodeObject(ctx, id)
+	err = w.Handler.GetMatrixNoExplodeObject(&GetMatrixNoExplodeObjectContext{ctx}, id)
 	return err
 }
 
 // GetPassThrough converts echo context to params.
 func (w *ServerInterfaceWrapper) GetPassThrough(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param string
+	var param GetPassThroughPathParam
 
 	param = ctx.Param("param")
 
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetPassThrough(ctx, param)
+	err = w.Handler.GetPassThrough(&GetPassThroughContext{ctx}, param)
 	return err
 }
 
@@ -2863,11 +3381,15 @@ func (w *ServerInterfaceWrapper) GetDeepObject(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("deepObject", true, true, "deepObj", ctx.QueryParams(), &params.DeepObj)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter deepObj: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetDeepObject(ctx, params)
+	err = w.Handler.GetDeepObject(&GetDeepObjectContext{ctx}, params)
 	return err
 }
 
@@ -2881,44 +3403,62 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, false, "ea", ctx.QueryParams(), &params.Ea)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ea: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+	}
 	// ------------- Optional query parameter "a" -------------
 
 	err = runtime.BindQueryParameter("form", false, false, "a", ctx.QueryParams(), &params.A)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter a: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+	}
 	// ------------- Optional query parameter "eo" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "eo", ctx.QueryParams(), &params.Eo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter eo: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+	}
 	// ------------- Optional query parameter "o" -------------
 
 	err = runtime.BindQueryParameter("form", false, false, "o", ctx.QueryParams(), &params.O)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter o: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+	}
 	// ------------- Optional query parameter "ep" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "ep", ctx.QueryParams(), &params.Ep)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ep: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+	}
 	// ------------- Optional query parameter "p" -------------
 
 	err = runtime.BindQueryParameter("form", false, false, "p", ctx.QueryParams(), &params.P)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+	}
 	// ------------- Optional query parameter "co" -------------
 
 	if paramValue := ctx.QueryParam("co"); paramValue != "" {
@@ -2926,94 +3466,123 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 		var value ComplexObject
 		err = json.Unmarshal([]byte(paramValue), &value)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter 'co' as JSON")
+			return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "cannot parse as json")})
 		}
 		params.Co = &value
 
 	}
 
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetQueryForm(ctx, params)
+	err = w.Handler.GetQueryForm(&GetQueryFormContext{ctx}, params)
 	return err
 }
 
 // GetSimpleExplodeArray converts echo context to params.
 func (w *ServerInterfaceWrapper) GetSimpleExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param []int32
+	var param GetSimpleExplodeArrayPathParam
 
 	err = runtime.BindStyledParameter("simple", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimpleExplodeArray(ctx, param)
+	err = w.Handler.GetSimpleExplodeArray(&GetSimpleExplodeArrayContext{ctx}, param)
 	return err
 }
 
 // GetSimpleExplodeObject converts echo context to params.
 func (w *ServerInterfaceWrapper) GetSimpleExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param Object
+	var param GetSimpleExplodeObjectPathParam
 
 	err = runtime.BindStyledParameter("simple", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimpleExplodeObject(ctx, param)
+	err = w.Handler.GetSimpleExplodeObject(&GetSimpleExplodeObjectContext{ctx}, param)
 	return err
 }
 
 // GetSimpleNoExplodeArray converts echo context to params.
 func (w *ServerInterfaceWrapper) GetSimpleNoExplodeArray(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param []int32
+	var param GetSimpleNoExplodeArrayPathParam
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimpleNoExplodeArray(ctx, param)
+	err = w.Handler.GetSimpleNoExplodeArray(&GetSimpleNoExplodeArrayContext{ctx}, param)
 	return err
 }
 
 // GetSimpleNoExplodeObject converts echo context to params.
 func (w *ServerInterfaceWrapper) GetSimpleNoExplodeObject(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param Object
+	var param GetSimpleNoExplodeObjectPathParam
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimpleNoExplodeObject(ctx, param)
+	err = w.Handler.GetSimpleNoExplodeObject(&GetSimpleNoExplodeObjectContext{ctx}, param)
 	return err
 }
 
 // GetSimplePrimitive converts echo context to params.
 func (w *ServerInterfaceWrapper) GetSimplePrimitive(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "param" -------------
-	var param int32
+	var param GetSimplePrimitivePathParam
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter param: %s", err))
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := param.Validate(); err != nil {
+		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetSimplePrimitive(ctx, param)
+	err = w.Handler.GetSimplePrimitive(&GetSimplePrimitiveContext{ctx}, param)
 	return err
 }
 
@@ -3033,37 +3602,38 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler, m ...echo.MiddlewareFunc) {
+	RegisterHandlersWithBaseURL(router, si, "", sh, m...)
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, sh SecurityHandler, m ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.GET(baseURL+"/contentObject/:param", wrapper.GetContentObject)
-	router.GET(baseURL+"/cookie", wrapper.GetCookie)
-	router.GET(baseURL+"/header", wrapper.GetHeader)
-	router.GET(baseURL+"/labelExplodeArray/:param", wrapper.GetLabelExplodeArray)
-	router.GET(baseURL+"/labelExplodeObject/:param", wrapper.GetLabelExplodeObject)
-	router.GET(baseURL+"/labelNoExplodeArray/:param", wrapper.GetLabelNoExplodeArray)
-	router.GET(baseURL+"/labelNoExplodeObject/:param", wrapper.GetLabelNoExplodeObject)
-	router.GET(baseURL+"/matrixExplodeArray/:id", wrapper.GetMatrixExplodeArray)
-	router.GET(baseURL+"/matrixExplodeObject/:id", wrapper.GetMatrixExplodeObject)
-	router.GET(baseURL+"/matrixNoExplodeArray/:id", wrapper.GetMatrixNoExplodeArray)
-	router.GET(baseURL+"/matrixNoExplodeObject/:id", wrapper.GetMatrixNoExplodeObject)
-	router.GET(baseURL+"/passThrough/:param", wrapper.GetPassThrough)
-	router.GET(baseURL+"/queryDeepObject", wrapper.GetDeepObject)
-	router.GET(baseURL+"/queryForm", wrapper.GetQueryForm)
-	router.GET(baseURL+"/simpleExplodeArray/:param", wrapper.GetSimpleExplodeArray)
-	router.GET(baseURL+"/simpleExplodeObject/:param", wrapper.GetSimpleExplodeObject)
-	router.GET(baseURL+"/simpleNoExplodeArray/:param", wrapper.GetSimpleNoExplodeArray)
-	router.GET(baseURL+"/simpleNoExplodeObject/:param", wrapper.GetSimpleNoExplodeObject)
-	router.GET(baseURL+"/simplePrimitive/:param", wrapper.GetSimplePrimitive)
+	router.GET(baseURL+"/contentObject/:param", wrapper.GetContentObject, m...)
+	router.GET(baseURL+"/cookie", wrapper.GetCookie, m...)
+	router.GET(baseURL+"/header", wrapper.GetHeader, m...)
+	router.GET(baseURL+"/labelExplodeArray/:param", wrapper.GetLabelExplodeArray, m...)
+	router.GET(baseURL+"/labelExplodeObject/:param", wrapper.GetLabelExplodeObject, m...)
+	router.GET(baseURL+"/labelNoExplodeArray/:param", wrapper.GetLabelNoExplodeArray, m...)
+	router.GET(baseURL+"/labelNoExplodeObject/:param", wrapper.GetLabelNoExplodeObject, m...)
+	router.GET(baseURL+"/matrixExplodeArray/:id", wrapper.GetMatrixExplodeArray, m...)
+	router.GET(baseURL+"/matrixExplodeObject/:id", wrapper.GetMatrixExplodeObject, m...)
+	router.GET(baseURL+"/matrixNoExplodeArray/:id", wrapper.GetMatrixNoExplodeArray, m...)
+	router.GET(baseURL+"/matrixNoExplodeObject/:id", wrapper.GetMatrixNoExplodeObject, m...)
+	router.GET(baseURL+"/passThrough/:param", wrapper.GetPassThrough, m...)
+	router.GET(baseURL+"/queryDeepObject", wrapper.GetDeepObject, m...)
+	router.GET(baseURL+"/queryForm", wrapper.GetQueryForm, m...)
+	router.GET(baseURL+"/simpleExplodeArray/:param", wrapper.GetSimpleExplodeArray, m...)
+	router.GET(baseURL+"/simpleExplodeObject/:param", wrapper.GetSimpleExplodeObject, m...)
+	router.GET(baseURL+"/simpleNoExplodeArray/:param", wrapper.GetSimpleNoExplodeArray, m...)
+	router.GET(baseURL+"/simpleNoExplodeObject/:param", wrapper.GetSimpleNoExplodeObject, m...)
+	router.GET(baseURL+"/simplePrimitive/:param", wrapper.GetSimplePrimitive, m...)
 
 }
 

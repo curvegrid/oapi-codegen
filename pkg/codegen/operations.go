@@ -17,6 +17,8 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
 	"unicode"
@@ -170,6 +172,7 @@ func DescribeParameters(params openapi3.Parameters, path []string) ([]ParameterD
 					paramOrRef.Ref, param.Name, err)
 			}
 			pd.Schema.GoType = goType
+			pd.Schema.RefType = goType
 		}
 		outParams = append(outParams, pd)
 	}
@@ -241,6 +244,13 @@ func (o *OperationDefinition) HasBody() bool {
 	return o.Spec.RequestBody != nil
 }
 
+// HasEmptySuccess returns whether the operation has an empty
+// success response.
+func (o *OperationDefinition) HasEmptySuccess() bool {
+	successResp := o.Spec.Responses.Get(200)
+	return successResp != nil && len(successResp.Value.Content) == 0
+}
+
 // This returns the Operations summary as a multi line comment
 func (o *OperationDefinition) SummaryAsComment() string {
 	if o.Summary == "" {
@@ -252,6 +262,62 @@ func (o *OperationDefinition) SummaryAsComment() string {
 		parts[i] = "// " + p
 	}
 	return strings.Join(parts, "\n")
+}
+
+// Produces a list of type definitions for a given Operation for the response
+// types which we know how to parse. These will be turned into fields on a
+// response object for automatic deserialization of responses in the generated
+// Client code. See "client-with-responses.tmpl".
+// This produces one type definition for each JSON response body.
+func (o *OperationDefinition) GetResponseIndependentTypeDefinitions() ([]TypeDefinition, error) {
+	var tds []TypeDefinition
+
+	responses := o.Spec.Responses
+	sortedResponsesKeys := SortedResponsesKeys(responses)
+	for _, responseName := range sortedResponsesKeys {
+		responseRef := responses[responseName]
+		responseCode := responseName
+
+		if num, err := strconv.Atoi(responseName); err == nil {
+			responseName = http.StatusText(num)
+		}
+
+		// We can only generate a type if we have a value:
+		if responseRef.Value == nil {
+			continue
+		}
+		// JSON-only first
+		contentType, ok := responseRef.Value.Content["application/json"]
+		if !ok {
+			continue
+		}
+		// We can only generate a type if we have a schema:
+		if contentType.Schema != nil {
+			responseSchema, err := GenerateGoSchema(contentType.Schema, []string{o.OperationId, responseName})
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("Unable to determine Go type for %s/%s", o.OperationId, responseName))
+			}
+
+			typeName := fmt.Sprintf("%sResponse%s", ToCamelCase(o.OperationId), ToCamelCase(responseName))
+
+			td := TypeDefinition{
+				TypeName:     typeName,
+				Schema:       responseSchema,
+				ResponseName: responseCode,
+			}
+			if contentType.Schema.Ref != "" {
+				td.IsAlias = true
+				refType, err := RefPathToGoType(contentType.Schema.Ref)
+				if err != nil {
+					return nil, errors.Wrap(err, "error dereferencing response Ref")
+				}
+				td.Schema.RefType = refType
+			}
+			tds = append(tds, td)
+		}
+	}
+
+	return tds, nil
 }
 
 // Produces a list of type definitions for a given Operation for the response
@@ -563,9 +629,29 @@ func GenerateTypeDefsForOperation(op OperationDefinition) []TypeDefinition {
 		typeDefs = append(typeDefs, param.Schema.GetAdditionalTypeDefs()...)
 	}
 
+	// We want all path params too
+	for idx, param := range op.PathParams {
+		if param.Schema.RefType == "" {
+			goName := op.OperationId + "Path" + ToCamelCase(param.ParamName)
+			typeDefs = append(typeDefs, TypeDefinition{
+				TypeName: goName,
+				Schema:   param.Schema,
+			})
+			op.PathParams[idx].Schema.GoType = goName
+		}
+	}
+
 	for _, body := range op.Bodies {
 		typeDefs = append(typeDefs, body.Schema.GetAdditionalTypeDefs()...)
 	}
+
+	// Responses too
+	resps, err := op.GetResponseIndependentTypeDefinitions()
+	if err != nil {
+		panic(err)
+	}
+	typeDefs = append(typeDefs, resps...)
+
 	return typeDefs
 }
 
@@ -766,6 +852,24 @@ func GenerateClient(t *template.Template, ops []OperationDefinition) (string, er
 
 	if err != nil {
 		return "", fmt.Errorf("error generating client bindings: %s", err)
+	}
+	err = w.Flush()
+	if err != nil {
+		return "", fmt.Errorf("error flushing output buffer for client: %s", err)
+	}
+	return buf.String(), nil
+}
+
+// Uses the template engine to generate the function which registers our wrappers
+// as Echo path handlers.
+func GenerateTestClient(t *template.Template, ops []OperationDefinition) (string, error) {
+	var buf bytes.Buffer
+	w := bufio.NewWriter(&buf)
+
+	err := t.ExecuteTemplate(w, "test-client.tmpl", ops)
+
+	if err != nil {
+		return "", fmt.Errorf("error generating test client bindings: %s", err)
 	}
 	err = w.Flush()
 	if err != nil {

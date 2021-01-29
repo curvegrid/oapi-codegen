@@ -14,6 +14,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // Error defines model for Error.
@@ -26,6 +27,23 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// Validate perform validation on the Error
+func (s Error) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Code,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Message,
+			validation.Required,
+		),
+	)
+
+}
+
 // NewPet defines model for NewPet.
 type NewPet struct {
 
@@ -34,6 +52,22 @@ type NewPet struct {
 
 	// Type of the pet
 	Tag *string `json:"tag,omitempty"`
+}
+
+// Validate perform validation on the NewPet
+func (s NewPet) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Tag,
+		),
+	)
+
 }
 
 // Pet defines model for Pet.
@@ -46,6 +80,19 @@ type Pet struct {
 	Id int64 `json:"id"`
 }
 
+// Validate perform validation on the Pet
+func (s Pet) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s, validation.Field(&s.NewPet),
+		validation.Field(
+			&s.Id,
+			validation.Required,
+		),
+	)
+
+}
+
 // FindPetsParams defines parameters for FindPets.
 type FindPetsParams struct {
 
@@ -56,8 +103,89 @@ type FindPetsParams struct {
 	Limit *int32 `json:"limit,omitempty"`
 }
 
+// Validate perform validation on the FindPetsParams
+func (s FindPetsParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Tags,
+
+			validation.Each(),
+		),
+		validation.Field(
+			&s.Limit,
+		),
+	)
+
+}
+
+// FindPetsResponseOK defines parameters for FindPets.
+type FindPetsResponseOK []Pet
+
+// Validate perform validation on the FindPetsResponseOK
+func (s FindPetsResponseOK) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]Pet)(s),
+		validation.Each(),
+	)
+
+}
+
+// FindPetsResponseDefault defines parameters for FindPets.
+type FindPetsResponseDefault = Error
+
 // AddPetJSONBody defines parameters for AddPet.
 type AddPetJSONBody NewPet
+
+// Validate perform validation on the AddPetJSONBody
+func (s AddPetJSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(NewPet)(s),
+	)
+
+}
+
+// AddPetResponseOK defines parameters for AddPet.
+type AddPetResponseOK = Pet
+
+// AddPetResponseDefault defines parameters for AddPet.
+type AddPetResponseDefault = Error
+
+// DeletePetPathId defines parameters for DeletePet.
+type DeletePetPathId int64
+
+// Validate perform validation on the DeletePetPathId
+func (s DeletePetPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
+// DeletePetResponseDefault defines parameters for DeletePet.
+type DeletePetResponseDefault = Error
+
+// FindPetByIdPathId defines parameters for FindPetById.
+type FindPetByIdPathId int64
+
+// Validate perform validation on the FindPetByIdPathId
+func (s FindPetByIdPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
+// FindPetByIdResponseOK defines parameters for FindPetById.
+type FindPetByIdResponseOK = Pet
+
+// FindPetByIdResponseDefault defines parameters for FindPetById.
+type FindPetByIdResponseDefault = Error
 
 // AddPetJSONRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody
@@ -72,10 +200,10 @@ type ServerInterface interface {
 	AddPet(w http.ResponseWriter, r *http.Request)
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(w http.ResponseWriter, r *http.Request, id int64)
+	DeletePet(w http.ResponseWriter, r *http.Request, id DeletePetPathId)
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetById(w http.ResponseWriter, r *http.Request, id int64)
+	FindPetById(w http.ResponseWriter, r *http.Request, id FindPetByIdPathId)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -150,7 +278,7 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var id DeletePetPathId
 
 	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
@@ -176,7 +304,7 @@ func (siw *ServerInterfaceWrapper) FindPetById(w http.ResponseWriter, r *http.Re
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var id FindPetByIdPathId
 
 	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
