@@ -18,6 +18,8 @@ type Schema struct {
 	IsExternal  bool // Whether it was defined externally, i.e. "x-go-type"
 	Validations Validations
 
+	ArrayType *Schema // The schema of array element
+
 	EnumValues map[string]string // Enum values
 
 	ItemType *Schema // For an array, the item's schema.
@@ -111,6 +113,11 @@ type TypeDefinition struct {
 	JsonName     string
 	ResponseName string
 	Schema       Schema
+}
+
+func (t *TypeDefinition) CanAlias() bool {
+	return t.Schema.IsRef() || /* actual reference */
+		(t.Schema.ArrayType != nil && t.Schema.ArrayType.IsRef()) /* array to ref */
 }
 
 func PropertiesEqual(a, b Property) bool {
@@ -270,6 +277,7 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			if err != nil {
 				return Schema{}, errors.Wrap(err, "error generating type for array")
 			}
+			outSchema.ArrayType = &arrayType
 			outSchema.GoType = "[]" + arrayType.TypeDecl()
 			outSchema.Properties = arrayType.Properties
 			outSchema.Validations.MinItems = schema.MinItems
