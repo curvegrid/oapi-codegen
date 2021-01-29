@@ -242,6 +242,71 @@ func (s RequestBody) Validate() error {
 
 }
 
+// EnsureEverythingIsReferencedResponseOK defines parameters for EnsureEverythingIsReferenced.
+type EnsureEverythingIsReferencedResponseOK struct {
+
+	// Has additional properties with schema for dictionaries
+	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
+
+	// Has anonymous field which has additional properties
+	Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
+	JsonField *ObjectWithJsonField         `json:"jsonField,omitempty"`
+
+	// Has additional properties of type int
+	One *AdditionalPropertiesObject1 `json:"one,omitempty"`
+
+	// Allows any additional property
+	Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
+
+	// Does not allow additional properties
+	Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
+}
+
+// Validate perform validation on the EnsureEverythingIsReferencedResponseOK
+func (s EnsureEverythingIsReferencedResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Five,
+		),
+		validation.Field(
+			&s.Four,
+		),
+		validation.Field(
+			&s.JsonField,
+		),
+		validation.Field(
+			&s.One,
+		),
+		validation.Field(
+			&s.Three,
+		),
+		validation.Field(
+			&s.Two,
+		),
+	)
+
+}
+
+// EnsureEverythingIsReferencedResponseDefault defines parameters for EnsureEverythingIsReferenced.
+type EnsureEverythingIsReferencedResponseDefault struct {
+	Field SchemaObject `json:"Field"`
+}
+
+// Validate perform validation on the EnsureEverythingIsReferencedResponseDefault
+func (s EnsureEverythingIsReferencedResponseDefault) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Field,
+			validation.Required,
+		),
+	)
+
+}
+
 // ParamsWithAddPropsParams_P1 defines parameters for ParamsWithAddProps.
 type ParamsWithAddPropsParams_P1 struct {
 	AdditionalProperties map[string]interface{} `json:"-"`
@@ -969,9 +1034,9 @@ type Client struct {
 	// customized settings, such as certificate chains.
 	Client HttpRequestDoer
 
-	// A callback for modifying requests which are generated before sending over
+	// A list of callbacks for modifying requests which are generated before sending over
 	// the network.
-	RequestEditor RequestEditorFn
+	RequestEditors []RequestEditorFn
 }
 
 // ClientOption allows setting custom parameters during construction
@@ -1013,7 +1078,7 @@ func WithHTTPClient(doer HttpRequestDoer) ClientOption {
 // called right before sending the request. This can be used to mutate the request.
 func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 	return func(c *Client) error {
-		c.RequestEditor = fn
+		c.RequestEditors = append(c.RequestEditors, fn)
 		return nil
 	}
 }
@@ -1021,90 +1086,70 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 	// EnsureEverythingIsReferenced request  with any body
-	EnsureEverythingIsReferencedWithBody(ctx context.Context, contentType string, body io.Reader) (*http.Response, error)
+	EnsureEverythingIsReferencedWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	EnsureEverythingIsReferenced(ctx context.Context, body EnsureEverythingIsReferencedJSONRequestBody) (*http.Response, error)
+	EnsureEverythingIsReferenced(ctx context.Context, body EnsureEverythingIsReferencedJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ParamsWithAddProps request
-	ParamsWithAddProps(ctx context.Context, params *ParamsWithAddPropsParams) (*http.Response, error)
+	ParamsWithAddProps(ctx context.Context, params *ParamsWithAddPropsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BodyWithAddProps request  with any body
-	BodyWithAddPropsWithBody(ctx context.Context, contentType string, body io.Reader) (*http.Response, error)
+	BodyWithAddPropsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	BodyWithAddProps(ctx context.Context, body BodyWithAddPropsJSONRequestBody) (*http.Response, error)
+	BodyWithAddProps(ctx context.Context, body BodyWithAddPropsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) EnsureEverythingIsReferencedWithBody(ctx context.Context, contentType string, body io.Reader) (*http.Response, error) {
+func (c *Client) EnsureEverythingIsReferencedWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewEnsureEverythingIsReferencedRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
-	req = req.WithContext(ctx)
-	if c.RequestEditor != nil {
-		err = c.RequestEditor(ctx, req)
-		if err != nil {
-			return nil, err
-		}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
 	}
 	return c.Client.Do(req)
 }
 
-func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, body EnsureEverythingIsReferencedJSONRequestBody) (*http.Response, error) {
+func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, body EnsureEverythingIsReferencedJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewEnsureEverythingIsReferencedRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
-	req = req.WithContext(ctx)
-	if c.RequestEditor != nil {
-		err = c.RequestEditor(ctx, req)
-		if err != nil {
-			return nil, err
-		}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
 	}
 	return c.Client.Do(req)
 }
 
-func (c *Client) ParamsWithAddProps(ctx context.Context, params *ParamsWithAddPropsParams) (*http.Response, error) {
+func (c *Client) ParamsWithAddProps(ctx context.Context, params *ParamsWithAddPropsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewParamsWithAddPropsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
-	req = req.WithContext(ctx)
-	if c.RequestEditor != nil {
-		err = c.RequestEditor(ctx, req)
-		if err != nil {
-			return nil, err
-		}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
 	}
 	return c.Client.Do(req)
 }
 
-func (c *Client) BodyWithAddPropsWithBody(ctx context.Context, contentType string, body io.Reader) (*http.Response, error) {
+func (c *Client) BodyWithAddPropsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBodyWithAddPropsRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
-	req = req.WithContext(ctx)
-	if c.RequestEditor != nil {
-		err = c.RequestEditor(ctx, req)
-		if err != nil {
-			return nil, err
-		}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
 	}
 	return c.Client.Do(req)
 }
 
-func (c *Client) BodyWithAddProps(ctx context.Context, body BodyWithAddPropsJSONRequestBody) (*http.Response, error) {
+func (c *Client) BodyWithAddProps(ctx context.Context, body BodyWithAddPropsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBodyWithAddPropsRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
-	req = req.WithContext(ctx)
-	if c.RequestEditor != nil {
-		err = c.RequestEditor(ctx, req)
-		if err != nil {
-			return nil, err
-		}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
 	}
 	return c.Client.Do(req)
 }
@@ -1240,6 +1285,21 @@ func NewBodyWithAddPropsRequestWithBody(server string, contentType string, body 
 
 	req.Header.Add("Content-Type", contentType)
 	return req, nil
+}
+
+func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
+	req = req.WithContext(ctx)
+	for _, r := range c.RequestEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	for _, r := range additionalEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ClientWithResponses builds on ClientInterface to offer response payloads
@@ -1541,26 +1601,6 @@ func (c *EnsureEverythingIsReferencedContext) ParseJSONBody() (EnsureEverythingI
 // OK responses with the appropriate code and the JSON response.
 func (c *EnsureEverythingIsReferencedContext) OK(resp EnsureEverythingIsReferencedResponseOK) error {
 	return c.JSON(200, resp)
-}
-
-// EnsureEverythingIsReferencedResponseOK is the response type for EnsureEverythingIsReferenced's "200" response.
-type EnsureEverythingIsReferencedResponseOK = struct {
-
-	// Has additional properties with schema for dictionaries
-	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
-
-	// Has anonymous field which has additional properties
-	Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
-	JsonField *ObjectWithJsonField         `json:"jsonField,omitempty"`
-
-	// Has additional properties of type int
-	One *AdditionalPropertiesObject1 `json:"one,omitempty"`
-
-	// Allows any additional property
-	Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
-
-	// Does not allow additional properties
-	Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
 }
 
 // ParamsWithAddPropsContext is a context customized for ParamsWithAddProps (GET /params_with_add_props).

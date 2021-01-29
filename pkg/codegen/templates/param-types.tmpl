@@ -1,7 +1,7 @@
 {{range .}}{{$opid := .OperationId}}
 {{range .TypeDefinitions}}
 // {{.TypeName}} defines parameters for {{$opid}}.
-type {{.TypeName}} {{.Schema.TypeDecl}}
+type {{.TypeName}} {{ if .IsAlias }}={{ end }} {{.Schema.TypeDecl}}
 
 {{ if not .Schema.RefType }}
 // Validate perform validation on the {{.TypeName}}

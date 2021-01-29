@@ -409,9 +409,9 @@ type Client struct {
 	// customized settings, such as certificate chains.
 	Client HttpRequestDoer
 
-	// A callback for modifying requests which are generated before sending over
+	// A list of callbacks for modifying requests which are generated before sending over
 	// the network.
-	RequestEditor RequestEditorFn
+	RequestEditors []RequestEditorFn
 }
 
 // ClientOption allows setting custom parameters during construction
@@ -453,7 +453,7 @@ func WithHTTPClient(doer HttpRequestDoer) ClientOption {
 // called right before sending the request. This can be used to mutate the request.
 func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 	return func(c *Client) error {
-		c.RequestEditor = fn
+		c.RequestEditors = append(c.RequestEditors, fn)
 		return nil
 	}
 }
@@ -465,9 +465,9 @@ type ClientInterface interface {
 {{$pathParams := .PathParams -}}
 {{$opid := .OperationId -}}
     // {{$opid}} request {{if .HasBody}} with any body{{end}}
-    {{$opid}}{{if .HasBody}}WithBody{{end}}(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}) (*http.Response, error)
+    {{$opid}}{{if .HasBody}}WithBody{{end}}(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}, reqEditors... RequestEditorFn) (*http.Response, error)
 {{range .Bodies}}
-    {{$opid}}{{.Suffix}}(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody) (*http.Response, error)
+    {{$opid}}{{.Suffix}}(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody, reqEditors... RequestEditorFn) (*http.Response, error)
 {{end}}{{/* range .Bodies */}}
 {{end}}{{/* range . $opid := .OperationId */}}
 }
@@ -479,33 +479,25 @@ type ClientInterface interface {
 {{$pathParams := .PathParams -}}
 {{$opid := .OperationId -}}
 
-func (c *Client) {{$opid}}{{if .HasBody}}WithBody{{end}}(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}) (*http.Response, error) {
+func (c *Client) {{$opid}}{{if .HasBody}}WithBody{{end}}(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}, reqEditors... RequestEditorFn) (*http.Response, error) {
     req, err := New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(c.Server{{genParamNames .PathParams}}{{if $hasParams}}, params{{end}}{{if .HasBody}}, contentType, body{{end}})
     if err != nil {
         return nil, err
     }
-    req = req.WithContext(ctx)
-    if c.RequestEditor != nil {
-        err = c.RequestEditor(ctx, req)
-        if err != nil {
-            return nil, err
-        }
+    if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+        return nil, err
     }
     return c.Client.Do(req)
 }
 
 {{range .Bodies}}
-func (c *Client) {{$opid}}{{.Suffix}}(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody) (*http.Response, error) {
+func (c *Client) {{$opid}}{{.Suffix}}(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody, reqEditors... RequestEditorFn) (*http.Response, error) {
     req, err := New{{$opid}}{{.Suffix}}Request(c.Server{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}, body)
     if err != nil {
         return nil, err
     }
-    req = req.WithContext(ctx)
-    if c.RequestEditor != nil {
-        err = c.RequestEditor(ctx, req)
-        if err != nil {
-            return nil, err
-        }
+    if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+        return nil, err
     }
     return c.Client.Do(req)
 }
@@ -662,6 +654,21 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
 }
 
 {{end}}{{/* Range */}}
+
+func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
+    req = req.WithContext(ctx)
+    for _, r := range c.RequestEditors {
+        if err := r(ctx, req); err != nil {
+            return err
+        }
+    }
+    for _, r := range additionalEditors {
+        if err := r(ctx, req); err != nil {
+            return err
+        }
+    }
+    return nil
+}
 `,
 	"imports.tmpl": `// Package {{.PackageName}} provides primitives to interact the openapi HTTP API.
 //
@@ -684,6 +691,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
@@ -731,7 +739,7 @@ func GetSwagger() (*openapi3.Swagger, error) {
 	"param-types.tmpl": `{{range .}}{{$opid := .OperationId}}
 {{range .TypeDefinitions}}
 // {{.TypeName}} defines parameters for {{$opid}}.
-type {{.TypeName}} {{.Schema.TypeDecl}}
+type {{.TypeName}} {{ if .IsAlias }}={{ end }} {{.Schema.TypeDecl}}
 
 {{ if not .Schema.RefType }}
 // Validate perform validation on the {{.TypeName}}
@@ -848,29 +856,19 @@ func (c *{{$op.OperationId}}Context) OK() error {
     return c.NoContent(200)
 }
 {{- end }}
-{{- range .GetResponseTypeDefinitions }}
-{{ $respType := .Schema.RefType }}
+{{- range .GetResponseIndependentTypeDefinitions }}
+{{ $respType := .TypeName }}
 {{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
-{{ if eq $respType "" }}
-{{ $respType = printf "%sResponse%s" $op.OperationId .ResponseName}}
-{{ end }}
 // Respond{{.ResponseName}} responses with the given code in range and the JSON response.
 func (c *{{$op.OperationId}}Context) Respond{{.ResponseName}}(code int, resp {{$respType}}) error {
     return c.JSON(code, resp)
 }
 {{- else if (ne .ResponseName "default") }}
 {{ $respName := statusText .ResponseName | camelCase | title }}
-{{ if eq $respType "" }}
-{{ $respType = printf "%sResponse%s" $op.OperationId $respName }}
-{{ end }}
 // {{$respName}} responses with the appropriate code and the JSON response.
 func (c *{{$op.OperationId}}Context) {{$respName}}(resp {{$respType}}) error {
     return c.JSON({{.ResponseName}}, resp)
 }
-{{- end }}
-{{ if and (ne $respType "") (eq .Schema.RefType "") }}
-// {{$respType}} is the response type for {{$op.OperationId}}'s "{{.ResponseName}}" response.
-type {{$respType}} = {{.Schema.GoType}}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -891,9 +889,125 @@ func (v ValidationError) Error() string {
     return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 `,
+	"test-client.tmpl": `// APIErrorCode represents an API error code and its corresponding HTTP error code
+type APIErrorCode interface {
+    // HTTPStatus returns the HTTP status code
+	HTTPStatus() int
+    // AppCode returns the application error code
+	AppCode() string
+}
+
+// TestClient is a client that is used mainly for testing.
+type TestClient struct {
+    // The generated client.
+    Client ClientInterface
+}
+
+{{/* Generate client methods */}}
+{{range . -}}
+{{$hasParams := .RequiresParamObject -}}
+{{$pathParams := .PathParams -}}
+{{$opid := .OperationId -}}
+{{$op := . -}}
+
+// {{$opid}}{{if .HasBody}}WithBody{{end}} calls the endpoints, asserts that there are no errors, and return the TestResponse.
+func (tc *TestClient) {{$opid}}{{if .HasBody}}WithBody{{end}}(t *testing.T{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}, reqEditors... RequestEditorFn) *{{$opid}}TestResponse {
+    ctx := context.Background()
+    resp, err := tc.Client.{{$opid}}{{if .HasBody}}WithBody{{end}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}{{if .HasBody}}, contentType, body{{end}}, reqEditors...)
+    if err != nil {
+        t.Fatal(err)
+    }
+    return &{{$opid}}TestResponse{resp, t, tc}
+}
+
+{{range .Bodies}}
+// {{$opid}}{{.Suffix}} calls the endpoints, asserts that there are no errors, and return the TestResponse.
+func (tc *TestClient) {{$opid}}{{.Suffix}}(t *testing.T{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody, reqEditors... RequestEditorFn) *{{$opid}}TestResponse {
+    ctx := context.Background()
+    resp, err := tc.Client.{{$opid}}{{.Suffix}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}, body, reqEditors...)
+    if err != nil {
+        t.Fatal(err)
+    }
+    return &{{$opid}}TestResponse{resp, t, tc}
+}
+{{end}}{{/* range .Bodies */}}
+
+{{/* Response handlers */}}
+// {{$opid}}TestResponse provides a facility for asserting response bodies.
+type {{$opid}}TestResponse struct {
+    *http.Response
+
+    t *testing.T
+    tc *TestClient
+}
+
+{{ if $op.HasEmptySuccess }}
+// OK asserts a successful response with no body.
+func (c *{{$op.OperationId}}TestResponse) OK() {
+    if c.StatusCode != 200 {
+        c.t.Fatalf("Expected status code 200, got %d", c.StatusCode)
+    }
+    if c.ContentLength != 0 {
+        c.t.Fatalf("Expected zero content length, got %d", c.ContentLength)
+    }
+}
+{{- end }}
+{{- range .GetResponseIndependentTypeDefinitions }}
+{{ $respType := .TypeName }}
+{{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") }}
+// Respond{{.ResponseName}} asserts a response with the given code in range and the defined JSON type.
+func (c *{{$op.OperationId}}TestResponse) Respond{{.ResponseName}}(code int) {{$respType}} {
+    if c.StatusCode != code {
+        c.t.Fatalf("Expected status code %d, got %d", code, c.StatusCode)
+    }
+    var resp {{$respType}}
+    c.tc.parseJSONResponse(c.t, c.Response, &resp)
+    return resp
+}
+{{- else if or (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
+// Error{{.ResponseName}} asserts an error response with the given API error code
+func (c *{{$op.OperationId}}TestResponse) Error{{.ResponseName}}(code APIErrorCode) {{$respType}} {
+    if c.StatusCode != code.HTTPStatus() {
+        c.t.Fatalf("Expected status code %d, got %d", code.HTTPStatus(), code)
+    }
+    var resp {{$respType}}
+    c.tc.parseJSONResponse(c.t, c.Response, &resp)
+
+    if resp.Code != code.AppCode() {
+        c.t.Fatalf("Expected error code %s, got %s", code.AppCode(), resp.Code)
+    }
+
+    return resp
+}
+{{- else if (ne .ResponseName "default") }}
+{{ $respName := statusText .ResponseName | camelCase | title }}
+// {{$respName}} asserts a response with the appropriate code and the defined JSON type.
+func (c *{{$op.OperationId}}TestResponse) {{$respName}}() {{$respType}} {
+    if c.StatusCode != {{.ResponseName}} {
+        c.t.Fatalf("Expected status code {{.ResponseName}}, got %d", c.StatusCode)
+    }
+    var resp {{$respType}}
+    c.tc.parseJSONResponse(c.t, c.Response, &resp)
+    return resp
+}
+{{- end }}
+{{- end }}
+{{end}}
+
+func (tc *TestClient) parseJSONResponse(t *testing.T, resp *http.Response, target validation.Validatable) {
+    defer resp.Body.Close()
+    decoder := json.NewDecoder(resp.Body)
+    if err := decoder.Decode(target); err != nil {
+        t.Fatalf("Failed to decode response body as JSON: %v", err)
+    }
+    if err := target.Validate(); err != nil {
+        t.Fatalf("Response validation failed: %v", err)
+    }
+}
+`,
 	"typedef.tmpl": `{{range .Types}}
 // {{.TypeName}} defines model for {{.JsonName}}.
-type {{.TypeName}} {{.Schema.TypeDecl}}
+type {{.TypeName}} {{ if .IsAlias }}={{ end }} {{.Schema.TypeDecl}}
 {{- if gt (len .Schema.EnumValues) 0 }}
 // List of {{ .TypeName }}
 const (
@@ -904,6 +1018,7 @@ const (
 )
 {{- end }}
 
+{{ if not .IsAlias }}
 // Validate perform validation on the {{.TypeName}}
 func (s {{.TypeName}}) Validate() error {
     {{- $v := .Schema.Validations -}}
@@ -931,6 +1046,7 @@ func (s {{.TypeName}}) Validate() error {
     )
     {{ end }}
 }
+{{ end }}
 {{end}}
 
 {{ define "validateRules" }}

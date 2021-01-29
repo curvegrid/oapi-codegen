@@ -291,6 +291,12 @@ func (s SimpleResponse) Validate() error {
 
 }
 
+// GetEveryTypeOptionalResponseOK defines parameters for GetEveryTypeOptional.
+type GetEveryTypeOptionalResponseOK = EveryTypeOptional
+
+// GetSimpleResponseOK defines parameters for GetSimple.
+type GetSimpleResponseOK = SomeObject
+
 // GetWithArgsParams defines parameters for GetWithArgs.
 type GetWithArgsParams struct {
 
@@ -323,6 +329,24 @@ func (s GetWithArgsParams) Validate() error {
 
 }
 
+// GetWithArgsResponseOK defines parameters for GetWithArgs.
+type GetWithArgsResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the GetWithArgsResponseOK
+func (s GetWithArgsResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
 // GetWithReferencesPathGlobalArgument defines parameters for GetWithReferences.
 type GetWithReferencesPathGlobalArgument int64
 
@@ -331,6 +355,24 @@ func (s GetWithReferencesPathGlobalArgument) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		(int64)(s),
+	)
+
+}
+
+// GetWithReferencesResponseOK defines parameters for GetWithReferences.
+type GetWithReferencesResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the GetWithReferencesResponseOK
+func (s GetWithReferencesResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
 	)
 
 }
@@ -350,6 +392,12 @@ func (s GetWithContentTypePathContentType) Validate() error {
 
 }
 
+// GetWithContentTypeResponseOK defines parameters for GetWithContentType.
+type GetWithContentTypeResponseOK = SomeObject
+
+// GetReservedKeywordResponseOK defines parameters for GetReservedKeyword.
+type GetReservedKeywordResponseOK = ReservedKeyword
+
 // CreateResourceJSONBody defines parameters for CreateResource.
 type CreateResourceJSONBody EveryTypeRequired
 
@@ -358,6 +406,24 @@ func (s CreateResourceJSONBody) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		(EveryTypeRequired)(s),
+	)
+
+}
+
+// CreateResourceResponseOK defines parameters for CreateResource.
+type CreateResourceResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the CreateResourceResponseOK
+func (s CreateResourceResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
 	)
 
 }
@@ -405,6 +471,24 @@ func (s CreateResource2PathInlineArgument) Validate() error {
 
 }
 
+// CreateResource2ResponseOK defines parameters for CreateResource2.
+type CreateResource2ResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the CreateResource2ResponseOK
+func (s CreateResource2ResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
 // UpdateResource3JSONBody defines parameters for UpdateResource3.
 type UpdateResource3JSONBody struct {
 	Id   *int    `json:"id,omitempty"`
@@ -437,6 +521,27 @@ func (s UpdateResource3PathFallthrough) Validate() error {
 	)
 
 }
+
+// UpdateResource3ResponseOK defines parameters for UpdateResource3.
+type UpdateResource3ResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the UpdateResource3ResponseOK
+func (s UpdateResource3ResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
+// GetResponseWithReferenceResponseOK defines parameters for GetResponseWithReference.
+type GetResponseWithReferenceResponseOK = SomeObject
 
 // CreateResourceRequestBody defines body for CreateResource for application/json ContentType.
 type CreateResourceJSONRequestBody CreateResourceJSONBody

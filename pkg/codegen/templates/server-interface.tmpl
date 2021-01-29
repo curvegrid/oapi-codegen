@@ -39,29 +39,19 @@ func (c *{{$op.OperationId}}Context) OK() error {
     return c.NoContent(200)
 }
 {{- end }}
-{{- range .GetResponseTypeDefinitions }}
-{{ $respType := .Schema.RefType }}
+{{- range .GetResponseIndependentTypeDefinitions }}
+{{ $respType := .TypeName }}
 {{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
-{{ if eq $respType "" }}
-{{ $respType = printf "%sResponse%s" $op.OperationId .ResponseName}}
-{{ end }}
 // Respond{{.ResponseName}} responses with the given code in range and the JSON response.
 func (c *{{$op.OperationId}}Context) Respond{{.ResponseName}}(code int, resp {{$respType}}) error {
     return c.JSON(code, resp)
 }
 {{- else if (ne .ResponseName "default") }}
 {{ $respName := statusText .ResponseName | camelCase | title }}
-{{ if eq $respType "" }}
-{{ $respType = printf "%sResponse%s" $op.OperationId $respName }}
-{{ end }}
 // {{$respName}} responses with the appropriate code and the JSON response.
 func (c *{{$op.OperationId}}Context) {{$respName}}(resp {{$respType}}) error {
     return c.JSON({{.ResponseName}}, resp)
 }
-{{- end }}
-{{ if and (ne $respType "") (eq .Schema.RefType "") }}
-// {{$respType}} is the response type for {{$op.OperationId}}'s "{{.ResponseName}}" response.
-type {{$respType}} = {{.Schema.GoType}}
 {{- end }}
 {{- end }}
 {{- end }}

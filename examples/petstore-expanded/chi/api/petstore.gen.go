@@ -120,6 +120,22 @@ func (s FindPetsParams) Validate() error {
 
 }
 
+// FindPetsResponseOK defines parameters for FindPets.
+type FindPetsResponseOK []Pet
+
+// Validate perform validation on the FindPetsResponseOK
+func (s FindPetsResponseOK) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]Pet)(s),
+		validation.Each(),
+	)
+
+}
+
+// FindPetsResponseDefault defines parameters for FindPets.
+type FindPetsResponseDefault = Error
+
 // AddPetJSONBody defines parameters for AddPet.
 type AddPetJSONBody NewPet
 
@@ -131,6 +147,12 @@ func (s AddPetJSONBody) Validate() error {
 	)
 
 }
+
+// AddPetResponseOK defines parameters for AddPet.
+type AddPetResponseOK = Pet
+
+// AddPetResponseDefault defines parameters for AddPet.
+type AddPetResponseDefault = Error
 
 // DeletePetPathId defines parameters for DeletePet.
 type DeletePetPathId int64
@@ -144,6 +166,9 @@ func (s DeletePetPathId) Validate() error {
 
 }
 
+// DeletePetResponseDefault defines parameters for DeletePet.
+type DeletePetResponseDefault = Error
+
 // FindPetByIdPathId defines parameters for FindPetById.
 type FindPetByIdPathId int64
 
@@ -155,6 +180,12 @@ func (s FindPetByIdPathId) Validate() error {
 	)
 
 }
+
+// FindPetByIdResponseOK defines parameters for FindPetById.
+type FindPetByIdResponseOK = Pet
+
+// FindPetByIdResponseDefault defines parameters for FindPetById.
+type FindPetByIdResponseDefault = Error
 
 // AddPetRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody
