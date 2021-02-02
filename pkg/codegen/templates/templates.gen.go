@@ -166,7 +166,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
   {{end}}
 
 {{range .SecurityDefinitions}}
-  ctx = context.WithValue(ctx, "{{.ProviderName}}.Scopes", {{toStringArray .Scopes}})
+  ctx = context.WithValue(ctx, {{.ProviderName | ucFirst}}Scopes, {{toStringArray .Scopes}})
 {{end}}
 
   {{if .RequiresParamObject}}
@@ -638,6 +638,7 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
         return nil, err
     }
 
+    {{if .HasBody}}req.Header.Add("Content-Type", contentType){{end}}
 {{range $paramIdx, $param := .HeaderParams}}
     {{if not .Required}} if params.{{.GoName}} != nil { {{end}}
     var headerParam{{$paramIdx}} string
@@ -658,7 +659,7 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
         return nil, err
     }
     {{end}}
-    req.Header.Add("{{.ParamName}}", headerParam{{$paramIdx}})
+    req.Header.Set("{{.ParamName}}", headerParam{{$paramIdx}})
     {{if not .Required}}}{{end}}
 {{end}}
 
@@ -689,7 +690,6 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
     req.AddCookie(cookie{{$paramIdx}})
     {{if not .Required}}}{{end}}
 {{end}}
-    {{if .HasBody}}req.Header.Add("Content-Type", contentType){{end}}
     return req, nil
 }
 
@@ -709,6 +709,14 @@ func (c *Client) applyEditors(ctx context.Context, req *http.Request, additional
     }
     return nil
 }
+`,
+	"constants.tmpl": `{{- if gt (len .SecuritySchemeProviderNames) 0 }}
+const (
+{{range $ProviderName := .SecuritySchemeProviderNames}}
+    {{- $ProviderName | ucFirst}}Scopes = "{{$ProviderName}}.Scopes"
+{{end}}
+)
+{{end}}
 `,
 	"imports.tmpl": `// Package {{.PackageName}} provides primitives to interact the openapi HTTP API.
 //

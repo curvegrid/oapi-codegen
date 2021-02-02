@@ -22,6 +22,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	OpenIdScopes = "OpenId.Scopes"
+)
+
 // SchemaObject defines model for SchemaObject.
 type SchemaObject struct {
 	FirstName string `json:"firstName"`
@@ -309,6 +313,7 @@ func NewPostBothRequestWithBody(server string, contentType string, body io.Reade
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
 	return req, nil
 }
 
@@ -375,6 +380,7 @@ func NewPostJsonRequestWithBody(server string, contentType string, body io.Reade
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
 	return req, nil
 }
 
@@ -430,6 +436,7 @@ func NewPostOtherRequestWithBody(server string, contentType string, body io.Read
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
 	return req, nil
 }
 

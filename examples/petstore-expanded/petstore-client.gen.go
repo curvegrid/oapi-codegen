@@ -433,6 +433,7 @@ func NewAddPetRequestWithBody(server string, contentType string, body io.Reader)
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
 	return req, nil
 }
 
