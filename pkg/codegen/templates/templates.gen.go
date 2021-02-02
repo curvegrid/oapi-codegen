@@ -1010,7 +1010,7 @@ func (c *{{$op.OperationId}}TestResponse) Respond{{.ResponseName}}(code int) {{$
 // Error{{.ResponseName}} asserts an error response with the given API error code
 func (c *{{$op.OperationId}}TestResponse) Error{{.ResponseName}}(code APIErrorCode) {{$respType}} {
     if c.StatusCode != code.HTTPStatus() {
-        c.t.Fatalf("Expected status code %d, got %d", code.HTTPStatus(), code)
+        c.t.Fatalf("Expected status code %d, got %d", code.HTTPStatus(), c.StatusCode)
     }
     var resp {{$respType}}
     c.tc.parseJSONResponse(c.t, c.Response, &resp)
