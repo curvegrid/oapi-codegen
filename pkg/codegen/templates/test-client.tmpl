@@ -23,9 +23,8 @@ type TestClient struct {
 func (tc *TestClient) {{$opid}}{{if .HasBody}}WithBody{{end}}(tb testing.TB{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}, reqEditors... RequestEditorFn) *{{$opid}}TestResponse {
     ctx := context.Background()
     resp, err := tc.Client.{{$opid}}{{if .HasBody}}WithBody{{end}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}{{if .HasBody}}, contentType, body{{end}}, reqEditors...)
-    if err != nil {
-        tb.Fatal(err)
-    }
+    require.NoError(tb, err)
+
     return &{{$opid}}TestResponse{resp, tb, tc}
 }
 
@@ -34,9 +33,8 @@ func (tc *TestClient) {{$opid}}{{if .HasBody}}WithBody{{end}}(tb testing.TB{{gen
 func (tc *TestClient) {{$opid}}{{.Suffix}}(tb testing.TB{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody, reqEditors... RequestEditorFn) *{{$opid}}TestResponse {
     ctx := context.Background()
     resp, err := tc.Client.{{$opid}}{{.Suffix}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}, body, reqEditors...)
-    if err != nil {
-        tb.Fatal(err)
-    }
+    require.NoError(tb, err)
+
     return &{{$opid}}TestResponse{resp, tb, tc}
 }
 {{end}}{{/* range .Bodies */}}
@@ -53,12 +51,8 @@ type {{$opid}}TestResponse struct {
 {{ if $op.HasEmptySuccess }}
 // OK asserts a successful response with no body.
 func (c *{{$op.OperationId}}TestResponse) OK() {
-    if c.StatusCode != 200 {
-        c.tb.Fatalf("Expected status code 200, got %d", c.StatusCode)
-    }
-    if c.ContentLength != 0 {
-        c.tb.Fatalf("Expected zero content length, got %d", c.ContentLength)
-    }
+    require.Equalf(c.tb, 200, c.StatusCode, "expected status code 200, got %d", c.StatusCode)
+    require.Equalf(c.tb, int64(0), c.ContentLength, "expected zero content length, got %d", c.ContentLength)
 }
 {{- end }}
 {{- range .GetResponseIndependentTypeDefinitions }}
@@ -66,9 +60,8 @@ func (c *{{$op.OperationId}}TestResponse) OK() {
 {{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") }}
 // Respond{{.ResponseName}} asserts a response with the given code in range and the defined JSON type.
 func (c *{{$op.OperationId}}TestResponse) Respond{{.ResponseName}}(code int) {{$respType}} {
-    if c.StatusCode != code {
-        c.tb.Fatalf("Expected status code %d, got %d", code, c.StatusCode)
-    }
+    require.Equalf(c.tb, code, c.StatusCode, "expected status code %d, got %d", code, c.StatusCode)
+
     var resp {{$respType}}
     c.tc.parseJSONResponse(c.tb, c.Response, &resp)
     return resp
@@ -76,25 +69,20 @@ func (c *{{$op.OperationId}}TestResponse) Respond{{.ResponseName}}(code int) {{$
 {{- else if or (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
 // Error{{.ResponseName}} asserts an error response with the given API error code
 func (c *{{$op.OperationId}}TestResponse) Error{{.ResponseName}}(code APIErrorCode) {{$respType}} {
-    if c.StatusCode != code.HTTPStatus() {
-        c.tb.Fatalf("Expected status code %d, got %d", code.HTTPStatus(), c.StatusCode)
-    }
+    require.Equalf(c.tb, code.HTTPStatus(), c.StatusCode, "expected status code %d, got %d", code.HTTPStatus(), c.StatusCode)
+
     var resp {{$respType}}
     c.tc.parseJSONResponse(c.tb, c.Response, &resp)
 
-    if resp.Code != code.AppCode() {
-        c.tb.Fatalf("Expected error code %s, got %s", code.AppCode(), resp.Code)
-    }
-
+    require.Equalf(c.tb, code.AppCode(), resp.Code, "expected API error code %s, got %s", code.AppCode(), resp.Code)
     return resp
 }
 {{- else if (ne .ResponseName "default") }}
 {{ $respName := statusText .ResponseName | camelCase | title }}
 // {{$respName}} asserts a response with the appropriate code and the defined JSON type.
 func (c *{{$op.OperationId}}TestResponse) {{$respName}}() {{$respType}} {
-    if c.StatusCode != {{.ResponseName}} {
-        c.tb.Fatalf("Expected status code {{.ResponseName}}, got %d", c.StatusCode)
-    }
+    require.Equalf(c.tb, {{.ResponseName}}, c.StatusCode, "expected status code {{.ResponseName}}, got %d", c.StatusCode)
+
     var resp {{$respType}}
     c.tc.parseJSONResponse(c.tb, c.Response, &resp)
     return resp
@@ -105,11 +93,9 @@ func (c *{{$op.OperationId}}TestResponse) {{$respName}}() {{$respType}} {
 
 func (tc *TestClient) parseJSONResponse(tb testing.TB, resp *http.Response, target validation.Validatable) {
     defer resp.Body.Close()
-    decoder := json.NewDecoder(resp.Body)
-    if err := decoder.Decode(target); err != nil {
-        tb.Fatalf("Failed to decode response body as JSON: %v", err)
-    }
-    if err := target.Validate(); err != nil {
-        tb.Fatalf("Response validation failed: %v", err)
-    }
+    err := json.NewDecoder(resp.Body).Decode(target)
+    require.NoError(tb, err, "failed to decode response body as JSON: %v", err)
+
+    err = target.Validate()
+    require.NoError(tb, err, "response validation failed: %v", err)
 }
