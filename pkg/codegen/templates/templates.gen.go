@@ -994,7 +994,7 @@ type {{$opid}}TestResponse struct {
 // OK asserts a successful response with no body.
 func (c *{{$op.OperationId}}TestResponse) OK() {
     require.Equalf(c.tb, 200, c.StatusCode, "expected status code 200, got %d", c.StatusCode)
-    require.Equalf(c.tb, 0, c.ContentLength, "expected zero content length, got %d", c.ContentLength)
+    require.Equalf(c.tb, int64(0), c.ContentLength, "expected zero content length, got %d", c.ContentLength)
 }
 {{- end }}
 {{- range .GetResponseIndependentTypeDefinitions }}
