@@ -285,4 +285,5 @@ var TemplateFunctions = template.FuncMap{
 		}
 		return http.StatusText(v), nil
 	},
+	"sanitizeGoIdentity": SanitizeGoIdentity,
 }
