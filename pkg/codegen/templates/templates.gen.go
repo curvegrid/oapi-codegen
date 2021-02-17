@@ -888,10 +888,10 @@ type {{.OperationId}}Context struct {
 func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}}{{.NameTag}}Body, error) {
     var resp {{$op.OperationId}}{{.NameTag}}Body
     if err := c.Bind(&resp); err != nil {
-        return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+        return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
     }
     if err := resp.Validate(); err != nil {
-        return resp, ValidationError{ParamType: "body", Err: err}
+        return resp, &ValidationError{ParamType: "body", Err: err}
     }
     return resp, nil
 }
@@ -933,7 +933,7 @@ type ValidationError struct {
 }
 
 // Error implements the error interface.
-func (v ValidationError) Error() string {
+func (v *ValidationError) Error() string {
     if v.Param == "" {
         return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
     }
@@ -1158,17 +1158,17 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
 {{if .IsJson}}
     err = json.Unmarshal([]byte(ctx.Param("{{.ParamName}}")), &{{$varName}})
     if err != nil {
-        return errors.WithStack(ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: errors.Wrap(err, "cannot parse as json")})
+        return errors.WithStack(&ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: errors.Wrap(err, "cannot parse as json")})
     }
 {{end}}
 {{if .IsStyled}}
     err = runtime.BindStyledParameter("{{.Style}}",{{.Explode}}, "{{.ParamName}}", ctx.Param("{{.ParamName}}"), &{{$varName}})
     if err != nil {
-        return errors.WithStack(ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
+        return errors.WithStack(&ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
     }
 {{end}}
     if err := {{$varName}}.Validate(); err != nil {
-        return errors.WithStack(ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: err})
+        return errors.WithStack(&ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: err})
     }
 {{end}}
 
@@ -1179,7 +1179,7 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     {{if .IsStyled}}
     err = runtime.BindQueryParameter("{{.Style}}", {{.Explode}}, {{.Required}}, "{{.ParamName}}", ctx.QueryParams(), &params.{{.GoName}})
     if err != nil {
-        return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+        return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
     }
     {{else}}
     if paramValue := ctx.QueryParam("{{.ParamName}}"); paramValue != "" {
@@ -1190,16 +1190,16 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     var value {{.TypeDef}}
     err = json.Unmarshal([]byte(paramValue), &value)
     if err != nil {
-        return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "cannot parse as json")})
+        return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "cannot parse as json")})
     }
     params.{{.GoName}} = {{if not .Required}}&{{end}}value
     {{end}}
     }{{if .Required}} else {
-        return errors.WithStack(ValidationError{ParamType: "query", Param: "{{.ParamName}}, Err: errors.New("required but not found")})
+        return errors.WithStack(&ValidationError{ParamType: "query", Param: "{{.ParamName}}, Err: errors.New("required but not found")})
     }{{end}}
     {{end}}
     if err := params.Validate(); err != nil {
-        return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+        return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
     }
 {{end}}
 
@@ -1210,7 +1210,7 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
         var {{.GoName}} {{.TypeDef}}
         n := len(valueList)
         if n != 1 {
-            return errors.WithStack(ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Errorf("expected one value, got %d", n)})
+            return errors.WithStack(&ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Errorf("expected one value, got %d", n)})
         }
 {{if .IsPassThrough}}
         params.{{.GoName}} = {{if not .Required}}&{{end}}valueList[0]
@@ -1218,18 +1218,18 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
 {{if .IsJson}}
         err = json.Unmarshal([]byte(valueList[0]), &{{.GoName}})
         if err != nil {
-            return errors.WithStack(ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Wrap(err, "cannot parse as json")})
+            return errors.WithStack(&ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Wrap(err, "cannot parse as json")})
         }
 {{end}}
 {{if .IsStyled}}
         err = runtime.BindStyledParameter("{{.Style}}",{{.Explode}}, "{{.ParamName}}", valueList[0], &{{.GoName}})
         if err != nil {
-            return errors.WithStack(ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
+            return errors.WithStack(&ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
         }
 {{end}}
         params.{{.GoName}} = {{if not .Required}}&{{end}}{{.GoName}}
         } {{if .Required}}else {
-            return errors.WithStack(ValidationError{ParamType: "header", Param: "{{.ParamName}}, Err: errors.New("required but not found")})
+            return errors.WithStack(&ValidationError{ParamType: "header", Param: "{{.ParamName}}, Err: errors.New("required but not found")})
         }{{end}}
 {{end}}
 {{end}}
@@ -1244,11 +1244,11 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     var decoded string
     decoded, err := url.QueryUnescape(cookie.Value)
     if err != nil {
-        return errors.WithStack(ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: err})
+        return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: err})
     }
     err = json.Unmarshal([]byte(decoded), &value)
     if err != nil {
-        return errors.WithStack(ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Wrap(err, "cannot parse as json")})
+        return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Wrap(err, "cannot parse as json")})
     }
     params.{{.GoName}} = {{if not .Required}}&{{end}}value
     {{end}}
@@ -1256,12 +1256,12 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     var value {{.TypeDef}}
     err = runtime.BindStyledParameter("simple",{{.Explode}}, "{{.ParamName}}", cookie.Value, &value)
     if err != nil {
-        return errors.WithStack(ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
+        return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
     }
     params.{{.GoName}} = {{if not .Required}}&{{end}}value
     {{end}}
     }{{if .Required}} else {
-        return errors.WithStack(ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Errorf("required, but not found")})
+        return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Errorf("required, but not found")})
     }{{end}}
 
 {{end}}{{/* .CookieParams */}}

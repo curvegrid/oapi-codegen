@@ -2944,7 +2944,7 @@ type ValidationError struct {
 }
 
 // Error implements the error interface.
-func (v ValidationError) Error() string {
+func (v *ValidationError) Error() string {
 	if v.Param == "" {
 		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
 	}
@@ -2982,11 +2982,11 @@ func (w *ServerInterfaceWrapper) GetContentObject(ctx echo.Context) error {
 
 	err = json.Unmarshal([]byte(ctx.Param("param")), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "cannot parse as json")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "cannot parse as json")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3006,7 +3006,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value int32
 		err = runtime.BindStyledParameter("simple", false, "p", cookie.Value, &value)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "p", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "p", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.P = &value
 
@@ -3017,7 +3017,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value int32
 		err = runtime.BindStyledParameter("simple", true, "ep", cookie.Value, &value)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "ep", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "ep", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.Ep = &value
 
@@ -3028,7 +3028,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value []int32
 		err = runtime.BindStyledParameter("simple", true, "ea", cookie.Value, &value)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "ea", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "ea", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.Ea = &value
 
@@ -3039,7 +3039,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value []int32
 		err = runtime.BindStyledParameter("simple", false, "a", cookie.Value, &value)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "a", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "a", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.A = &value
 
@@ -3050,7 +3050,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value Object
 		err = runtime.BindStyledParameter("simple", true, "eo", cookie.Value, &value)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "eo", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "eo", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.Eo = &value
 
@@ -3061,7 +3061,7 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var value Object
 		err = runtime.BindStyledParameter("simple", false, "o", cookie.Value, &value)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "o", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "o", Err: errors.Wrap(err, "invalid format")})
 		}
 		params.O = &value
 
@@ -3073,11 +3073,11 @@ func (w *ServerInterfaceWrapper) GetCookie(ctx echo.Context) error {
 		var decoded string
 		decoded, err := url.QueryUnescape(cookie.Value)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "co", Err: err})
+			return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "co", Err: err})
 		}
 		err = json.Unmarshal([]byte(decoded), &value)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "cookie", Param: "co", Err: errors.Wrap(err, "cannot parse as json")})
+			return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "co", Err: errors.Wrap(err, "cannot parse as json")})
 		}
 		params.Co = &value
 
@@ -3101,12 +3101,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XPrimitive int32
 		n := len(valueList)
 		if n != 1 {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive", Err: errors.Errorf("expected one value, got %d", n)})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Primitive", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "X-Primitive", valueList[0], &XPrimitive)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Primitive", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XPrimitive = &XPrimitive
@@ -3116,12 +3116,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XPrimitiveExploded int32
 		n := len(valueList)
 		if n != 1 {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Primitive-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", true, "X-Primitive-Exploded", valueList[0], &XPrimitiveExploded)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Primitive-Exploded", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Primitive-Exploded", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XPrimitiveExploded = &XPrimitiveExploded
@@ -3131,12 +3131,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XArrayExploded []int32
 		n := len(valueList)
 		if n != 1 {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Array-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", true, "X-Array-Exploded", valueList[0], &XArrayExploded)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array-Exploded", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Array-Exploded", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XArrayExploded = &XArrayExploded
@@ -3146,12 +3146,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XArray []int32
 		n := len(valueList)
 		if n != 1 {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array", Err: errors.Errorf("expected one value, got %d", n)})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Array", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "X-Array", valueList[0], &XArray)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Array", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Array", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XArray = &XArray
@@ -3161,12 +3161,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XObjectExploded Object
 		n := len(valueList)
 		if n != 1 {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Object-Exploded", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", true, "X-Object-Exploded", valueList[0], &XObjectExploded)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object-Exploded", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Object-Exploded", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XObjectExploded = &XObjectExploded
@@ -3176,12 +3176,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XObject Object
 		n := len(valueList)
 		if n != 1 {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object", Err: errors.Errorf("expected one value, got %d", n)})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Object", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "X-Object", valueList[0], &XObject)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Object", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Object", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.XObject = &XObject
@@ -3191,12 +3191,12 @@ func (w *ServerInterfaceWrapper) GetHeader(ctx echo.Context) error {
 		var XComplexObject ComplexObject
 		n := len(valueList)
 		if n != 1 {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Complex-Object", Err: errors.Errorf("expected one value, got %d", n)})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Complex-Object", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = json.Unmarshal([]byte(valueList[0]), &XComplexObject)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "X-Complex-Object", Err: errors.Wrap(err, "cannot parse as json")})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "X-Complex-Object", Err: errors.Wrap(err, "cannot parse as json")})
 		}
 
 		params.XComplexObject = &XComplexObject
@@ -3216,11 +3216,11 @@ func (w *ServerInterfaceWrapper) GetLabelExplodeArray(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("label", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3237,11 +3237,11 @@ func (w *ServerInterfaceWrapper) GetLabelExplodeObject(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("label", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3258,11 +3258,11 @@ func (w *ServerInterfaceWrapper) GetLabelNoExplodeArray(ctx echo.Context) error 
 
 	err = runtime.BindStyledParameter("label", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3279,11 +3279,11 @@ func (w *ServerInterfaceWrapper) GetLabelNoExplodeObject(ctx echo.Context) error
 
 	err = runtime.BindStyledParameter("label", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3300,11 +3300,11 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeArray(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("matrix", true, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3321,11 +3321,11 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeObject(ctx echo.Context) error 
 
 	err = runtime.BindStyledParameter("matrix", true, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3342,11 +3342,11 @@ func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray(ctx echo.Context) error
 
 	err = runtime.BindStyledParameter("matrix", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3363,11 +3363,11 @@ func (w *ServerInterfaceWrapper) GetMatrixNoExplodeObject(ctx echo.Context) erro
 
 	err = runtime.BindStyledParameter("matrix", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3385,7 +3385,7 @@ func (w *ServerInterfaceWrapper) GetPassThrough(ctx echo.Context) error {
 	param = ctx.Param("param")
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3403,11 +3403,11 @@ func (w *ServerInterfaceWrapper) GetDeepObject(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("deepObject", true, true, "deepObj", ctx.QueryParams(), &params.DeepObj)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3425,71 +3425,71 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, false, "ea", ctx.QueryParams(), &params.Ea)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "a" -------------
 
 	err = runtime.BindQueryParameter("form", false, false, "a", ctx.QueryParams(), &params.A)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "eo" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "eo", ctx.QueryParams(), &params.Eo)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "o" -------------
 
 	err = runtime.BindQueryParameter("form", false, false, "o", ctx.QueryParams(), &params.O)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "ep" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "ep", ctx.QueryParams(), &params.Ep)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "p" -------------
 
 	err = runtime.BindQueryParameter("form", false, false, "p", ctx.QueryParams(), &params.P)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "ps" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "ps", ctx.QueryParams(), &params.Ps)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "co" -------------
 
@@ -3498,14 +3498,14 @@ func (w *ServerInterfaceWrapper) GetQueryForm(ctx echo.Context) error {
 		var value ComplexObject
 		err = json.Unmarshal([]byte(paramValue), &value)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "cannot parse as json")})
+			return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "cannot parse as json")})
 		}
 		params.Co = &value
 
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3522,11 +3522,11 @@ func (w *ServerInterfaceWrapper) GetSimpleExplodeArray(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3543,11 +3543,11 @@ func (w *ServerInterfaceWrapper) GetSimpleExplodeObject(ctx echo.Context) error 
 
 	err = runtime.BindStyledParameter("simple", true, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3564,11 +3564,11 @@ func (w *ServerInterfaceWrapper) GetSimpleNoExplodeArray(ctx echo.Context) error
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3585,11 +3585,11 @@ func (w *ServerInterfaceWrapper) GetSimpleNoExplodeObject(ctx echo.Context) erro
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -3606,11 +3606,11 @@ func (w *ServerInterfaceWrapper) GetSimplePrimitive(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "param", ctx.Param("param"), &param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

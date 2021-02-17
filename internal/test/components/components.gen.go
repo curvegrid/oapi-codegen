@@ -1576,10 +1576,10 @@ type EnsureEverythingIsReferencedContext struct {
 func (c *EnsureEverythingIsReferencedContext) ParseJSONBody() (EnsureEverythingIsReferencedJSONBody, error) {
 	var resp EnsureEverythingIsReferencedJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: err}
+		return resp, &ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -1606,10 +1606,10 @@ type BodyWithAddPropsContext struct {
 func (c *BodyWithAddPropsContext) ParseJSONBody() (BodyWithAddPropsJSONBody, error) {
 	var resp BodyWithAddPropsJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: err}
+		return resp, &ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -1622,7 +1622,7 @@ type ValidationError struct {
 }
 
 // Error implements the error interface.
-func (v ValidationError) Error() string {
+func (v *ValidationError) Error() string {
 	if v.Param == "" {
 		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
 	}
@@ -1670,21 +1670,21 @@ func (w *ServerInterfaceWrapper) ParamsWithAddProps(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("simple", true, true, "p1", ctx.QueryParams(), &params.P1)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Required query parameter "p2" -------------
 
 	err = runtime.BindQueryParameter("form", true, true, "p2", ctx.QueryParams(), &params.P2)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

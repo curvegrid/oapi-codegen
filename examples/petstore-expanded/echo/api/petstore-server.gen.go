@@ -54,10 +54,10 @@ type AddPetContext struct {
 func (c *AddPetContext) ParseJSONBody() (AddPetJSONBody, error) {
 	var resp AddPetJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: err}
+		return resp, &ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -96,7 +96,7 @@ type ValidationError struct {
 }
 
 // Error implements the error interface.
-func (v ValidationError) Error() string {
+func (v *ValidationError) Error() string {
 	if v.Param == "" {
 		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
 	}
@@ -135,21 +135,21 @@ func (w *ServerInterfaceWrapper) FindPets(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, false, "tags", ctx.QueryParams(), &params.Tags)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 	// ------------- Optional query parameter "limit" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -175,11 +175,11 @@ func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -196,11 +196,11 @@ func (w *ServerInterfaceWrapper) FindPetById(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "id", ctx.Param("id"), &id)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := id.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "id", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

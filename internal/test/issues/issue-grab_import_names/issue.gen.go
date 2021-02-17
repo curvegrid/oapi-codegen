@@ -330,7 +330,7 @@ type ValidationError struct {
 }
 
 // Error implements the error interface.
-func (v ValidationError) Error() string {
+func (v *ValidationError) Error() string {
 	if v.Param == "" {
 		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
 	}
@@ -372,12 +372,12 @@ func (w *ServerInterfaceWrapper) GetFoo(ctx echo.Context) error {
 		var Foo string
 		n := len(valueList)
 		if n != 1 {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "Foo", Err: errors.Errorf("expected one value, got %d", n)})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "Foo", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "Foo", valueList[0], &Foo)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "Foo", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "Foo", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.Foo = &Foo
@@ -387,12 +387,12 @@ func (w *ServerInterfaceWrapper) GetFoo(ctx echo.Context) error {
 		var Bar string
 		n := len(valueList)
 		if n != 1 {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "Bar", Err: errors.Errorf("expected one value, got %d", n)})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "Bar", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameter("simple", false, "Bar", valueList[0], &Bar)
 		if err != nil {
-			return errors.WithStack(ValidationError{ParamType: "header", Param: "Bar", Err: errors.Wrap(err, "invalid format")})
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "Bar", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.Bar = &Bar

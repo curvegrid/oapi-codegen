@@ -393,7 +393,7 @@ type ValidationError struct {
 }
 
 // Error implements the error interface.
-func (v ValidationError) Error() string {
+func (v *ValidationError) Error() string {
 	if v.Param == "" {
 		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
 	}

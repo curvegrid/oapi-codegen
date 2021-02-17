@@ -1240,10 +1240,10 @@ type Issue185Context struct {
 func (c *Issue185Context) ParseJSONBody() (Issue185JSONBody, error) {
 	var resp Issue185JSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: err}
+		return resp, &ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -1273,10 +1273,10 @@ type Issue9Context struct {
 func (c *Issue9Context) ParseJSONBody() (Issue9JSONBody, error) {
 	var resp Issue9JSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: err}
+		return resp, &ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -1289,7 +1289,7 @@ type ValidationError struct {
 }
 
 // Error implements the error interface.
-func (v ValidationError) Error() string {
+func (v *ValidationError) Error() string {
 	if v.Param == "" {
 		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
 	}
@@ -1386,11 +1386,11 @@ func (w *ServerInterfaceWrapper) Issue209(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "str", ctx.Param("str"), &str)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "str", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "str", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := str.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "str", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "str", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1415,11 +1415,11 @@ func (w *ServerInterfaceWrapper) Issue30(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "fallthrough", ctx.Param("fallthrough"), &pFallthrough)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "fallthrough", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "fallthrough", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := pFallthrough.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "fallthrough", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "fallthrough", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1444,11 +1444,11 @@ func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
 
 	err = runtime.BindStyledParameter("simple", false, "1param", ctx.Param("1param"), &n1param)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "1param", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "1param", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := n1param.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "path", Param: "1param", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "1param", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1474,11 +1474,11 @@ func (w *ServerInterfaceWrapper) Issue9(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, true, "foo", ctx.QueryParams(), &params.Foo)
 	if err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
 	if err := params.Validate(); err != nil {
-		return errors.WithStack(ValidationError{ParamType: "query", Err: err})
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments

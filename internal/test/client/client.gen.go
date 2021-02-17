@@ -958,10 +958,10 @@ type PostBothContext struct {
 func (c *PostBothContext) ParseJSONBody() (PostBothJSONBody, error) {
 	var resp PostBothJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: err}
+		return resp, &ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -981,10 +981,10 @@ type PostJsonContext struct {
 func (c *PostJsonContext) ParseJSONBody() (PostJsonJSONBody, error) {
 	var resp PostJsonJSONBody
 	if err := c.Bind(&resp); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
 	}
 	if err := resp.Validate(); err != nil {
-		return resp, ValidationError{ParamType: "body", Err: err}
+		return resp, &ValidationError{ParamType: "body", Err: err}
 	}
 	return resp, nil
 }
@@ -1019,7 +1019,7 @@ type ValidationError struct {
 }
 
 // Error implements the error interface.
-func (v ValidationError) Error() string {
+func (v *ValidationError) Error() string {
 	if v.Param == "" {
 		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
 	}
