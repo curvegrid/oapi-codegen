@@ -863,8 +863,7 @@ type {{.TypeName}} {{ if .CanAlias }}={{ end }} {{.Schema.TypeDecl}}
 {{ if not .Schema.RefType }}
 // Validate perform validation on the {{.TypeName}}
 func (s {{.TypeName}}) Validate() error {
-    {{- $v := .Schema.Validations -}}
-    {{ if eq (len .Schema.Properties) 0 }}
+    {{- if eq (len .Schema.Properties) 0 }}
     // Run validate on a scalar
     return validation.Validate(
         ({{.Schema.GoType}})(s),
