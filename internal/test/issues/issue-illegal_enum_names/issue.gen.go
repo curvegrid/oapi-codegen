@@ -59,7 +59,6 @@ func (s Bar) Validate() error {
 	return validation.Validate(
 		(string)(s),
 	)
-
 }
 
 // GetFooResponseOK defines parameters for GetFoo.
