@@ -1198,27 +1198,27 @@ func (s {{.TypeName}}) Validate() error {
 {{end}}
 
 {{ define "validateRules" }}
-{{- $s := .OAPISchema }}
-{{- if $s }}
-{{- if or $s.MinItems $s.MaxItems }}
-validation.Length({{if $s.MinItems}}{{$s.MinItems}}{{else}}0{{end}}, {{if $s.MaxItems}}{{ $s.MaxItems }}{{else}}0{{end}}),
+{{- $v := .OAPISchema }}
+{{- if $v }}
+{{- if or $v.MinItems $v.MaxItems }}
+validation.Length({{if $v.MinItems}}{{$v.MinItems}}{{else}}0{{end}}, {{if $v.MaxItems}}{{ $v.MaxItems }}{{else}}0{{end}}),
 {{ end }}
-{{- if or $s.MinProps $s.MaxProps }}
-validation.Length({{$s.MinProps}}, {{if $s.MaxProps}}{{ $s.MaxProps }}{{else}}0{{end}}),
+{{- if or $v.MinProps $v.MaxProps }}
+validation.Length({{$v.MinProps}}, {{if $v.MaxProps}}{{ $v.MaxProps }}{{else}}0{{end}}),
 {{ end }}
 {{- if .ItemType }}
 validation.Each(
     {{ template "validateRules" .ItemType }}
 ),
 {{ end }}
-{{- if $s.Min }} validation.Min({{ $s.Min }}){{if $s.ExclusiveMin}}.Exclusive(){{end}},{{end}}
-{{- if $s.Max }} validation.Max({{ $s.Max }}){{if $s.ExclusiveMax}}.Exclusive(){{end}},{{end}}
-{{- if $s.MultipleOf }} validation.MultipleOf({{ $s.MultipleOf }}),{{end}}
-{{- if or $s.MinLength $s.MaxLength }}
-validation.Length({{$s.MinLength}}, {{if $s.MaxLength}}{{ $s.MaxLength }}{{else}}0{{end}}),
+{{- if $v.Min }} validation.Min({{ $v.Min }}){{if $v.ExclusiveMin}}.Exclusive(){{end}},{{end}}
+{{- if $v.Max }} validation.Max({{ $v.Max }}){{if $v.ExclusiveMax}}.Exclusive(){{end}},{{end}}
+{{- if $v.MultipleOf }} validation.MultipleOf({{ $v.MultipleOf }}),{{end}}
+{{- if or $v.MinLength $v.MaxLength }}
+validation.Length({{$v.MinLength}}, {{if $v.MaxLength}}{{ $v.MaxLength }}{{else}}0{{end}}),
 {{- end }}
-{{- if ne $s.Pattern "" }}
-validation.Match(regexp.MustCompile({{ printf "%#v" $s.Pattern}})),
+{{- if ne $v.Pattern "" }}
+validation.Match(regexp.MustCompile({{ printf "%#v" $v.Pattern}})),
 {{- end }}
 {{- end }}
 {{ end }}
