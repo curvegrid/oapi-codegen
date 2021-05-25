@@ -1,6 +1,6 @@
 {{range .Types}}
-// {{.TypeName}} defines model for {{.JsonName}}.
-type {{.TypeName}} {{ if .IsAlias }}={{ end }} {{.Schema.TypeDecl}}
+// {{ with .Schema.Description }}{{ . }}{{ else }}{{.TypeName}} defines model for {{.JsonName}}.{{ end }}
+type {{.TypeName}} {{if and (opts.AliasTypes) (.CanAlias)}}={{end}} {{.Schema.TypeDecl}}
 {{- if gt (len .Schema.EnumValues) 0 }}
 // List of {{ .TypeName }}
 const (
@@ -11,7 +11,7 @@ const (
 )
 {{- end }}
 
-{{ if not .IsAlias }}
+{{ if not .CanAlias }}
 // Validate perform validation on the {{.TypeName}}
 func (s {{.TypeName}}) Validate() error {
     {{- $v := .Schema.Validations -}}
