@@ -45,12 +45,19 @@ type Bar string
 
 // Validate perform validation on the Bar
 func (s Bar) Validate() error {
-	// Run validate on a scalar
-	return validation.Validate(
-		(string)(s),
+	// Run validate on an enum
+	if err := validation.Validate(
+		s,
 		validation.In(
 			BarBar, BarFoo, BarFoo1, BarFoo2, BarFoo3, BarFoo4, BarFooBar, BarFooBar1,
 		),
+		validation.Skip, // do not recurse infinitely
+	); err != nil {
+		return err
+	}
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
 	)
 
 }

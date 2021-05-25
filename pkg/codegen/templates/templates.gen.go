@@ -1121,6 +1121,18 @@ type {{.TypeName}} {{if and (opts.AliasTypes) (.CanAlias)}}={{end}} {{.Schema.Ty
 func (s {{.TypeName}}) Validate() error {
     {{- $v := .Schema.Validations -}}
     {{ if eq (len .Schema.Properties) 0 }}
+    {{- if ne (len $v.Values) 0 }}
+    // Run validate on an enum
+    if err := validation.Validate(
+        s,
+        validation.In(
+            {{ range $v.Values }}{{ printf "%v" . }},{{ end }}
+        ),
+        validation.Skip, // do not recurse infinitely
+    ); err != nil {
+        return err
+    }
+    {{- end }}
     // Run validate on a scalar
     return validation.Validate(
         ({{.Schema.GoType}})(s),
@@ -1165,11 +1177,6 @@ validation.Length({{$v.MinLength}}, {{if $v.MaxLength}}{{ $v.MaxLength }}{{else}
 {{- end }}
 {{- if ne $v.Pattern "" }}
 validation.Match(regexp.MustCompile({{ printf "%#v" $v.Pattern}})),
-{{- end }}
-{{- if ne (len $v.Values) 0 }}
-validation.In(
-    {{ range $v.Values }}{{ printf "%v" . }},{{ end }}
-),
 {{- end }}
 {{ end }}
 `,

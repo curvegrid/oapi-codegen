@@ -385,9 +385,6 @@ func (s GetWithContentTypeParamsContentType) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		(string)(s),
-		validation.In(
-			GetWithContentTypeParamsContentTypeJson, GetWithContentTypeParamsContentTypeText,
-		),
 	)
 
 }
