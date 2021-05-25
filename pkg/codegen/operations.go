@@ -459,6 +459,9 @@ func OperationDefinitions(swagger *openapi3.Swagger) ([]OperationDefinition, err
 		pathOps := pathItem.Operations()
 		for _, opName := range SortedOperationsKeys(pathOps) {
 			op := pathOps[opName]
+			if pathItem.Servers != nil {
+				op.Servers = &pathItem.Servers
+			}
 			// We rely on OperationID to generate function names, it's required
 			if op.OperationID == "" {
 				op.OperationID, err = generateDefaultOperationID(opName, requestPath)

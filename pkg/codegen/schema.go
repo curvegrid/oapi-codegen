@@ -111,9 +111,18 @@ func (p Property) GoTypeDef() string {
 	return typeDef
 }
 
+// EnumDefinition holds type information for enum
+type EnumDefinition struct {
+	Schema       Schema
+	TypeName     string
+	ValueWrapper string
+}
+
 type Constants struct {
 	// SecuritySchemeProviderNames holds all provider names for security schemes.
 	SecuritySchemeProviderNames []string
+	// EnumDefinitions holds type and value information for all enums
+	EnumDefinitions []EnumDefinition
 }
 
 // TypeDefinition describes a Go type definition in generated code.
@@ -179,12 +188,12 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 		}
 		return Schema{
 			GoType:      refType,
-			Description: schema.Description,
+			Description: StringToGoComment(schema.Description),
 		}, nil
 	}
 
 	outSchema := Schema{
-		Description: schema.Description,
+		Description: StringToGoComment(schema.Description),
 	}
 	// Check for custom Go type extension
 	if extension, ok := schema.Extensions[extPropGoType]; ok {
@@ -310,107 +319,142 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			outSchema.GoType = GenStructFromSchema(outSchema)
 		}
 		return outSchema, nil
+	} else if len(schema.Enum) > 0 {
+		err := resolveType(schema, path, &outSchema)
+		if err != nil {
+			return Schema{}, errors.Wrap(err, "error resolving primitive type")
+		}
+		enumValues := make([]string, len(schema.Enum))
+		for i, enumValue := range schema.Enum {
+			enumValues[i] = fmt.Sprintf("%v", enumValue)
+		}
+
+		sanitizedValues := SanitizeEnumNames(enumValues)
+		outSchema.EnumValues = make(map[string]string, len(sanitizedValues))
+		var constNamePath []string
+		for k, v := range sanitizedValues {
+			if v == "" {
+				constNamePath = append(path, "Empty")
+			} else {
+				constNamePath = append(path, k)
+			}
+			outSchema.EnumValues[SchemaNameToTypeName(PathToTypeName(constNamePath))] = v
+		}
+		outSchema.Validations.Values = make([]string, 0, len(outSchema.EnumValues))
+		for key := range outSchema.EnumValues {
+			outSchema.Validations.Values = append(outSchema.Validations.Values, key)
+		}
+		sort.Sort(sort.StringSlice(outSchema.Validations.Values))
+		if len(path) > 1 { // handle additional type only on non-toplevel types
+			typeName := SchemaNameToTypeName(PathToTypeName(path))
+			typeDef := TypeDefinition{
+				TypeName: typeName,
+				JsonName: strings.Join(path, "."),
+				Schema:   outSchema,
+			}
+			outSchema.AdditionalTypes = append(outSchema.AdditionalTypes, typeDef)
+			outSchema.RefType = typeName
+		}
+		//outSchema.RefType = typeName
 	} else {
-		f := schema.Format
-
-		switch t {
-		case "array":
-			// For arrays, we'll get the type of the Items and throw a
-			// [] in front of it.
-			arrayType, err := GenerateGoSchema(schema.Items, path)
-			if err != nil {
-				return Schema{}, errors.Wrap(err, "error generating type for array")
-			}
-			outSchema.ArrayType = &arrayType
-			outSchema.GoType = "[]" + arrayType.TypeDecl()
-			outSchema.Properties = arrayType.Properties
-			outSchema.Validations.MinItems = schema.MinItems
-			outSchema.Validations.MaxItems = schema.MaxItems
-			outSchema.ItemType = &arrayType
-		case "integer":
-			// We default to int if format doesn't ask for something else.
-			if f == "int64" {
-				outSchema.GoType = "int64"
-			} else if f == "uint64" {
-				outSchema.GoType = "uint64"
-			} else if f == "int32" {
-				outSchema.GoType = "int32"
-			} else if f == "uint32" {
-				outSchema.GoType = "uint32"
-			} else if f == "" {
-				outSchema.GoType = "int"
-			} else {
-				return Schema{}, fmt.Errorf("invalid integer format: %s", f)
-			}
-			outSchema.Validations.Min = schema.Min
-			outSchema.Validations.ExclusiveMin = schema.ExclusiveMin
-			outSchema.Validations.Max = schema.Max
-			outSchema.Validations.ExclusiveMax = schema.ExclusiveMax
-			outSchema.Validations.MultipleOf = schema.MultipleOf
-		case "number":
-			// We default to float for "number"
-			if f == "double" {
-				outSchema.GoType = "float64"
-			} else if f == "float" || f == "" {
-				outSchema.GoType = "float32"
-			} else {
-				return Schema{}, fmt.Errorf("invalid number format: %s", f)
-			}
-			outSchema.Validations.Min = schema.Min
-			outSchema.Validations.Max = schema.Max
-		case "boolean":
-			if f != "" {
-				return Schema{}, fmt.Errorf("invalid format (%s) for boolean", f)
-			}
-			outSchema.GoType = "bool"
-		case "string":
-			enumValues := make([]string, len(schema.Enum))
-			var ok bool
-			for i, enumValue := range schema.Enum {
-				enumValues[i], ok = enumValue.(string)
-				if !ok {
-					return Schema{}, fmt.Errorf("expected enum to contain strings, found a %T", enumValue)
-				}
-			}
-			outSchema.EnumValues = SanitizeEnumNames(enumValues)
-			if len(outSchema.EnumValues) > 0 {
-				outSchema.Validations.Values = make([]string, 0, len(outSchema.EnumValues))
-				for _, value := range outSchema.EnumValues {
-					outSchema.Validations.Values = append(outSchema.Validations.Values, value)
-				}
-				sort.Sort(sort.StringSlice(outSchema.Validations.Values))
-			}
-
-			// Special case string formats here.
-			switch f {
-			case "byte":
-				outSchema.GoType = "[]byte"
-			case "email":
-				outSchema.GoType = "openapi_types.Email"
-			case "date":
-				outSchema.GoType = "openapi_types.Date"
-			case "date-time":
-				outSchema.GoType = "time.Time"
-			case "json":
-				outSchema.GoType = "json.RawMessage"
-				outSchema.SkipOptionalPointer = true
-			default:
-				// All unrecognized formats are simply a regular string.
-				outSchema.GoType = "string"
-				outSchema.Validations.MinLength = schema.MinLength
-				outSchema.Validations.MaxLength = schema.MaxLength
-				if schema.Pattern != "" {
-					// Try to compile it first
-					if _, err := regexp.Compile(schema.Pattern); err == nil {
-						outSchema.Validations.Pattern = schema.Pattern
-					}
-				}
-			}
-		default:
-			return Schema{}, fmt.Errorf("unhandled Schema type: %s", t)
+		err := resolveType(schema, path, &outSchema)
+		if err != nil {
+			return Schema{}, errors.Wrap(err, "error resolving primitive type")
 		}
 	}
 	return outSchema, nil
+}
+
+// resolveType resolves primitive  type or array for schema
+func resolveType(schema *openapi3.Schema, path []string, outSchema *Schema) error {
+	f := schema.Format
+	t := schema.Type
+
+	switch t {
+	case "array":
+		// For arrays, we'll get the type of the Items and throw a
+		// [] in front of it.
+		arrayType, err := GenerateGoSchema(schema.Items, path)
+		if err != nil {
+			return errors.Wrap(err, "error generating type for array")
+		}
+		outSchema.ArrayType = &arrayType
+		outSchema.GoType = "[]" + arrayType.TypeDecl()
+		additionalTypes := arrayType.GetAdditionalTypeDefs()
+		// Check also types defined in array item
+		if len(additionalTypes) > 0 {
+			outSchema.AdditionalTypes = append(outSchema.AdditionalTypes, additionalTypes...)
+		}
+		outSchema.Properties = arrayType.Properties
+		outSchema.Validations.MinItems = schema.MinItems
+		outSchema.Validations.MaxItems = schema.MaxItems
+		outSchema.ItemType = &arrayType
+	case "integer":
+		// We default to int if format doesn't ask for something else.
+		if f == "int64" {
+			outSchema.GoType = "int64"
+		} else if f == "uint64" {
+			outSchema.GoType = "uint64"
+		} else if f == "int32" {
+			outSchema.GoType = "int32"
+		} else if f == "uint32" {
+			outSchema.GoType = "uint32"
+		} else if f == "" {
+			outSchema.GoType = "int"
+		} else {
+			return fmt.Errorf("invalid integer format: %s", f)
+		}
+		outSchema.Validations.Min = schema.Min
+		outSchema.Validations.ExclusiveMin = schema.ExclusiveMin
+		outSchema.Validations.Max = schema.Max
+		outSchema.Validations.ExclusiveMax = schema.ExclusiveMax
+		outSchema.Validations.MultipleOf = schema.MultipleOf
+	case "number":
+		// We default to float for "number"
+		if f == "double" {
+			outSchema.GoType = "float64"
+		} else if f == "float" || f == "" {
+			outSchema.GoType = "float32"
+		} else {
+			return fmt.Errorf("invalid number format: %s", f)
+		}
+		outSchema.Validations.Min = schema.Min
+		outSchema.Validations.Max = schema.Max
+	case "boolean":
+		if f != "" {
+			return fmt.Errorf("invalid format (%s) for boolean", f)
+		}
+		outSchema.GoType = "bool"
+	case "string":
+		// Special case string formats here.
+		switch f {
+		case "byte":
+			outSchema.GoType = "[]byte"
+		case "email":
+			outSchema.GoType = "openapi_types.Email"
+		case "date":
+			outSchema.GoType = "openapi_types.Date"
+		case "date-time":
+			outSchema.GoType = "time.Time"
+		case "json":
+			outSchema.GoType = "json.RawMessage"
+			outSchema.SkipOptionalPointer = true
+		default:
+			// All unrecognized formats are simply a regular string.
+			outSchema.GoType = "string"
+			outSchema.Validations.MinLength = schema.MinLength
+			outSchema.Validations.MaxLength = schema.MaxLength
+			if schema.Pattern != "" {
+				// Try to compile it first
+				if _, err := regexp.Compile(schema.Pattern); err == nil {
+					outSchema.Validations.Pattern = schema.Pattern
+				}
+			}
+		}
+	default:
+		return fmt.Errorf("unhandled Schema type: %s", t)
+	}
+	return nil
 }
 
 // This describes a Schema, a type definition.
@@ -601,7 +645,7 @@ func paramToGoType(param *openapi3.Parameter, path []string) (Schema, error) {
 	if len(param.Content) > 1 {
 		return Schema{
 			GoType:      "string",
-			Description: param.Description,
+			Description: StringToGoComment(param.Description),
 		}, nil
 	}
 
@@ -611,7 +655,7 @@ func paramToGoType(param *openapi3.Parameter, path []string) (Schema, error) {
 		// If we don't have json, it's a string
 		return Schema{
 			GoType:      "string",
-			Description: param.Description,
+			Description: StringToGoComment(param.Description),
 		}, nil
 	}
 

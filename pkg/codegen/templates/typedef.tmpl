@@ -1,15 +1,6 @@
 {{range .Types}}
-// {{ with .Schema.Description }}{{ . }}{{ else }}{{.TypeName}} defines model for {{.JsonName}}.{{ end }}
+{{ with .Schema.Description }}{{ . }}{{ else }}// {{.TypeName}} defines model for {{.JsonName}}.{{ end }}
 type {{.TypeName}} {{if and (opts.AliasTypes) (.CanAlias)}}={{end}} {{.Schema.TypeDecl}}
-{{- if gt (len .Schema.EnumValues) 0 }}
-// List of {{ .TypeName }}
-const (
-	{{- $typeName := .TypeName }}
-    {{- range $key, $value := .Schema.EnumValues }}
-    {{ $typeName }}_{{ $key }} {{ $typeName }} = "{{ $value }}"
-    {{- end }}
-)
-{{- end }}
 
 {{ if not .CanAlias }}
 // Validate perform validation on the {{.TypeName}}
@@ -63,7 +54,7 @@ validation.Match(regexp.MustCompile({{ printf "%#v" $v.Pattern}})),
 {{- end }}
 {{- if ne (len $v.Values) 0 }}
 validation.In(
-    {{ range $v.Values }}{{ printf "%#v" . }},{{ end }}
+    {{ range $v.Values }}{{ printf "%v" . }},{{ end }}
 ),
 {{- end }}
 {{ end }}

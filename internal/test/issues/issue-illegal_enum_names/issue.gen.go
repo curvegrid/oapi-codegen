@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -20,20 +21,27 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// Defines values for Bar.
+const (
+	BarBar Bar = "Bar"
+
+	BarFoo Bar = "Foo"
+
+	BarFoo1 Bar = "1Foo"
+
+	BarFoo2 Bar = " Foo"
+
+	BarFoo3 Bar = " Foo "
+
+	BarFoo4 Bar = "_Foo_"
+
+	BarFooBar Bar = "Foo Bar"
+
+	BarFooBar1 Bar = "Foo-Bar"
+)
+
 // Bar defines model for Bar.
 type Bar string
-
-// List of Bar
-const (
-	Bar_Bar      Bar = "Bar"
-	Bar_Foo      Bar = "Foo"
-	Bar_Foo_Bar  Bar = "Foo Bar"
-	Bar_Foo_Bar1 Bar = "Foo-Bar"
-	Bar__Foo     Bar = "1Foo"
-	Bar__Foo1    Bar = " Foo"
-	Bar__Foo_    Bar = " Foo "
-	Bar__Foo_1   Bar = "_Foo_"
-)
 
 // Validate perform validation on the Bar
 func (s Bar) Validate() error {
@@ -41,7 +49,7 @@ func (s Bar) Validate() error {
 	return validation.Validate(
 		(string)(s),
 		validation.In(
-			" Foo", " Foo ", "1Foo", "Bar", "Foo", "Foo Bar", "Foo-Bar", "_Foo_",
+			BarBar, BarFoo, BarFoo1, BarFoo2, BarFoo3, BarFoo4, BarFooBar, BarFooBar1,
 		),
 	)
 
@@ -390,9 +398,9 @@ var swaggerSpec = []string{
 	"Jkt64H8BAAA=",
 }
 
-// GetSwagger returns the Swagger specification corresponding to the generated code
-// in this file.
-func GetSwagger() (*openapi3.Swagger, error) {
+// GetSwagger returns the content of the embedded swagger specification file
+// or error if failed to decode
+func decodeSpec() ([]byte, error) {
 	zipped, err := base64.StdEncoding.DecodeString(strings.Join(swaggerSpec, ""))
 	if err != nil {
 		return nil, fmt.Errorf("error base64 decoding spec: %s", err)
@@ -407,9 +415,57 @@ func GetSwagger() (*openapi3.Swagger, error) {
 		return nil, fmt.Errorf("error decompressing spec: %s", err)
 	}
 
-	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData(buf.Bytes())
-	if err != nil {
-		return nil, fmt.Errorf("error loading Swagger: %s", err)
+	return buf.Bytes(), nil
+}
+
+var rawSpec = decodeSpecCached()
+
+// a naive cached of a decoded swagger spec
+func decodeSpecCached() func() ([]byte, error) {
+	data, err := decodeSpec()
+	return func() ([]byte, error) {
+		return data, err
 	}
-	return swagger, nil
+}
+
+// Constructs a synthetic filesystem for resolving external references when loading openapi specifications.
+func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
+	var res = make(map[string]func() ([]byte, error))
+	if len(pathToFile) > 0 {
+		res[pathToFile] = rawSpec
+	}
+
+	return res
+}
+
+// GetSwagger returns the Swagger specification corresponding to the generated code
+// in this file. The external references of Swagger specification are resolved.
+// The logic of resolving external references is tightly connected to "import-mapping" feature.
+// Externally referenced files must be embedded in the corresponding golang packages.
+// Urls can be supported but this task was out of the scope.
+func GetSwagger() (swagger *openapi3.Swagger, err error) {
+	var resolvePath = PathToRawSpec("")
+
+	loader := openapi3.NewSwaggerLoader()
+	loader.IsExternalRefsAllowed = true
+	loader.ReadFromURIFunc = func(loader *openapi3.SwaggerLoader, url *url.URL) ([]byte, error) {
+		var pathToFile = url.String()
+		pathToFile = path.Clean(pathToFile)
+		getSpec, ok := resolvePath[pathToFile]
+		if !ok {
+			err1 := fmt.Errorf("path not found: %s", pathToFile)
+			return nil, err1
+		}
+		return getSpec()
+	}
+	var specData []byte
+	specData, err = rawSpec()
+	if err != nil {
+		return
+	}
+	swagger, err = loader.LoadSwaggerFromData(specData)
+	if err != nil {
+		return
+	}
+	return
 }
