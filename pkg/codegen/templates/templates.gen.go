@@ -228,7 +228,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
         {{end}}
 
         {{if .IsStyled}}
-          err = runtime.BindStyledParameter("{{.Style}}",{{.Explode}}, "{{.ParamName}}", valueList[0], &{{.GoName}})
+          err = runtime.BindStyledParameterWithLocation("{{.Style}}",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationHeader, valueList[0], &{{.GoName}})
           if err != nil {
             http.Error(w, fmt.Sprintf("Invalid format for parameter {{.ParamName}}: %s", err), http.StatusBadRequest)
             return
@@ -341,9 +341,9 @@ type ClientWithResponsesInterface interface {
 {{$pathParams := .PathParams -}}
 {{$opid := .OperationId -}}
     // {{$opid}} request {{if .HasBody}} with any body{{end}}
-    {{$opid}}{{if .HasBody}}WithBody{{end}}WithResponse(ctx context.Context{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}) (*{{genResponseTypeName $opid}}, error)
+    {{$opid}}{{if .HasBody}}WithBody{{end}}WithResponse(ctx context.Context{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}, reqEditors... RequestEditorFn) (*{{genResponseTypeName $opid}}, error)
 {{range .Bodies}}
-    {{$opid}}{{.Suffix}}WithResponse(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody) (*{{genResponseTypeName $opid}}, error)
+    {{$opid}}{{.Suffix}}WithResponse(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody, reqEditors... RequestEditorFn) (*{{genResponseTypeName $opid}}, error)
 {{end}}{{/* range .Bodies */}}
 {{end}}{{/* range . $opid := .OperationId */}}
 }
@@ -384,8 +384,8 @@ func (r {{$opid | ucFirst}}Response) StatusCode() int {
 {{/* Generate client methods (with responses)*/}}
 
 // {{$opid}}{{if .HasBody}}WithBody{{end}}WithResponse request{{if .HasBody}} with arbitrary body{{end}} returning *{{$opid}}Response
-func (c *ClientWithResponses) {{$opid}}{{if .HasBody}}WithBody{{end}}WithResponse(ctx context.Context{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}) (*{{genResponseTypeName $opid}}, error){
-    rsp, err := c.{{$opid}}{{if .HasBody}}WithBody{{end}}(ctx{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}}{{if .HasBody}}, contentType, body{{end}})
+func (c *ClientWithResponses) {{$opid}}{{if .HasBody}}WithBody{{end}}WithResponse(ctx context.Context{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}, reqEditors... RequestEditorFn) (*{{genResponseTypeName $opid}}, error){
+    rsp, err := c.{{$opid}}{{if .HasBody}}WithBody{{end}}(ctx{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}}{{if .HasBody}}, contentType, body{{end}}, reqEditors...)
     if err != nil {
         return nil, err
     }
@@ -396,8 +396,8 @@ func (c *ClientWithResponses) {{$opid}}{{if .HasBody}}WithBody{{end}}WithRespons
 {{$pathParams := .PathParams -}}
 {{$bodyRequired := .BodyRequired -}}
 {{range .Bodies}}
-func (c *ClientWithResponses) {{$opid}}{{.Suffix}}WithResponse(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody) (*{{genResponseTypeName $opid}}, error) {
-    rsp, err := c.{{$opid}}{{.Suffix}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}, body)
+func (c *ClientWithResponses) {{$opid}}{{.Suffix}}WithResponse(ctx context.Context{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody, reqEditors... RequestEditorFn) (*{{genResponseTypeName $opid}}, error) {
+    rsp, err := c.{{$opid}}{{.Suffix}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}, body, reqEditors...)
     if err != nil {
         return nil, err
     }
@@ -475,7 +475,7 @@ func NewClient(server string, opts ...ClientOption) (*Client, error) {
     }
     // create httpClient, if not already present
     if client.Client == nil {
-        client.Client = http.DefaultClient
+        client.Client = &http.Client{}
     }
     return &client, nil
 }
@@ -524,6 +524,7 @@ func (c *Client) {{$opid}}{{if .HasBody}}WithBody{{end}}(ctx context.Context{{ge
     if err != nil {
         return nil, err
     }
+    req = req.WithContext(ctx)
     if err := c.applyEditors(ctx, req, reqEditors); err != nil {
         return nil, err
     }
@@ -536,6 +537,7 @@ func (c *Client) {{$opid}}{{.Suffix}}(ctx context.Context{{genParamArgs $pathPar
     if err != nil {
         return nil, err
     }
+    req = req.WithContext(ctx)
     if err := c.applyEditors(ctx, req, reqEditors); err != nil {
         return nil, err
     }
@@ -581,28 +583,29 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
     pathParam{{$paramIdx}} = string(pathParamBuf{{$paramIdx}})
     {{end}}
     {{if .IsStyled}}
-    pathParam{{$paramIdx}}, err = runtime.StyleParam("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{.GoVariableName}})
+    pathParam{{$paramIdx}}, err = runtime.StyleParamWithLocation("{{.Style}}", {{.Explode}}, "{{.ParamName}}", runtime.ParamLocationPath, {{.GoVariableName}})
     if err != nil {
         return nil, err
     }
     {{end}}
 {{end}}
-    queryUrl, err := url.Parse(server)
+    serverURL, err := url.Parse(server)
     if err != nil {
         return nil, err
     }
 
-    basePath := fmt.Sprintf("{{genParamFmtString .Path}}"{{range $paramIdx, $param := .PathParams}}, pathParam{{$paramIdx}}{{end}})
-    if basePath[0] == '/' {
-        basePath = basePath[1:]
+    operationPath := fmt.Sprintf("{{genParamFmtString .Path}}"{{range $paramIdx, $param := .PathParams}}, pathParam{{$paramIdx}}{{end}})
+    if operationPath[0] == '/' {
+        operationPath = operationPath[1:]
+    }
+    operationURL := url.URL{
+    	Path: operationPath,
     }
 
-    queryUrl, err = queryUrl.Parse(basePath)
-    if err != nil {
-        return nil, err
-    }
+    queryURL := serverURL.ResolveReference(&operationURL)
+
 {{if .QueryParams}}
-    queryValues := queryUrl.Query()
+    queryValues := queryURL.Query()
 {{range $paramIdx, $param := .QueryParams}}
     {{if not .Required}} if params.{{.GoName}} != nil { {{end}}
     {{if .IsPassThrough}}
@@ -617,7 +620,7 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
 
     {{end}}
     {{if .IsStyled}}
-    if queryFrag, err := runtime.StyleParam("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if not .Required}}*{{end}}params.{{.GoName}}); err != nil {
+    if queryFrag, err := runtime.StyleParamWithLocation("{{.Style}}", {{.Explode}}, "{{.ParamName}}", runtime.ParamLocationQuery, {{if not .Required}}*{{end}}params.{{.GoName}}); err != nil {
         return nil, err
     } else if parsed, err := url.ParseQuery(queryFrag); err != nil {
        return nil, err
@@ -631,9 +634,9 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
     {{end}}
     {{if not .Required}}}{{end}}
 {{end}}
-    queryUrl.RawQuery = queryValues.Encode()
+    queryURL.RawQuery = queryValues.Encode()
 {{end}}{{/* if .QueryParams */}}
-    req, err := http.NewRequest("{{.Method}}", queryUrl.String(), {{if .HasBody}}body{{else}}nil{{end}})
+    req, err := http.NewRequest("{{.Method}}", queryURL.String(), {{if .HasBody}}body{{else}}nil{{end}})
     if err != nil {
         return nil, err
     }
@@ -654,7 +657,7 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
     headerParam{{$paramIdx}} = string(headerParamBuf{{$paramIdx}})
     {{end}}
     {{if .IsStyled}}
-    headerParam{{$paramIdx}}, err = runtime.StyleParam("{{.Style}}", {{.Explode}}, "{{.ParamName}}", {{if not .Required}}*{{end}}params.{{.GoName}})
+    headerParam{{$paramIdx}}, err = runtime.StyleParamWithLocation("{{.Style}}", {{.Explode}}, "{{.ParamName}}", runtime.ParamLocationHeader, {{if not .Required}}*{{end}}params.{{.GoName}})
     if err != nil {
         return nil, err
     }
@@ -678,7 +681,7 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
     cookieParam{{$paramIdx}} = url.QueryEscape(string(cookieParamBuf{{$paramIdx}}))
     {{end}}
     {{if .IsStyled}}
-    cookieParam{{$paramIdx}}, err = runtime.StyleParam("simple", {{.Explode}}, "{{.ParamName}}", {{if not .Required}}*{{end}}params.{{.GoName}})
+    cookieParam{{$paramIdx}}, err = runtime.StyleParamWithLocation("simple", {{.Explode}}, "{{.ParamName}}", runtime.ParamLocationCookie, {{if not .Required}}*{{end}}params.{{.GoName}})
     if err != nil {
         return nil, err
     }
@@ -696,7 +699,6 @@ func New{{$opid}}Request{{if .HasBody}}WithBody{{end}}(server string{{genParamAr
 {{end}}{{/* Range */}}
 
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
-    req = req.WithContext(ctx)
     for _, r := range c.RequestEditors {
         if err := r(ctx, req); err != nil {
             return err
@@ -717,10 +719,20 @@ const (
 {{end}}
 )
 {{end}}
+{{if gt (len .EnumDefinitions) 0 }}
+{{range $Enum := .EnumDefinitions}}
+// Defines values for {{$Enum.TypeName}}.
+const (
+{{range $index, $value := $Enum.Schema.EnumValues}}
+  {{$index}} {{$Enum.TypeName}} = {{$Enum.ValueWrapper}}{{$value}}{{$Enum.ValueWrapper}}
+{{end}}
+)
+{{end}}
+{{end}}
 `,
-	"imports.tmpl": `// Package {{.PackageName}} provides primitives to interact the openapi HTTP API.
+	"imports.tmpl": `// Package {{.PackageName}} provides primitives to interact with the openapi HTTP API.
 //
-// Code generated by github.com/deepmap/oapi-codegen DO NOT EDIT.
+// Code generated by {{.ModuleName}} version {{.Version}} DO NOT EDIT.
 package {{.PackageName}}
 
 import (
@@ -745,7 +757,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -757,13 +769,13 @@ import (
 `,
 	"inline.tmpl": `// Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
-{{range .}}
+{{range .SpecParts}}
     "{{.}}",{{end}}
 }
 
-// GetSwagger returns the Swagger specification corresponding to the generated code
-// in this file.
-func GetSwagger() (*openapi3.Swagger, error) {
+// GetSwagger returns the content of the embedded swagger specification file
+// or error if failed to decode
+func decodeSpec() ([]byte, error) {
     zipped, err := base64.StdEncoding.DecodeString(strings.Join(swaggerSpec, ""))
     if err != nil {
         return nil, fmt.Errorf("error base64 decoding spec: %s", err)
@@ -778,17 +790,75 @@ func GetSwagger() (*openapi3.Swagger, error) {
         return nil, fmt.Errorf("error decompressing spec: %s", err)
     }
 
-    swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData(buf.Bytes())
-    if err != nil {
-        return nil, fmt.Errorf("error loading Swagger: %s", err)
+    return buf.Bytes(), nil
+}
+
+var rawSpec = decodeSpecCached()
+
+// a naive cached of a decoded swagger spec
+func decodeSpecCached() func() ([]byte, error) {
+	data, err := decodeSpec()
+	return func() ([]byte, error) {
+		return data, err
+	}
+}
+
+// Constructs a synthetic filesystem for resolving external references when loading openapi specifications.
+func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
+    var res = make(map[string]func() ([]byte, error))
+    if len(pathToFile) > 0 {
+        res[pathToFile] = rawSpec
     }
-    return swagger, nil
+    {{ if .ImportMapping }}
+    pathPrefix := path.Dir(pathToFile)
+    {{ end }}
+    {{ range $key, $value := .ImportMapping }}
+    for rawPath, rawFunc := range {{ $value.Name }}.PathToRawSpec(path.Join(pathPrefix, "{{ $key }}")) {
+        if _, ok := res[rawPath]; ok {
+            // it is not possible to compare functions in golang, so always overwrite the old value
+        }
+        res[rawPath] = rawFunc
+    }
+    {{- end }}
+    return res
+}
+
+// GetSwagger returns the Swagger specification corresponding to the generated code
+// in this file. The external references of Swagger specification are resolved.
+// The logic of resolving external references is tightly connected to "import-mapping" feature.
+// Externally referenced files must be embedded in the corresponding golang packages.
+// Urls can be supported but this task was out of the scope.
+func GetSwagger() (swagger *openapi3.T, err error) {
+    var resolvePath = PathToRawSpec("")
+
+    loader := openapi3.NewLoader()
+    loader.IsExternalRefsAllowed = true
+    loader.ReadFromURIFunc = func(loader *openapi3.Loader, url *url.URL) ([]byte, error) {
+        var pathToFile = url.String()
+        pathToFile = path.Clean(pathToFile)
+        getSpec, ok := resolvePath[pathToFile]
+        if !ok {
+            err1 := fmt.Errorf("path not found: %s", pathToFile)
+            return nil, err1
+        }
+        return getSpec()
+    }
+    var specData []byte
+    specData, err = rawSpec()
+    if err != nil {
+        return
+    }
+    swagger, err = loader.LoadFromData(specData)
+    if err != nil {
+        return
+    }
+    return
 }
 `,
 	"param-types.tmpl": `{{range .}}{{$opid := .OperationId}}
 {{range .TypeDefinitions}}
 // {{.TypeName}} defines parameters for {{$opid}}.
-type {{.TypeName}} {{ if .IsAlias }}={{ end }} {{.Schema.TypeDecl}}
+type {{.TypeName}} {{ if .CanAlias }}={{ end }} {{.Schema.TypeDecl}}
 
 {{ if not .Schema.RefType }}
 // Validate perform validation on the {{.TypeName}}
@@ -1043,23 +1113,26 @@ func (tc *TestClient) parseJSONResponse(tb testing.TB, resp *http.Response, targ
 }
 `,
 	"typedef.tmpl": `{{range .Types}}
-// {{.TypeName}} defines model for {{.JsonName}}.
-type {{.TypeName}} {{ if .IsAlias }}={{ end }} {{.Schema.TypeDecl}}
-{{- if gt (len .Schema.EnumValues) 0 }}
-// List of {{ .TypeName }}
-const (
-	{{- $typeName := .TypeName }}
-    {{- range $key, $value := .Schema.EnumValues }}
-    {{ $typeName }}_{{ $key }} {{ $typeName }} = "{{ $value }}"
-    {{- end }}
-)
-{{- end }}
+{{ with .Schema.Description }}{{ . }}{{ else }}// {{.TypeName}} defines model for {{.JsonName}}.{{ end }}
+type {{.TypeName}} {{if and (opts.AliasTypes) (.CanAlias)}}={{end}} {{.Schema.TypeDecl}}
 
-{{ if not .IsAlias }}
+{{ if not .CanAlias }}
 // Validate perform validation on the {{.TypeName}}
 func (s {{.TypeName}}) Validate() error {
     {{- $v := .Schema.Validations -}}
     {{ if eq (len .Schema.Properties) 0 }}
+    {{- if ne (len $v.Values) 0 }}
+    // Run validate on an enum
+    if err := validation.Validate(
+        s,
+        validation.In(
+            {{ range $v.Values }}{{ printf "%v" . }},{{ end }}
+        ),
+        validation.Skip, // do not recurse infinitely
+    ); err != nil {
+        return err
+    }
+    {{- end }}
     // Run validate on a scalar
     return validation.Validate(
         ({{.Schema.GoType}})(s),
@@ -1104,11 +1177,6 @@ validation.Length({{$v.MinLength}}, {{if $v.MaxLength}}{{ $v.MaxLength }}{{else}
 {{- end }}
 {{- if ne $v.Pattern "" }}
 validation.Match(regexp.MustCompile({{ printf "%#v" $v.Pattern}})),
-{{- end }}
-{{- if ne (len $v.Values) 0 }}
-validation.In(
-    {{ range $v.Values }}{{ printf "%#v" . }},{{ end }}
-),
 {{- end }}
 {{ end }}
 `,
@@ -1162,7 +1230,7 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     }
 {{end}}
 {{if .IsStyled}}
-    err = runtime.BindStyledParameter("{{.Style}}",{{.Explode}}, "{{.ParamName}}", ctx.Param("{{.ParamName}}"), &{{$varName}})
+    err = runtime.BindStyledParameterWithLocation("{{.Style}}",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationPath, ctx.Param("{{.ParamName}}"), &{{$varName}})
     if err != nil {
         return errors.WithStack(&ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
     }
@@ -1222,7 +1290,7 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
         }
 {{end}}
 {{if .IsStyled}}
-        err = runtime.BindStyledParameter("{{.Style}}",{{.Explode}}, "{{.ParamName}}", valueList[0], &{{.GoName}})
+        err = runtime.BindStyledParameterWithLocation("{{.Style}}",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationHeader, valueList[0], &{{.GoName}})
         if err != nil {
             return errors.WithStack(&ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
         }
@@ -1254,7 +1322,7 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     {{end}}
     {{if .IsStyled}}
     var value {{.TypeDef}}
-    err = runtime.BindStyledParameter("simple",{{.Explode}}, "{{.ParamName}}", cookie.Value, &value)
+    err = runtime.BindStyledParameterWithLocation("simple",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationCookie, cookie.Value, &value)
     if err != nil {
         return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
     }

@@ -10,7 +10,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/testutil"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -102,7 +102,7 @@ func doPost(t *testing.T, mux *chi.Mux, url string, jsonBody interface{}) *httpt
 }
 
 func TestOapiRequestValidator(t *testing.T) {
-	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(testSchema))
+	swagger, err := openapi3.NewLoader().LoadFromData([]byte(testSchema))
 	require.NoError(t, err, "Error initializing swagger")
 
 	r := chi.NewRouter()
@@ -115,7 +115,7 @@ func TestOapiRequestValidator(t *testing.T) {
 }
 
 func TestOapiRequestValidatorWithOptions(t *testing.T) {
-	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(testSchema))
+	swagger, err := openapi3.NewLoader().LoadFromData([]byte(testSchema))
 	require.NoError(t, err, "Error initializing swagger")
 
 	r := chi.NewRouter()
