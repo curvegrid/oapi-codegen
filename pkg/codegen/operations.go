@@ -660,6 +660,7 @@ func GenerateTypeDefsForOperation(op OperationDefinition) []TypeDefinition {
 	}
 	for _, resp := range resps {
 		typeDefs = append(typeDefs, resp.TypeDefinition)
+		typeDefs = append(typeDefs, resp.Schema.GetAdditionalTypeDefs()...)
 	}
 
 	return typeDefs
