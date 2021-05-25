@@ -228,7 +228,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
         {{end}}
 
         {{if .IsStyled}}
-          err = runtime.BindStyledParameter("{{.Style}}",{{.Explode}}, "{{.ParamName}}", valueList[0], &{{.GoName}})
+          err = runtime.BindStyledParameterWithLocation("{{.Style}}",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationHeader, valueList[0], &{{.GoName}})
           if err != nil {
             http.Error(w, fmt.Sprintf("Invalid format for parameter {{.ParamName}}: %s", err), http.StatusBadRequest)
             return
@@ -828,12 +828,12 @@ func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
 // The logic of resolving external references is tightly connected to "import-mapping" feature.
 // Externally referenced files must be embedded in the corresponding golang packages.
 // Urls can be supported but this task was out of the scope.
-func GetSwagger() (swagger *openapi3.Swagger, err error) {
+func GetSwagger() (swagger *openapi3.T, err error) {
     var resolvePath = PathToRawSpec("")
 
-    loader := openapi3.NewSwaggerLoader()
+    loader := openapi3.NewLoader()
     loader.IsExternalRefsAllowed = true
-    loader.ReadFromURIFunc = func(loader *openapi3.SwaggerLoader, url *url.URL) ([]byte, error) {
+    loader.ReadFromURIFunc = func(loader *openapi3.Loader, url *url.URL) ([]byte, error) {
         var pathToFile = url.String()
         pathToFile = path.Clean(pathToFile)
         getSpec, ok := resolvePath[pathToFile]
@@ -848,7 +848,7 @@ func GetSwagger() (swagger *openapi3.Swagger, err error) {
     if err != nil {
         return
     }
-    swagger, err = loader.LoadSwaggerFromData(specData)
+    swagger, err = loader.LoadFromData(specData)
     if err != nil {
         return
     }
