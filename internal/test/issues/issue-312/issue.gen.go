@@ -550,13 +550,7 @@ type ValidatePetsContext struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *ValidatePetsContext) ParseJSONBody() (ValidatePetsJSONBody, error) {
 	var resp ValidatePetsJSONBody
-	if err := c.Bind(&resp); err != nil {
-		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
-	}
-	if err := resp.Validate(); err != nil {
-		return resp, &ValidationError{ParamType: "body", Err: err}
-	}
-	return resp, nil
+	return resp, bindValidateBody(c, &resp)
 }
 
 // Responses
@@ -564,6 +558,39 @@ func (c *ValidatePetsContext) ParseJSONBody() (ValidatePetsJSONBody, error) {
 // OK responses with the appropriate code and the JSON response.
 func (c *ValidatePetsContext) OK(resp ValidatePetsResponseOK) error {
 	return c.JSON(200, resp)
+}
+
+// bindValidateBody decodes and validates the body of a request. It's highly inspired
+// from the echo.DefaultBinder BindBody function.
+// This is preferred over echo.Bind, since it grants more control over the binding
+// functionality. Particularly, it returns a well-formatted ValidationError on invalid input.
+func bindValidateBody(c echo.Context, i validation.Validatable) error {
+	req := c.Request()
+	if req.ContentLength != 0 {
+		// Decode
+		ctype := req.Header.Get(echo.HeaderContentType)
+		switch {
+		case strings.HasPrefix(ctype, echo.MIMEApplicationJSON):
+			if err := json.NewDecoder(req.Body).Decode(i); err != nil {
+				// Add some context to the error when possible
+				switch e := err.(type) {
+				case *json.UnmarshalTypeError:
+					err = fmt.Errorf("cannot unmarshal a value of type %v into the field %v of type %v (offset %v)", e.Value, e.Field, e.Type, e.Offset)
+				case *json.SyntaxError:
+					err = fmt.Errorf("%v (offset %v)", err.Error(), e.Offset)
+				}
+				return &ValidationError{ParamType: "body", Err: err}
+			}
+		default:
+			return echo.ErrUnsupportedMediaType
+		}
+	}
+
+	// Validate
+	if err := i.Validate(); err != nil {
+		return &ValidationError{ParamType: "body", Err: err}
+	}
+	return nil
 }
 
 // ValidationError is the special validation error type, returned from failed validation runs.

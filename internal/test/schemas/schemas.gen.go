@@ -1254,13 +1254,7 @@ type Issue185Context struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *Issue185Context) ParseJSONBody() (Issue185JSONBody, error) {
 	var resp Issue185JSONBody
-	if err := c.Bind(&resp); err != nil {
-		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
-	}
-	if err := resp.Validate(); err != nil {
-		return resp, &ValidationError{ParamType: "body", Err: err}
-	}
-	return resp, nil
+	return resp, bindValidateBody(c, &resp)
 }
 
 // Issue209Context is a context customized for Issue209 (GET /issues/209/${str}).
@@ -1287,13 +1281,40 @@ type Issue9Context struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *Issue9Context) ParseJSONBody() (Issue9JSONBody, error) {
 	var resp Issue9JSONBody
-	if err := c.Bind(&resp); err != nil {
-		return resp, &ValidationError{ParamType: "body", Err: errors.Wrap(err, "cannot parse as json")}
+	return resp, bindValidateBody(c, &resp)
+}
+
+// bindValidateBody decodes and validates the body of a request. It's highly inspired
+// from the echo.DefaultBinder BindBody function.
+// This is preferred over echo.Bind, since it grants more control over the binding
+// functionality. Particularly, it returns a well-formatted ValidationError on invalid input.
+func bindValidateBody(c echo.Context, i validation.Validatable) error {
+	req := c.Request()
+	if req.ContentLength != 0 {
+		// Decode
+		ctype := req.Header.Get(echo.HeaderContentType)
+		switch {
+		case strings.HasPrefix(ctype, echo.MIMEApplicationJSON):
+			if err := json.NewDecoder(req.Body).Decode(i); err != nil {
+				// Add some context to the error when possible
+				switch e := err.(type) {
+				case *json.UnmarshalTypeError:
+					err = fmt.Errorf("cannot unmarshal a value of type %v into the field %v of type %v (offset %v)", e.Value, e.Field, e.Type, e.Offset)
+				case *json.SyntaxError:
+					err = fmt.Errorf("%v (offset %v)", err.Error(), e.Offset)
+				}
+				return &ValidationError{ParamType: "body", Err: err}
+			}
+		default:
+			return echo.ErrUnsupportedMediaType
+		}
 	}
-	if err := resp.Validate(); err != nil {
-		return resp, &ValidationError{ParamType: "body", Err: err}
+
+	// Validate
+	if err := i.Validate(); err != nil {
+		return &ValidationError{ParamType: "body", Err: err}
 	}
-	return resp, nil
+	return nil
 }
 
 // ValidationError is the special validation error type, returned from failed validation runs.
