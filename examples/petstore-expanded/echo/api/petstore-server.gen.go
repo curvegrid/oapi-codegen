@@ -88,8 +88,8 @@ func (c *FindPetByIDContext) OK(resp FindPetByIDResponseOK) error {
 
 // bindValidateBody decodes and validates the body of a request. It's highly inspired
 // from the echo.DefaultBinder BindBody function.
-// NOTE: we don't use c.Bind() directly because it doesn't work with slices.
-// See: https://github.com/labstack/echo/issues/1356
+// This is preferred over echo.Bind, since it grants more control over the binding
+// functionality. Particularly, it returns a well-formatted ValidationError on invalid input.
 func bindValidateBody(c echo.Context, i validation.Validatable) error {
 	req := c.Request()
 	if req.ContentLength != 0 {
