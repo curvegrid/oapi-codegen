@@ -1093,10 +1093,17 @@ type {{$opid}}TestResponse struct {
     tc *TestClient
 }
 
-{{ if $op.HasEmptySuccess }}
+{{ if $op.HasNoContent 200 }}
 // OK asserts a successful response with no body.
 func (c *{{$op.OperationId}}TestResponse) OK() {
     require.Equalf(c.tb, 200, c.StatusCode, "expected status code 200, got %d", c.StatusCode)
+    require.Equalf(c.tb, int64(0), c.ContentLength, "expected zero content length, got %d", c.ContentLength)
+}
+{{- end }}
+{{ if $op.HasNoContent 204 }}
+// OK asserts a successful response with no body.
+func (c *{{$op.OperationId}}TestResponse) OK() {
+    require.Equalf(c.tb, 204, c.StatusCode, "expected status code 204, got %d", c.StatusCode)
     require.Equalf(c.tb, int64(0), c.ContentLength, "expected zero content length, got %d", c.ContentLength)
 }
 {{- end }}
