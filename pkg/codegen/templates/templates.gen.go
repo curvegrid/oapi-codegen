@@ -965,10 +965,16 @@ func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}
 {{- if gt (len .GetResponseTypeDefinitions) 0 }}
 
 // Responses
-{{ if $op.HasEmptySuccess }}
+{{ if $op.HasNoContent 200 }}
 // OK returns the successful response with no body.
 func (c *{{$op.OperationId}}Context) OK() error {
     return c.NoContent(200)
+}
+{{- end }}
+{{ if $op.HasNoContent 204 }}
+// NoContent returns the successful response with no body.
+func (c *{{$op.OperationId}}Context) NoContent() error {
+    return c.NoContent(204)
 }
 {{- end }}
 {{- range .GetResponseIndependentTypeDefinitions }}
