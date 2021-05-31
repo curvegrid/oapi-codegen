@@ -74,6 +74,11 @@ type DeletePetContext struct {
 
 // Responses
 
+// NoContent returns the successful response with no body.
+func (c *DeletePetContext) NoContent() error {
+	return c.NoContent(204)
+}
+
 // FindPetByIDContext is a context customized for FindPetByID (GET /pets/{id}).
 type FindPetByIDContext struct {
 	echo.Context
