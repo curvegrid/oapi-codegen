@@ -965,7 +965,7 @@ type PostBothContext struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *PostBothContext) ParseJSONBody() (PostBothJSONBody, error) {
 	var resp PostBothJSONBody
-	return resp, bindValidateBody(c, &resp)
+	return resp, bindValidateBody(c.Context, &resp)
 }
 
 // GetBothContext is a context customized for GetBoth (GET /with_both_responses).
@@ -982,7 +982,7 @@ type PostJsonContext struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *PostJsonContext) ParseJSONBody() (PostJsonJSONBody, error) {
 	var resp PostJsonJSONBody
-	return resp, bindValidateBody(c, &resp)
+	return resp, bindValidateBody(c.Context, &resp)
 }
 
 // GetJsonContext is a context customized for GetJson (GET /with_json_response).

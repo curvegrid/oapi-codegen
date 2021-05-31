@@ -1230,7 +1230,7 @@ type EnsureEverythingIsReferencedContext struct {
 
 // OK responses with the appropriate code and the JSON response.
 func (c *EnsureEverythingIsReferencedContext) OK(resp EnsureEverythingIsReferencedResponseOK) error {
-	return c.JSON(200, resp)
+	return c.Context.JSON(200, resp)
 }
 
 // Issue127Context is a context customized for Issue127 (GET /issues/127).
@@ -1242,7 +1242,7 @@ type Issue127Context struct {
 
 // OK responses with the appropriate code and the JSON response.
 func (c *Issue127Context) OK(resp Issue127ResponseOK) error {
-	return c.JSON(200, resp)
+	return c.Context.JSON(200, resp)
 }
 
 // Issue185Context is a context customized for Issue185 (GET /issues/185).
@@ -1254,7 +1254,7 @@ type Issue185Context struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *Issue185Context) ParseJSONBody() (Issue185JSONBody, error) {
 	var resp Issue185JSONBody
-	return resp, bindValidateBody(c, &resp)
+	return resp, bindValidateBody(c.Context, &resp)
 }
 
 // Issue209Context is a context customized for Issue209 (GET /issues/209/${str}).
@@ -1281,7 +1281,7 @@ type Issue9Context struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *Issue9Context) ParseJSONBody() (Issue9JSONBody, error) {
 	var resp Issue9JSONBody
-	return resp, bindValidateBody(c, &resp)
+	return resp, bindValidateBody(c.Context, &resp)
 }
 
 // bindValidateBody decodes and validates the body of a request. It's highly inspired

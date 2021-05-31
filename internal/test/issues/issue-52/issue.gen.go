@@ -383,7 +383,7 @@ type ExampleGetContext struct {
 
 // OK responses with the appropriate code and the JSON response.
 func (c *ExampleGetContext) OK(resp ExampleGetResponseOK) error {
-	return c.JSON(200, resp)
+	return c.Context.JSON(200, resp)
 }
 
 // bindValidateBody decodes and validates the body of a request. It's highly inspired

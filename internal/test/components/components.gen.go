@@ -1580,14 +1580,14 @@ type EnsureEverythingIsReferencedContext struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *EnsureEverythingIsReferencedContext) ParseJSONBody() (EnsureEverythingIsReferencedJSONBody, error) {
 	var resp EnsureEverythingIsReferencedJSONBody
-	return resp, bindValidateBody(c, &resp)
+	return resp, bindValidateBody(c.Context, &resp)
 }
 
 // Responses
 
 // OK responses with the appropriate code and the JSON response.
 func (c *EnsureEverythingIsReferencedContext) OK(resp EnsureEverythingIsReferencedResponseOK) error {
-	return c.JSON(200, resp)
+	return c.Context.JSON(200, resp)
 }
 
 // ParamsWithAddPropsContext is a context customized for ParamsWithAddProps (GET /params_with_add_props).
@@ -1604,7 +1604,7 @@ type BodyWithAddPropsContext struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *BodyWithAddPropsContext) ParseJSONBody() (BodyWithAddPropsJSONBody, error) {
 	var resp BodyWithAddPropsJSONBody
-	return resp, bindValidateBody(c, &resp)
+	return resp, bindValidateBody(c.Context, &resp)
 }
 
 // bindValidateBody decodes and validates the body of a request. It's highly inspired

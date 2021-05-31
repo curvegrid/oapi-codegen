@@ -538,7 +538,7 @@ type GetPetContext struct {
 
 // OK responses with the appropriate code and the JSON response.
 func (c *GetPetContext) OK(resp GetPetResponseOK) error {
-	return c.JSON(200, resp)
+	return c.Context.JSON(200, resp)
 }
 
 // ValidatePetsContext is a context customized for ValidatePets (POST /pets:validate).
@@ -550,14 +550,14 @@ type ValidatePetsContext struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *ValidatePetsContext) ParseJSONBody() (ValidatePetsJSONBody, error) {
 	var resp ValidatePetsJSONBody
-	return resp, bindValidateBody(c, &resp)
+	return resp, bindValidateBody(c.Context, &resp)
 }
 
 // Responses
 
 // OK responses with the appropriate code and the JSON response.
 func (c *ValidatePetsContext) OK(resp ValidatePetsResponseOK) error {
-	return c.JSON(200, resp)
+	return c.Context.JSON(200, resp)
 }
 
 // bindValidateBody decodes and validates the body of a request. It's highly inspired

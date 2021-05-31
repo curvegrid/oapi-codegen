@@ -957,7 +957,7 @@ type {{.OperationId}}Context struct {
 // Parse{{.NameTag}}Body tries to parse the body into the respective structure and validate it.
 func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}}{{.NameTag}}Body, error) {
     var resp {{$op.OperationId}}{{.NameTag}}Body
-	return resp, bindValidateBody(c, &resp)
+	return resp, bindValidateBody(c.Context, &resp)
 }
 {{- end }}
 {{- end }}
@@ -968,13 +968,13 @@ func (c *{{$op.OperationId}}Context) Parse{{.NameTag}}Body() ({{$op.OperationId}
 {{ if $op.HasNoContent 200 }}
 // OK returns the successful response with no body.
 func (c *{{$op.OperationId}}Context) OK() error {
-    return c.NoContent(200)
+    return c.Context.NoContent(200)
 }
 {{- end }}
 {{ if $op.HasNoContent 204 }}
 // NoContent returns the successful response with no body.
 func (c *{{$op.OperationId}}Context) NoContent() error {
-    return c.NoContent(204)
+    return c.Context.NoContent(204)
 }
 {{- end }}
 {{- range .GetResponseIndependentTypeDefinitions }}
@@ -982,13 +982,13 @@ func (c *{{$op.OperationId}}Context) NoContent() error {
 {{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
 // Respond{{.ResponseName}} responses with the given code in range and the JSON response.
 func (c *{{$op.OperationId}}Context) Respond{{.ResponseName}}(code int, resp {{$respType}}) error {
-    return c.JSON(code, resp)
+    return c.Context.JSON(code, resp)
 }
 {{- else if (ne .ResponseName "default") }}
 {{ $respName := statusText .ResponseName | camelCase | title }}
 // {{$respName}} responses with the appropriate code and the JSON response.
 func (c *{{$op.OperationId}}Context) {{$respName}}(resp {{$respType}}) error {
-    return c.JSON({{.ResponseName}}, resp)
+    return c.Context.JSON({{.ResponseName}}, resp)
 }
 {{- end }}
 {{- end }}

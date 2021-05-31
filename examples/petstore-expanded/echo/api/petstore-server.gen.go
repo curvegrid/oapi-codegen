@@ -45,7 +45,7 @@ type FindPetsContext struct {
 
 // OK responses with the appropriate code and the JSON response.
 func (c *FindPetsContext) OK(resp FindPetsResponseOK) error {
-	return c.JSON(200, resp)
+	return c.Context.JSON(200, resp)
 }
 
 // AddPetContext is a context customized for AddPet (POST /pets).
@@ -57,14 +57,14 @@ type AddPetContext struct {
 // ParseJSONBody tries to parse the body into the respective structure and validate it.
 func (c *AddPetContext) ParseJSONBody() (AddPetJSONBody, error) {
 	var resp AddPetJSONBody
-	return resp, bindValidateBody(c, &resp)
+	return resp, bindValidateBody(c.Context, &resp)
 }
 
 // Responses
 
 // OK responses with the appropriate code and the JSON response.
 func (c *AddPetContext) OK(resp AddPetResponseOK) error {
-	return c.JSON(200, resp)
+	return c.Context.JSON(200, resp)
 }
 
 // DeletePetContext is a context customized for DeletePet (DELETE /pets/{id}).
@@ -76,7 +76,7 @@ type DeletePetContext struct {
 
 // NoContent returns the successful response with no body.
 func (c *DeletePetContext) NoContent() error {
-	return c.NoContent(204)
+	return c.Context.NoContent(204)
 }
 
 // FindPetByIDContext is a context customized for FindPetByID (GET /pets/{id}).
@@ -88,7 +88,7 @@ type FindPetByIDContext struct {
 
 // OK responses with the appropriate code and the JSON response.
 func (c *FindPetByIDContext) OK(resp FindPetByIDResponseOK) error {
-	return c.JSON(200, resp)
+	return c.Context.JSON(200, resp)
 }
 
 // bindValidateBody decodes and validates the body of a request. It's highly inspired
