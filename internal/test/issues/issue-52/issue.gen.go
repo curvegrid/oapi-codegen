@@ -32,7 +32,6 @@ func (s ArrayValue) Validate() error {
 		([]Value)(s),
 		validation.Each(),
 	)
-
 }
 
 // Document defines model for Document.
@@ -65,7 +64,6 @@ func (s Document_Fields) Validate() error {
 			AdditionalProperties map[string]Value `json:"-"`
 		})(s),
 	)
-
 }
 
 // Value defines model for Value.

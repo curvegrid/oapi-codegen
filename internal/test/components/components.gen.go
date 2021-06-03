@@ -154,7 +154,6 @@ func (s AdditionalPropertiesObject5) Validate() error {
 			AdditionalProperties map[string]SchemaObject `json:"-"`
 		})(s),
 	)
-
 }
 
 // ObjectWithJsonField defines model for ObjectWithJsonField.

@@ -40,7 +40,6 @@ func (s N5StartsWithNumber) Validate() error {
 	return validation.Validate(
 		(map[string]interface{})(s),
 	)
-
 }
 
 // AnyType1 defines model for AnyType1.
@@ -52,7 +51,6 @@ func (s AnyType1) Validate() error {
 	return validation.Validate(
 		(interface{})(s),
 	)
-
 }
 
 // AnyType2 represents any type.
@@ -66,7 +64,6 @@ func (s AnyType2) Validate() error {
 	return validation.Validate(
 		(interface{})(s),
 	)
-
 }
 
 // CustomStringType defines model for CustomStringType.
@@ -78,7 +75,6 @@ func (s CustomStringType) Validate() error {
 	return validation.Validate(
 		(string)(s),
 	)
-
 }
 
 // GenericObject defines model for GenericObject.
@@ -90,7 +86,6 @@ func (s GenericObject) Validate() error {
 	return validation.Validate(
 		(map[string]interface{})(s),
 	)
-
 }
 
 // NullableProperties defines model for NullableProperties.
@@ -132,7 +127,6 @@ func (s StringInPath) Validate() error {
 	return validation.Validate(
 		(string)(s),
 	)
-
 }
 
 // EnsureEverythingIsReferencedResponseOK defines parameters for EnsureEverythingIsReferenced.

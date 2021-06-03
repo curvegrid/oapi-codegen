@@ -258,7 +258,6 @@ func (s Argument) Validate() error {
 	return validation.Validate(
 		(string)(s),
 	)
-
 }
 
 // ResponseWithReference defines model for ResponseWithReference.
@@ -270,7 +269,6 @@ func (s ResponseWithReference) Validate() error {
 	return validation.Validate(
 		(SomeObject)(s),
 	)
-
 }
 
 // SimpleResponse defines model for SimpleResponse.

@@ -863,8 +863,7 @@ type {{.TypeName}} {{ if .CanAlias }}={{ end }} {{.Schema.TypeDecl}}
 {{ if not .Schema.RefType }}
 // Validate perform validation on the {{.TypeName}}
 func (s {{.TypeName}}) Validate() error {
-    {{- $v := .Schema.Validations -}}
-    {{ if eq (len .Schema.Properties) 0 }}
+    {{- if eq (len .Schema.Properties) 0 }}
     // Run validate on a scalar
     return validation.Validate(
         ({{.Schema.GoType}})(s),
@@ -1159,14 +1158,13 @@ type {{.TypeName}} {{if and (opts.AliasTypes) (.CanAlias)}}={{end}} {{.Schema.Ty
 {{ if not .CanAlias }}
 // Validate perform validation on the {{.TypeName}}
 func (s {{.TypeName}}) Validate() error {
-    {{- $v := .Schema.Validations -}}
-    {{ if eq (len .Schema.Properties) 0 }}
-    {{- if ne (len $v.Values) 0 }}
+    {{- if eq (len .Schema.Properties) 0 }}
+    {{- if ne (len .Schema.EnumValues) 0 }}
     // Run validate on an enum
     if err := validation.Validate(
         s,
         validation.In(
-            {{ range $v.Values }}{{ printf "%v" . }},{{ end }}
+            {{ range $key, $value := .Schema.EnumValues }}{{ printf "%v" $key }},{{ end }}
         ),
         validation.Skip, // do not recurse infinitely
     ); err != nil {
@@ -1178,7 +1176,7 @@ func (s {{.TypeName}}) Validate() error {
         ({{.Schema.GoType}})(s),
         {{- template "validateRules" .Schema -}}
     )
-    {{ else }}
+    {{- else }}
     // Run validate on a struct
     return validation.ValidateStruct(
         &s,
@@ -1200,9 +1198,13 @@ func (s {{.TypeName}}) Validate() error {
 {{end}}
 
 {{ define "validateRules" }}
-{{- $v := .Validations }}
+{{- $v := .OAPISchema }}
+{{- if $v }}
 {{- if or $v.MinItems $v.MaxItems }}
-validation.Length({{$v.MinItems}}, {{if $v.MaxItems}}{{ $v.MaxItems }}{{else}}0{{end}}),
+validation.Length({{if $v.MinItems}}{{$v.MinItems}}{{else}}0{{end}}, {{if $v.MaxItems}}{{ $v.MaxItems }}{{else}}0{{end}}),
+{{ end }}
+{{- if or $v.MinProps $v.MaxProps }}
+validation.Length({{$v.MinProps}}, {{if $v.MaxProps}}{{ $v.MaxProps }}{{else}}0{{end}}),
 {{ end }}
 {{- if .ItemType }}
 validation.Each(
@@ -1217,6 +1219,7 @@ validation.Length({{$v.MinLength}}, {{if $v.MaxLength}}{{ $v.MaxLength }}{{else}
 {{- end }}
 {{- if ne $v.Pattern "" }}
 validation.Match(regexp.MustCompile({{ printf "%#v" $v.Pattern}})),
+{{- end }}
 {{- end }}
 {{ end }}
 `,
