@@ -44,12 +44,12 @@ func (s EveryTypeOptional) Validate() error {
 		validation.Field(
 			&s.ArrayInlineField,
 
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.ArrayReferencedField,
 
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.BoolField,
@@ -125,12 +125,12 @@ func (s EveryTypeRequired) Validate() error {
 		validation.Field(
 			&s.ArrayInlineField,
 			validation.Required,
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.ArrayReferencedField,
 			validation.Required,
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.BoolField,
@@ -287,6 +287,18 @@ func (s SimpleResponse) Validate() error {
 		),
 	)
 
+}
+
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
 }
 
 // GetEveryTypeOptionalResponseOK defines parameters for GetEveryTypeOptional.

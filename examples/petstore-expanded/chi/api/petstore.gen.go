@@ -95,6 +95,18 @@ func (s Pet) Validate() error {
 
 }
 
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
+}
+
 // FindPetsParams defines parameters for FindPets.
 type FindPetsParams struct {
 
@@ -113,7 +125,7 @@ func (s FindPetsParams) Validate() error {
 		validation.Field(
 			&s.Tags,
 
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.Limit,
@@ -130,7 +142,7 @@ func (s FindPetsResponseOK) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		([]Pet)(s),
-		validation.Each(),
+		eachWithIndirection(),
 	)
 
 }

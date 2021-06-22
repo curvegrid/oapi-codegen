@@ -129,6 +129,18 @@ func (s StringInPath) Validate() error {
 	)
 }
 
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
+}
+
 // EnsureEverythingIsReferencedResponseOK defines parameters for EnsureEverythingIsReferenced.
 type EnsureEverythingIsReferencedResponseOK struct {
 	AnyType1 *AnyType1 `json:"anyType1,omitempty"`

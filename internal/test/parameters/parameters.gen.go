@@ -74,6 +74,18 @@ func (s Object) Validate() error {
 
 }
 
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
+}
+
 // GetContentObjectPathParam defines parameters for GetContentObject.
 type GetContentObjectPathParam ComplexObject
 
@@ -125,12 +137,12 @@ func (s GetCookieParams) Validate() error {
 		validation.Field(
 			&s.Ea,
 
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.A,
 
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.Eo,
@@ -184,12 +196,12 @@ func (s GetHeaderParams) Validate() error {
 		validation.Field(
 			&s.XArrayExploded,
 
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.XArray,
 
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.XObjectExploded,
@@ -212,7 +224,7 @@ func (s GetLabelExplodeArrayPathParam) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		([]int32)(s),
-		validation.Each(),
+		eachWithIndirection(),
 	)
 
 }
@@ -237,7 +249,7 @@ func (s GetLabelNoExplodeArrayPathParam) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		([]int32)(s),
-		validation.Each(),
+		eachWithIndirection(),
 	)
 
 }
@@ -262,7 +274,7 @@ func (s GetMatrixExplodeArrayPathId) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		([]int32)(s),
-		validation.Each(),
+		eachWithIndirection(),
 	)
 
 }
@@ -287,7 +299,7 @@ func (s GetMatrixNoExplodeArrayPathId) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		([]int32)(s),
-		validation.Each(),
+		eachWithIndirection(),
 	)
 
 }
@@ -372,12 +384,12 @@ func (s GetQueryFormParams) Validate() error {
 		validation.Field(
 			&s.Ea,
 
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.A,
 
-			validation.Each(),
+			eachWithIndirection(),
 		),
 		validation.Field(
 			&s.Eo,
@@ -409,7 +421,7 @@ func (s GetSimpleExplodeArrayPathParam) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		([]int32)(s),
-		validation.Each(),
+		eachWithIndirection(),
 	)
 
 }
@@ -434,7 +446,7 @@ func (s GetSimpleNoExplodeArrayPathParam) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		([]int32)(s),
-		validation.Each(),
+		eachWithIndirection(),
 	)
 
 }

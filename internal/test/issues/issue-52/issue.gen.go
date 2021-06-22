@@ -30,7 +30,7 @@ func (s ArrayValue) Validate() error {
 	// Run validate on a scalar
 	return validation.Validate(
 		([]Value)(s),
-		validation.Each(),
+		eachWithIndirection(),
 	)
 }
 
@@ -85,6 +85,18 @@ func (s Value) Validate() error {
 		),
 	)
 
+}
+
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
 }
 
 // ExampleGetResponseOK defines parameters for ExampleGet.
