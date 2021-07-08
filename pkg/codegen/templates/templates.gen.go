@@ -1092,6 +1092,11 @@ type {{$opid}}TestResponse struct {
     tc *TestClient
 }
 
+// Success asserts that the response was a successful response.
+func (c *{{$op.OperationId}}TestResponse) Success() {
+    require.Truef(c.tb, c.StatusCode/100==2, "expected status code 2xx, got %d", c.StatusCode)
+}
+
 {{ if $op.HasNoContent 200 }}
 // OK asserts a successful response with no body.
 func (c *{{$op.OperationId}}TestResponse) OK() {
