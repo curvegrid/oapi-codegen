@@ -17,6 +17,9 @@ type Schema struct {
 
 	EnumValues map[string]string // Enum values
 
+	ItemType *Schema // For an array, the item's schema.
+
+	EmbeddedFields           []string         // For an allOf struct
 	Properties               []Property       // For an object, the fields with names
 	HasAdditionalProperties  bool             // Whether we support additional properties
 	AdditionalPropertiesType *Schema          // And if we do, their type
@@ -165,7 +168,16 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 
 	outSchema := Schema{
 		Description: StringToGoComment(schema.Description),
-		OAPISchema: schema,
+		OAPISchema:  schema,
+	}
+	// Check for custom Go type extension
+	if extension, ok := schema.Extensions[extPropGoType]; ok {
+		typeName, err := extTypeName(extension)
+		if err != nil {
+			return outSchema, errors.Wrapf(err, "invalid value for %q", extPropGoType)
+		}
+		outSchema.GoType = typeName
+		return outSchema, nil
 	}
 
 	// We can't support this in any meaningful way
@@ -190,16 +202,6 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 		}
 		mergedSchema.OAPISchema = schema
 		return mergedSchema, nil
-	}
-
-	// Check for custom Go type extension
-	if extension, ok := schema.Extensions[extPropGoType]; ok {
-		typeName, err := extTypeName(extension)
-		if err != nil {
-			return outSchema, errors.Wrapf(err, "invalid value for %q", extPropGoType)
-		}
-		outSchema.GoType = typeName
-		return outSchema, nil
 	}
 
 	// Schema type and format, eg. string / binary
@@ -341,6 +343,7 @@ func resolveType(schema *openapi3.Schema, path []string, outSchema *Schema) erro
 			outSchema.AdditionalTypes = append(outSchema.AdditionalTypes, additionalTypes...)
 		}
 		outSchema.Properties = arrayType.Properties
+		outSchema.ItemType = &arrayType
 	case "integer":
 		// We default to int if format doesn't ask for something else.
 		if f == "int64" {
@@ -502,6 +505,7 @@ func MergeSchemas(allOf []*openapi3.SchemaRef, path []string) (Schema, error) {
 			if err != nil {
 				return Schema{}, errors.Wrap(err, "error converting reference path to a go type")
 			}
+			outSchema.EmbeddedFields = append(outSchema.EmbeddedFields, refType)
 		}
 
 		schema, err := GenerateGoSchema(schemaOrRef, path)

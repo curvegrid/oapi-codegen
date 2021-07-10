@@ -1,0 +1,113 @@
+// APIErrorCode represents an API error code and its corresponding HTTP error code
+type APIErrorCode interface {
+    // HTTPStatus returns the HTTP status code
+	HTTPStatus() int
+    // AppCode returns the application error code
+	AppCode() string
+}
+
+// TestClient is a client that is used mainly for testing.
+type TestClient struct {
+    // The generated client.
+    Client ClientInterface
+}
+
+{{/* Generate client methods */}}
+{{range . -}}
+{{$hasParams := .RequiresParamObject -}}
+{{$pathParams := .PathParams -}}
+{{$opid := .OperationId -}}
+{{$op := . -}}
+
+// {{$opid}}{{if .HasBody}}WithBody{{end}} calls the endpoints, asserts that there are no errors, and return the TestResponse.
+func (tc *TestClient) {{$opid}}{{if .HasBody}}WithBody{{end}}(tb testing.TB{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}{{if .HasBody}}, contentType string, body io.Reader{{end}}, reqEditors... RequestEditorFn) *{{$opid}}TestResponse {
+    ctx := context.Background()
+    resp, err := tc.Client.{{$opid}}{{if .HasBody}}WithBody{{end}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}{{if .HasBody}}, contentType, body{{end}}, reqEditors...)
+    require.NoError(tb, err)
+
+    return &{{$opid}}TestResponse{resp, tb, tc}
+}
+
+{{range .Bodies}}
+// {{$opid}}{{.Suffix}} calls the endpoints, asserts that there are no errors, and return the TestResponse.
+func (tc *TestClient) {{$opid}}{{.Suffix}}(tb testing.TB{{genParamArgs $pathParams}}{{if $hasParams}}, params *{{$opid}}Params{{end}}, body {{$opid}}{{.NameTag}}RequestBody, reqEditors... RequestEditorFn) *{{$opid}}TestResponse {
+    ctx := context.Background()
+    resp, err := tc.Client.{{$opid}}{{.Suffix}}(ctx{{genParamNames $pathParams}}{{if $hasParams}}, params{{end}}, body, reqEditors...)
+    require.NoError(tb, err)
+
+    return &{{$opid}}TestResponse{resp, tb, tc}
+}
+{{end}}{{/* range .Bodies */}}
+
+{{/* Response handlers */}}
+// {{$opid}}TestResponse provides a facility for asserting response bodies.
+type {{$opid}}TestResponse struct {
+    *http.Response
+
+    tb testing.TB
+    tc *TestClient
+}
+
+// Success asserts that the response was a successful response.
+func (c *{{$op.OperationId}}TestResponse) Success() {
+    require.Truef(c.tb, c.StatusCode/100==2, "expected status code 2xx, got %d", c.StatusCode)
+}
+
+{{ if $op.HasNoContent 200 }}
+// OK asserts a successful response with no body.
+func (c *{{$op.OperationId}}TestResponse) OK() {
+    require.Equalf(c.tb, 200, c.StatusCode, "expected status code 200, got %d", c.StatusCode)
+    require.Equalf(c.tb, int64(0), c.ContentLength, "expected zero content length, got %d", c.ContentLength)
+}
+{{- end }}
+{{ if $op.HasNoContent 204 }}
+// OK asserts a successful response with no body.
+func (c *{{$op.OperationId}}TestResponse) OK() {
+    require.Equalf(c.tb, 204, c.StatusCode, "expected status code 204, got %d", c.StatusCode)
+    require.Equalf(c.tb, int64(0), c.ContentLength, "expected zero content length, got %d", c.ContentLength)
+}
+{{- end }}
+{{- range .GetResponseIndependentTypeDefinitions }}
+{{ $respType := .TypeName }}
+{{- if or (eq .ResponseName "1XX") (eq .ResponseName "2XX") (eq .ResponseName "3XX") }}
+// Respond{{.ResponseName}} asserts a response with the given code in range and the defined JSON type.
+func (c *{{$op.OperationId}}TestResponse) Respond{{.ResponseName}}(code int) {{$respType}} {
+    require.Equalf(c.tb, code, c.StatusCode, "expected status code %d, got %d", code, c.StatusCode)
+
+    var resp {{$respType}}
+    c.tc.parseJSONResponse(c.tb, c.Response, &resp)
+    return resp
+}
+{{- else if or (eq .ResponseName "4XX") (eq .ResponseName "5XX") }}
+// Error{{.ResponseName}} asserts an error response with the given API error code
+func (c *{{$op.OperationId}}TestResponse) Error{{.ResponseName}}(code APIErrorCode) {{$respType}} {
+    require.Equalf(c.tb, code.HTTPStatus(), c.StatusCode, "expected status code %d, got %d", code.HTTPStatus(), c.StatusCode)
+
+    var resp {{$respType}}
+    c.tc.parseJSONResponse(c.tb, c.Response, &resp)
+
+    require.Equalf(c.tb, code.AppCode(), resp.Code, "expected API error code %s, got %s", code.AppCode(), resp.Code)
+    return resp
+}
+{{- else if (ne .ResponseName "default") }}
+{{ $respName := statusText .ResponseName | camelCase | title }}
+// {{$respName}} asserts a response with the appropriate code and the defined JSON type.
+func (c *{{$op.OperationId}}TestResponse) {{$respName}}() {{$respType}} {
+    require.Equalf(c.tb, {{.ResponseName}}, c.StatusCode, "expected status code {{.ResponseName}}, got %d", c.StatusCode)
+
+    var resp {{$respType}}
+    c.tc.parseJSONResponse(c.tb, c.Response, &resp)
+    return resp
+}
+{{- end }}
+{{- end }}
+{{end}}
+
+func (tc *TestClient) parseJSONResponse(tb testing.TB, resp *http.Response, target validation.Validatable) {
+    defer resp.Body.Close()
+    err := json.NewDecoder(resp.Body).Decode(target)
+    require.NoError(tb, err, "failed to decode response body as JSON: %v", err)
+
+    err = target.Validate()
+    require.NoError(tb, err, "response validation failed: %v", err)
+}

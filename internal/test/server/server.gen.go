@@ -11,6 +11,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/go-chi/chi/v5"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // EveryTypeOptional defines model for EveryTypeOptional.
@@ -33,6 +34,64 @@ type EveryTypeOptional struct {
 	NumberField     *float32    `json:"number_field,omitempty"`
 	ReferencedField *SomeObject `json:"referenced_field,omitempty"`
 	StringField     *string     `json:"string_field,omitempty"`
+}
+
+// Validate perform validation on the EveryTypeOptional
+func (s EveryTypeOptional) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.ArrayInlineField,
+
+			eachWithIndirection(),
+		),
+		validation.Field(
+			&s.ArrayReferencedField,
+
+			eachWithIndirection(),
+		),
+		validation.Field(
+			&s.BoolField,
+		),
+		validation.Field(
+			&s.ByteField,
+		),
+		validation.Field(
+			&s.DateField,
+		),
+		validation.Field(
+			&s.DateTimeField,
+		),
+		validation.Field(
+			&s.DoubleField,
+		),
+		validation.Field(
+			&s.FloatField,
+		),
+		validation.Field(
+			&s.InlineObjectField,
+		),
+		validation.Field(
+			&s.Int32Field,
+		),
+		validation.Field(
+			&s.Int64Field,
+		),
+		validation.Field(
+			&s.IntField,
+		),
+		validation.Field(
+			&s.NumberField,
+		),
+		validation.Field(
+			&s.ReferencedField,
+		),
+		validation.Field(
+			&s.StringField,
+		),
+	)
+
 }
 
 // EveryTypeRequired defines model for EveryTypeRequired.
@@ -58,9 +117,95 @@ type EveryTypeRequired struct {
 	StringField     string     `json:"string_field"`
 }
 
+// Validate perform validation on the EveryTypeRequired
+func (s EveryTypeRequired) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.ArrayInlineField,
+			validation.Required,
+			eachWithIndirection(),
+		),
+		validation.Field(
+			&s.ArrayReferencedField,
+			validation.Required,
+			eachWithIndirection(),
+		),
+		validation.Field(
+			&s.BoolField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.ByteField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.DateField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.DateTimeField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.DoubleField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.EmailField,
+		),
+		validation.Field(
+			&s.FloatField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.InlineObjectField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Int32Field,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Int64Field,
+			validation.Required,
+		),
+		validation.Field(
+			&s.IntField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.NumberField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.ReferencedField,
+			validation.Required,
+		),
+		validation.Field(
+			&s.StringField,
+			validation.Required,
+		),
+	)
+
+}
+
 // ReservedKeyword defines model for ReservedKeyword.
 type ReservedKeyword struct {
 	Channel *string `json:"channel,omitempty"`
+}
+
+// Validate perform validation on the ReservedKeyword
+func (s ReservedKeyword) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Channel,
+		),
+	)
+
 }
 
 // Resource defines model for Resource.
@@ -69,21 +214,98 @@ type Resource struct {
 	Value float32 `json:"value"`
 }
 
+// Validate perform validation on the Resource
+func (s Resource) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Value,
+			validation.Required,
+		),
+	)
+
+}
+
 // SomeObject defines model for some_object.
 type SomeObject struct {
 	Name string `json:"name"`
 }
 
+// Validate perform validation on the SomeObject
+func (s SomeObject) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
 // Argument defines model for argument.
 type Argument string
 
+// Validate perform validation on the Argument
+func (s Argument) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+	)
+}
+
 // ResponseWithReference defines model for ResponseWithReference.
 type ResponseWithReference SomeObject
+
+// Validate perform validation on the ResponseWithReference
+func (s ResponseWithReference) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(SomeObject)(s),
+	)
+}
 
 // SimpleResponse defines model for SimpleResponse.
 type SimpleResponse struct {
 	Name string `json:"name"`
 }
+
+// Validate perform validation on the SimpleResponse
+func (s SimpleResponse) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
+}
+
+// GetEveryTypeOptionalResponseOK defines parameters for GetEveryTypeOptional.
+type GetEveryTypeOptionalResponseOK = EveryTypeOptional
+
+// GetSimpleResponseOK defines parameters for GetSimple.
+type GetSimpleResponseOK = SomeObject
 
 // GetWithArgsParams defines parameters for GetWithArgs.
 type GetWithArgsParams struct {
@@ -98,14 +320,132 @@ type GetWithArgsParams struct {
 	HeaderArgument *int32 `json:"header_argument,omitempty"`
 }
 
+// Validate perform validation on the GetWithArgsParams
+func (s GetWithArgsParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.OptionalArgument,
+		),
+		validation.Field(
+			&s.RequiredArgument,
+			validation.Required,
+		),
+		validation.Field(
+			&s.HeaderArgument,
+		),
+	)
+
+}
+
+// GetWithArgsResponseOK defines parameters for GetWithArgs.
+type GetWithArgsResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the GetWithArgsResponseOK
+func (s GetWithArgsResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
+// GetWithReferencesPathGlobalArgument defines parameters for GetWithReferences.
+type GetWithReferencesPathGlobalArgument int64
+
+// Validate perform validation on the GetWithReferencesPathGlobalArgument
+func (s GetWithReferencesPathGlobalArgument) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
+// GetWithReferencesResponseOK defines parameters for GetWithReferences.
+type GetWithReferencesResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the GetWithReferencesResponseOK
+func (s GetWithReferencesResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
 // GetWithContentTypeParamsContentType defines parameters for GetWithContentType.
 type GetWithContentTypeParamsContentType string
+
+// Validate perform validation on the GetWithContentTypeParamsContentType
+func (s GetWithContentTypeParamsContentType) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+	)
+
+}
+
+// GetWithContentTypeResponseOK defines parameters for GetWithContentType.
+type GetWithContentTypeResponseOK = SomeObject
+
+// GetReservedKeywordResponseOK defines parameters for GetReservedKeyword.
+type GetReservedKeywordResponseOK = ReservedKeyword
 
 // CreateResourceJSONBody defines parameters for CreateResource.
 type CreateResourceJSONBody EveryTypeRequired
 
+// Validate perform validation on the CreateResourceJSONBody
+func (s CreateResourceJSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(EveryTypeRequired)(s),
+	)
+
+}
+
+// CreateResourceResponseOK defines parameters for CreateResource.
+type CreateResourceResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the CreateResourceResponseOK
+func (s CreateResourceResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
 // CreateResource2JSONBody defines parameters for CreateResource2.
 type CreateResource2JSONBody Resource
+
+// Validate perform validation on the CreateResource2JSONBody
+func (s CreateResource2JSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(Resource)(s),
+	)
+
+}
 
 // CreateResource2Params defines parameters for CreateResource2.
 type CreateResource2Params struct {
@@ -114,11 +454,101 @@ type CreateResource2Params struct {
 	InlineQueryArgument *int `json:"inline_query_argument,omitempty"`
 }
 
+// Validate perform validation on the CreateResource2Params
+func (s CreateResource2Params) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.InlineQueryArgument,
+		),
+	)
+
+}
+
+// CreateResource2PathInlineArgument defines parameters for CreateResource2.
+type CreateResource2PathInlineArgument int
+
+// Validate perform validation on the CreateResource2PathInlineArgument
+func (s CreateResource2PathInlineArgument) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int)(s),
+	)
+
+}
+
+// CreateResource2ResponseOK defines parameters for CreateResource2.
+type CreateResource2ResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the CreateResource2ResponseOK
+func (s CreateResource2ResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
 // UpdateResource3JSONBody defines parameters for UpdateResource3.
 type UpdateResource3JSONBody struct {
 	Id   *int    `json:"id,omitempty"`
 	Name *string `json:"name,omitempty"`
 }
+
+// Validate perform validation on the UpdateResource3JSONBody
+func (s UpdateResource3JSONBody) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Id,
+		),
+		validation.Field(
+			&s.Name,
+		),
+	)
+
+}
+
+// UpdateResource3PathFallthrough defines parameters for UpdateResource3.
+type UpdateResource3PathFallthrough int
+
+// Validate perform validation on the UpdateResource3PathFallthrough
+func (s UpdateResource3PathFallthrough) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int)(s),
+	)
+
+}
+
+// UpdateResource3ResponseOK defines parameters for UpdateResource3.
+type UpdateResource3ResponseOK struct {
+	Name string `json:"name"`
+}
+
+// Validate perform validation on the UpdateResource3ResponseOK
+func (s UpdateResource3ResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+	)
+
+}
+
+// GetResponseWithReferenceResponseOK defines parameters for GetResponseWithReference.
+type GetResponseWithReferenceResponseOK = SomeObject
 
 // CreateResourceJSONRequestBody defines body for CreateResource for application/json ContentType.
 type CreateResourceJSONRequestBody CreateResourceJSONBody
@@ -142,7 +572,7 @@ type ServerInterface interface {
 	GetWithArgs(w http.ResponseWriter, r *http.Request, params GetWithArgsParams)
 	// Getter with referenced parameter and referenced response
 	// (GET /get-with-references/{global_argument}/{argument})
-	GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument)
+	GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument GetWithReferencesPathGlobalArgument, argument Argument)
 	// Get an object by ID
 	// (GET /get-with-type/{content_type})
 	GetWithContentType(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType)
@@ -154,11 +584,11 @@ type ServerInterface interface {
 	CreateResource(w http.ResponseWriter, r *http.Request, argument Argument)
 	// Create a resource with inline parameter
 	// (POST /resource2/{inline_argument})
-	CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params)
+	CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument CreateResource2PathInlineArgument, params CreateResource2Params)
 	// Update a resource with inline body. The parameter name is a reserved
 	// keyword, so make sure that gets prefixed to avoid syntax errors
 	// (PUT /resource3/{fallthrough})
-	UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough int)
+	UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough UpdateResource3PathFallthrough)
 	// get response with reference
 	// (GET /response-with-reference)
 	GetResponseWithReference(w http.ResponseWriter, r *http.Request)
@@ -275,7 +705,7 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	var err error
 
 	// ------------- Path parameter "global_argument" -------------
-	var globalArgument int64
+	var globalArgument GetWithReferencesPathGlobalArgument
 
 	err = runtime.BindStyledParameter("simple", false, "global_argument", chi.URLParam(r, "global_argument"), &globalArgument)
 	if err != nil {
@@ -377,7 +807,7 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	var err error
 
 	// ------------- Path parameter "inline_argument" -------------
-	var inlineArgument int
+	var inlineArgument CreateResource2PathInlineArgument
 
 	err = runtime.BindStyledParameter("simple", false, "inline_argument", chi.URLParam(r, "inline_argument"), &inlineArgument)
 	if err != nil {
@@ -417,7 +847,7 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 	var err error
 
 	// ------------- Path parameter "fallthrough" -------------
-	var pFallthrough int
+	var pFallthrough UpdateResource3PathFallthrough
 
 	err = runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough)
 	if err != nil {

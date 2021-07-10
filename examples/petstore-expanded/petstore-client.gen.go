@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // Error defines model for Error.
@@ -27,6 +28,23 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// Validate perform validation on the Error
+func (s Error) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Code,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Message,
+			validation.Required,
+		),
+	)
+
+}
+
 // NewPet defines model for NewPet.
 type NewPet struct {
 
@@ -35,6 +53,22 @@ type NewPet struct {
 
 	// Type of the pet
 	Tag *string `json:"tag,omitempty"`
+}
+
+// Validate perform validation on the NewPet
+func (s NewPet) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+			validation.Required,
+		),
+		validation.Field(
+			&s.Tag,
+		),
+	)
+
 }
 
 // Pet defines model for Pet.
@@ -47,6 +81,31 @@ type Pet struct {
 	Id int64 `json:"id"`
 }
 
+// Validate perform validation on the Pet
+func (s Pet) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s, validation.Field(&s.NewPet),
+		validation.Field(
+			&s.Id,
+			validation.Required,
+		),
+	)
+
+}
+
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
+}
+
 // FindPetsParams defines parameters for FindPets.
 type FindPetsParams struct {
 
@@ -57,8 +116,89 @@ type FindPetsParams struct {
 	Limit *int32 `json:"limit,omitempty"`
 }
 
+// Validate perform validation on the FindPetsParams
+func (s FindPetsParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Tags,
+
+			eachWithIndirection(),
+		),
+		validation.Field(
+			&s.Limit,
+		),
+	)
+
+}
+
+// FindPetsResponseOK defines parameters for FindPets.
+type FindPetsResponseOK []Pet
+
+// Validate perform validation on the FindPetsResponseOK
+func (s FindPetsResponseOK) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		([]Pet)(s),
+		eachWithIndirection(),
+	)
+
+}
+
+// FindPetsResponseDefault defines parameters for FindPets.
+type FindPetsResponseDefault = Error
+
 // AddPetJSONBody defines parameters for AddPet.
 type AddPetJSONBody NewPet
+
+// Validate perform validation on the AddPetJSONBody
+func (s AddPetJSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(NewPet)(s),
+	)
+
+}
+
+// AddPetResponseOK defines parameters for AddPet.
+type AddPetResponseOK = Pet
+
+// AddPetResponseDefault defines parameters for AddPet.
+type AddPetResponseDefault = Error
+
+// DeletePetPathId defines parameters for DeletePet.
+type DeletePetPathId int64
+
+// Validate perform validation on the DeletePetPathId
+func (s DeletePetPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
+// DeletePetResponseDefault defines parameters for DeletePet.
+type DeletePetResponseDefault = Error
+
+// FindPetByIDPathId defines parameters for FindPetByID.
+type FindPetByIDPathId int64
+
+// Validate perform validation on the FindPetByIDPathId
+func (s FindPetByIDPathId) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(int64)(s),
+	)
+
+}
+
+// FindPetByIDResponseOK defines parameters for FindPetByID.
+type FindPetByIDResponseOK = Pet
+
+// FindPetByIDResponseDefault defines parameters for FindPetByID.
+type FindPetByIDResponseDefault = Error
 
 // AddPetJSONRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody
@@ -145,10 +285,10 @@ type ClientInterface interface {
 	AddPet(ctx context.Context, body AddPetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeletePet request
-	DeletePet(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeletePet(ctx context.Context, id DeletePetPathId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// FindPetByID request
-	FindPetByID(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
+	FindPetByID(ctx context.Context, id FindPetByIDPathId, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) FindPets(ctx context.Context, params *FindPetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -187,7 +327,7 @@ func (c *Client) AddPet(ctx context.Context, body AddPetJSONRequestBody, reqEdit
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeletePet(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DeletePet(ctx context.Context, id DeletePetPathId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeletePetRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -199,7 +339,7 @@ func (c *Client) DeletePet(ctx context.Context, id int64, reqEditors ...RequestE
 	return c.Client.Do(req)
 }
 
-func (c *Client) FindPetByID(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) FindPetByID(ctx context.Context, id FindPetByIDPathId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFindPetByIDRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -315,7 +455,7 @@ func NewAddPetRequestWithBody(server string, contentType string, body io.Reader)
 }
 
 // NewDeletePetRequest generates requests for DeletePet
-func NewDeletePetRequest(server string, id int64) (*http.Request, error) {
+func NewDeletePetRequest(server string, id DeletePetPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -349,7 +489,7 @@ func NewDeletePetRequest(server string, id int64) (*http.Request, error) {
 }
 
 // NewFindPetByIDRequest generates requests for FindPetByID
-func NewFindPetByIDRequest(server string, id int64) (*http.Request, error) {
+func NewFindPetByIDRequest(server string, id FindPetByIDPathId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -434,17 +574,22 @@ type ClientWithResponsesInterface interface {
 	AddPetWithResponse(ctx context.Context, body AddPetJSONRequestBody, reqEditors ...RequestEditorFn) (*AddPetResponse, error)
 
 	// DeletePet request
-	DeletePetWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*DeletePetResponse, error)
+	DeletePetWithResponse(ctx context.Context, id DeletePetPathId, reqEditors ...RequestEditorFn) (*DeletePetResponse, error)
 
 	// FindPetByID request
-	FindPetByIDWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error)
+	FindPetByIDWithResponse(ctx context.Context, id FindPetByIDPathId, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error)
 }
 
+// FindPetsResponseJSON200 represents a possible response for the FindPets request.
+type FindPetsResponseJSON200 []Pet
+
+// FindPetsResponseJSONDefault represents a possible response for the FindPets request.
+type FindPetsResponseJSONDefault Error
 type FindPetsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]Pet
-	JSONDefault  *Error
+	JSON200      *FindPetsResponseJSON200
+	JSONDefault  *FindPetsResponseJSONDefault
 }
 
 // Status returns HTTPResponse.Status
@@ -463,11 +608,16 @@ func (r FindPetsResponse) StatusCode() int {
 	return 0
 }
 
+// AddPetResponseJSON200 represents a possible response for the AddPet request.
+type AddPetResponseJSON200 Pet
+
+// AddPetResponseJSONDefault represents a possible response for the AddPet request.
+type AddPetResponseJSONDefault Error
 type AddPetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Pet
-	JSONDefault  *Error
+	JSON200      *AddPetResponseJSON200
+	JSONDefault  *AddPetResponseJSONDefault
 }
 
 // Status returns HTTPResponse.Status
@@ -486,10 +636,12 @@ func (r AddPetResponse) StatusCode() int {
 	return 0
 }
 
+// DeletePetResponseJSONDefault represents a possible response for the DeletePet request.
+type DeletePetResponseJSONDefault Error
 type DeletePetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSONDefault  *Error
+	JSONDefault  *DeletePetResponseJSONDefault
 }
 
 // Status returns HTTPResponse.Status
@@ -508,11 +660,16 @@ func (r DeletePetResponse) StatusCode() int {
 	return 0
 }
 
+// FindPetByIDResponseJSON200 represents a possible response for the FindPetByID request.
+type FindPetByIDResponseJSON200 Pet
+
+// FindPetByIDResponseJSONDefault represents a possible response for the FindPetByID request.
+type FindPetByIDResponseJSONDefault Error
 type FindPetByIDResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Pet
-	JSONDefault  *Error
+	JSON200      *FindPetByIDResponseJSON200
+	JSONDefault  *FindPetByIDResponseJSONDefault
 }
 
 // Status returns HTTPResponse.Status
@@ -558,7 +715,7 @@ func (c *ClientWithResponses) AddPetWithResponse(ctx context.Context, body AddPe
 }
 
 // DeletePetWithResponse request returning *DeletePetResponse
-func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*DeletePetResponse, error) {
+func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, id DeletePetPathId, reqEditors ...RequestEditorFn) (*DeletePetResponse, error) {
 	rsp, err := c.DeletePet(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -567,7 +724,7 @@ func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, id int6
 }
 
 // FindPetByIDWithResponse request returning *FindPetByIDResponse
-func (c *ClientWithResponses) FindPetByIDWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error) {
+func (c *ClientWithResponses) FindPetByIDWithResponse(ctx context.Context, id FindPetByIDPathId, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error) {
 	rsp, err := c.FindPetByID(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -590,14 +747,14 @@ func ParseFindPetsResponse(rsp *http.Response) (*FindPetsResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []Pet
+		var dest FindPetsResponseJSON200
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
+		var dest FindPetsResponseJSONDefault
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -623,14 +780,14 @@ func ParseAddPetResponse(rsp *http.Response) (*AddPetResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Pet
+		var dest AddPetResponseJSON200
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
+		var dest AddPetResponseJSONDefault
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -656,7 +813,7 @@ func ParseDeletePetResponse(rsp *http.Response) (*DeletePetResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
+		var dest DeletePetResponseJSONDefault
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -682,14 +839,14 @@ func ParseFindPetByIDResponse(rsp *http.Response) (*FindPetByIDResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Pet
+		var dest FindPetByIDResponseJSON200
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
+		var dest FindPetByIDResponseJSONDefault
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

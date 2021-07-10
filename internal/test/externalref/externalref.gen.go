@@ -15,12 +15,40 @@ import (
 	externalRef0 "github.com/deepmap/oapi-codegen/internal/test/externalref/packageA"
 	externalRef1 "github.com/deepmap/oapi-codegen/internal/test/externalref/packageB"
 	"github.com/getkin/kin-openapi/openapi3"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // Container defines model for Container.
 type Container struct {
 	ObjectA *externalRef0.ObjectA `json:"object_a,omitempty"`
 	ObjectB *externalRef1.ObjectB `json:"object_b,omitempty"`
+}
+
+// Validate perform validation on the Container
+func (s Container) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.ObjectA,
+		),
+		validation.Field(
+			&s.ObjectB,
+		),
+	)
+
+}
+
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

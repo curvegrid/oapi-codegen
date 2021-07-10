@@ -16,7 +16,9 @@ package codegen
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -152,7 +154,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 						" return nil, err \n"+
 						"}\n"+
 						"response.%s = &dest",
-						typeDefinition.Schema.TypeDecl(),
+						op.OperationId+"Response"+typeDefinition.TypeName,
 						typeDefinition.TypeName)
 
 					caseKey, caseClause := buildUnmarshalCase(typeDefinition, caseAction, "json")
@@ -168,7 +170,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 						" return nil, err \n"+
 						"}\n"+
 						"response.%s = &dest",
-						typeDefinition.Schema.TypeDecl(),
+						op.OperationId+"Response"+typeDefinition.TypeName,
 						typeDefinition.TypeName)
 					caseKey, caseClause := buildUnmarshalCase(typeDefinition, caseAction, "yaml")
 					handledCaseClauses[caseKey] = caseClause
@@ -183,7 +185,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 						" return nil, err \n"+
 						"}\n"+
 						"response.%s = &dest",
-						typeDefinition.Schema.TypeDecl(),
+						op.OperationId+"Response"+typeDefinition.TypeName,
 						typeDefinition.TypeName)
 					caseKey, caseClause := buildUnmarshalCase(typeDefinition, caseAction, "xml")
 					handledCaseClauses[caseKey] = caseClause
@@ -278,5 +280,12 @@ var TemplateFunctions = template.FuncMap{
 	"lower":                      strings.ToLower,
 	"title":                      strings.Title,
 	"stripNewLines":              stripNewLines,
-	"sanitizeGoIdentity":         SanitizeGoIdentity,
+	"statusText": func(s string) (string, error) {
+		v, err := strconv.Atoi(s)
+		if err != nil {
+			return "", err
+		}
+		return http.StatusText(v), nil
+	},
+	"sanitizeGoIdentity": SanitizeGoIdentity,
 }

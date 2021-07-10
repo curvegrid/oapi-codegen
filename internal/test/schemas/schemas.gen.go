@@ -22,7 +22,9 @@ import (
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -32,19 +34,59 @@ const (
 // This schema name starts with a number
 type N5StartsWithNumber map[string]interface{}
 
+// Validate perform validation on the N5StartsWithNumber
+func (s N5StartsWithNumber) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(map[string]interface{})(s),
+	)
+}
+
 // AnyType1 defines model for AnyType1.
 type AnyType1 interface{}
+
+// Validate perform validation on the AnyType1
+func (s AnyType1) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(interface{})(s),
+	)
+}
 
 // AnyType2 represents any type.
 //
 // This should be an interface{}
 type AnyType2 interface{}
 
+// Validate perform validation on the AnyType2
+func (s AnyType2) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(interface{})(s),
+	)
+}
+
 // CustomStringType defines model for CustomStringType.
 type CustomStringType string
 
+// Validate perform validation on the CustomStringType
+func (s CustomStringType) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+	)
+}
+
 // GenericObject defines model for GenericObject.
 type GenericObject map[string]interface{}
+
+// Validate perform validation on the GenericObject
+func (s GenericObject) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(map[string]interface{})(s),
+	)
+}
 
 // NullableProperties defines model for NullableProperties.
 type NullableProperties struct {
@@ -54,18 +96,150 @@ type NullableProperties struct {
 	RequiredAndNullable *string `json:"requiredAndNullable"`
 }
 
+// Validate perform validation on the NullableProperties
+func (s NullableProperties) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Optional,
+		),
+		validation.Field(
+			&s.OptionalAndNullable,
+		),
+		validation.Field(
+			&s.Required,
+			validation.Required,
+		),
+		validation.Field(
+			&s.RequiredAndNullable,
+		),
+	)
+
+}
+
 // StringInPath defines model for StringInPath.
 type StringInPath string
+
+// Validate perform validation on the StringInPath
+func (s StringInPath) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+	)
+}
+
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
+}
+
+// EnsureEverythingIsReferencedResponseOK defines parameters for EnsureEverythingIsReferenced.
+type EnsureEverythingIsReferencedResponseOK struct {
+	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
+
+	// AnyType2 represents any type.
+	//
+	// This should be an interface{}
+	AnyType2         *AnyType2         `json:"anyType2,omitempty"`
+	CustomStringType *CustomStringType `foo:"bar" json:"customStringType,omitempty"`
+}
+
+// Validate perform validation on the EnsureEverythingIsReferencedResponseOK
+func (s EnsureEverythingIsReferencedResponseOK) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.AnyType1,
+		),
+		validation.Field(
+			&s.AnyType2,
+		),
+		validation.Field(
+			&s.CustomStringType,
+		),
+	)
+
+}
+
+// Issue127ResponseOK defines parameters for Issue127.
+type Issue127ResponseOK = GenericObject
+
+// Issue127ResponseDefault defines parameters for Issue127.
+type Issue127ResponseDefault = GenericObject
 
 // Issue185JSONBody defines parameters for Issue185.
 type Issue185JSONBody NullableProperties
 
+// Validate perform validation on the Issue185JSONBody
+func (s Issue185JSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(NullableProperties)(s),
+	)
+
+}
+
+// Issue30PathFallthrough defines parameters for Issue30.
+type Issue30PathFallthrough string
+
+// Validate perform validation on the Issue30PathFallthrough
+func (s Issue30PathFallthrough) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+	)
+
+}
+
+// Issue41Path1param defines parameters for Issue41.
+type Issue41Path1param N5StartsWithNumber
+
+// Validate perform validation on the Issue41Path1param
+func (s Issue41Path1param) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(N5StartsWithNumber)(s),
+	)
+
+}
+
 // Issue9JSONBody defines parameters for Issue9.
 type Issue9JSONBody interface{}
+
+// Validate perform validation on the Issue9JSONBody
+func (s Issue9JSONBody) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(interface{})(s),
+	)
+
+}
 
 // Issue9Params defines parameters for Issue9.
 type Issue9Params struct {
 	Foo string `json:"foo"`
+}
+
+// Validate perform validation on the Issue9Params
+func (s Issue9Params) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Foo,
+			validation.Required,
+		),
+	)
+
 }
 
 // Issue185JSONRequestBody defines body for Issue185 for application/json ContentType.
@@ -162,10 +336,10 @@ type ClientInterface interface {
 	Issue209(ctx context.Context, str StringInPath, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// Issue30 request
-	Issue30(ctx context.Context, pFallthrough string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	Issue30(ctx context.Context, pFallthrough Issue30PathFallthrough, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// Issue41 request
-	Issue41(ctx context.Context, n1param N5StartsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error)
+	Issue41(ctx context.Context, n1param Issue41Path1param, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// Issue9 request  with any body
 	Issue9WithBody(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -233,7 +407,7 @@ func (c *Client) Issue209(ctx context.Context, str StringInPath, reqEditors ...R
 	return c.Client.Do(req)
 }
 
-func (c *Client) Issue30(ctx context.Context, pFallthrough string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) Issue30(ctx context.Context, pFallthrough Issue30PathFallthrough, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewIssue30Request(c.Server, pFallthrough)
 	if err != nil {
 		return nil, err
@@ -245,7 +419,7 @@ func (c *Client) Issue30(ctx context.Context, pFallthrough string, reqEditors ..
 	return c.Client.Do(req)
 }
 
-func (c *Client) Issue41(ctx context.Context, n1param N5StartsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) Issue41(ctx context.Context, n1param Issue41Path1param, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewIssue41Request(c.Server, n1param)
 	if err != nil {
 		return nil, err
@@ -410,7 +584,7 @@ func NewIssue209Request(server string, str StringInPath) (*http.Request, error) 
 }
 
 // NewIssue30Request generates requests for Issue30
-func NewIssue30Request(server string, pFallthrough string) (*http.Request, error) {
+func NewIssue30Request(server string, pFallthrough Issue30PathFallthrough) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -444,7 +618,7 @@ func NewIssue30Request(server string, pFallthrough string) (*http.Request, error
 }
 
 // NewIssue41Request generates requests for Issue41
-func NewIssue41Request(server string, n1param N5StartsWithNumber) (*http.Request, error) {
+func NewIssue41Request(server string, n1param Issue41Path1param) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -591,10 +765,10 @@ type ClientWithResponsesInterface interface {
 	Issue209WithResponse(ctx context.Context, str StringInPath, reqEditors ...RequestEditorFn) (*Issue209Response, error)
 
 	// Issue30 request
-	Issue30WithResponse(ctx context.Context, pFallthrough string, reqEditors ...RequestEditorFn) (*Issue30Response, error)
+	Issue30WithResponse(ctx context.Context, pFallthrough Issue30PathFallthrough, reqEditors ...RequestEditorFn) (*Issue30Response, error)
 
 	// Issue41 request
-	Issue41WithResponse(ctx context.Context, n1param N5StartsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error)
+	Issue41WithResponse(ctx context.Context, n1param Issue41Path1param, reqEditors ...RequestEditorFn) (*Issue41Response, error)
 
 	// Issue9 request  with any body
 	Issue9WithBodyWithResponse(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*Issue9Response, error)
@@ -602,18 +776,20 @@ type ClientWithResponsesInterface interface {
 	Issue9WithResponse(ctx context.Context, params *Issue9Params, body Issue9JSONRequestBody, reqEditors ...RequestEditorFn) (*Issue9Response, error)
 }
 
+// EnsureEverythingIsReferencedResponseJSON200 represents a possible response for the EnsureEverythingIsReferenced request.
+type EnsureEverythingIsReferencedResponseJSON200 struct {
+	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
+
+	// AnyType2 represents any type.
+	//
+	// This should be an interface{}
+	AnyType2         *AnyType2         `json:"anyType2,omitempty"`
+	CustomStringType *CustomStringType `foo:"bar" json:"customStringType,omitempty"`
+}
 type EnsureEverythingIsReferencedResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		AnyType1 *AnyType1 `json:"anyType1,omitempty"`
-
-		// AnyType2 represents any type.
-		//
-		// This should be an interface{}
-		AnyType2         *AnyType2         `json:"anyType2,omitempty"`
-		CustomStringType *CustomStringType `foo:"bar" json:"customStringType,omitempty"`
-	}
+	JSON200      *EnsureEverythingIsReferencedResponseJSON200
 }
 
 // Status returns HTTPResponse.Status
@@ -632,13 +808,24 @@ func (r EnsureEverythingIsReferencedResponse) StatusCode() int {
 	return 0
 }
 
+// Issue127ResponseJSON200 represents a possible response for the Issue127 request.
+type Issue127ResponseJSON200 GenericObject
+
+// Issue127ResponseXML200 represents a possible response for the Issue127 request.
+type Issue127ResponseXML200 GenericObject
+
+// Issue127ResponseYAML200 represents a possible response for the Issue127 request.
+type Issue127ResponseYAML200 GenericObject
+
+// Issue127ResponseJSONDefault represents a possible response for the Issue127 request.
+type Issue127ResponseJSONDefault GenericObject
 type Issue127Response struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *GenericObject
-	XML200       *GenericObject
-	YAML200      *GenericObject
-	JSONDefault  *GenericObject
+	JSON200      *Issue127ResponseJSON200
+	XML200       *Issue127ResponseXML200
+	YAML200      *Issue127ResponseYAML200
+	JSONDefault  *Issue127ResponseJSONDefault
 }
 
 // Status returns HTTPResponse.Status
@@ -807,7 +994,7 @@ func (c *ClientWithResponses) Issue209WithResponse(ctx context.Context, str Stri
 }
 
 // Issue30WithResponse request returning *Issue30Response
-func (c *ClientWithResponses) Issue30WithResponse(ctx context.Context, pFallthrough string, reqEditors ...RequestEditorFn) (*Issue30Response, error) {
+func (c *ClientWithResponses) Issue30WithResponse(ctx context.Context, pFallthrough Issue30PathFallthrough, reqEditors ...RequestEditorFn) (*Issue30Response, error) {
 	rsp, err := c.Issue30(ctx, pFallthrough, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -816,7 +1003,7 @@ func (c *ClientWithResponses) Issue30WithResponse(ctx context.Context, pFallthro
 }
 
 // Issue41WithResponse request returning *Issue41Response
-func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, n1param N5StartsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error) {
+func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, n1param Issue41Path1param, reqEditors ...RequestEditorFn) (*Issue41Response, error) {
 	rsp, err := c.Issue41(ctx, n1param, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -856,15 +1043,7 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			AnyType1 *AnyType1 `json:"anyType1,omitempty"`
-
-			// AnyType2 represents any type.
-			//
-			// This should be an interface{}
-			AnyType2         *AnyType2         `json:"anyType2,omitempty"`
-			CustomStringType *CustomStringType `foo:"bar" json:"customStringType,omitempty"`
-		}
+		var dest EnsureEverythingIsReferencedResponseJSON200
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -890,28 +1069,28 @@ func ParseIssue127Response(rsp *http.Response) (*Issue127Response, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest GenericObject
+		var dest Issue127ResponseJSON200
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest GenericObject
+		var dest Issue127ResponseJSONDefault
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSONDefault = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "xml") && rsp.StatusCode == 200:
-		var dest GenericObject
+		var dest Issue127ResponseXML200
 		if err := xml.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.XML200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
-		var dest GenericObject
+		var dest Issue127ResponseYAML200
 		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1027,40 +1206,174 @@ func ParseIssue9Response(rsp *http.Response) (*Issue9Response, error) {
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(ctx echo.Context) error
+	EnsureEverythingIsReferenced(ctx *EnsureEverythingIsReferencedContext) error
 
 	// (GET /issues/127)
-	Issue127(ctx echo.Context) error
+	Issue127(ctx *Issue127Context) error
 
 	// (GET /issues/185)
-	Issue185(ctx echo.Context) error
+	Issue185(ctx *Issue185Context) error
 
 	// (GET /issues/209/${str})
-	Issue209(ctx echo.Context, str StringInPath) error
+	Issue209(ctx *Issue209Context, str StringInPath) error
 
 	// (GET /issues/30/{fallthrough})
-	Issue30(ctx echo.Context, pFallthrough string) error
+	Issue30(ctx *Issue30Context, pFallthrough Issue30PathFallthrough) error
 
 	// (GET /issues/41/{1param})
-	Issue41(ctx echo.Context, n1param N5StartsWithNumber) error
+	Issue41(ctx *Issue41Context, n1param Issue41Path1param) error
 
 	// (GET /issues/9)
-	Issue9(ctx echo.Context, params Issue9Params) error
+	Issue9(ctx *Issue9Context, params Issue9Params) error
+}
+
+// EnsureEverythingIsReferencedContext is a context customized for EnsureEverythingIsReferenced (GET /ensure-everything-is-referenced).
+type EnsureEverythingIsReferencedContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *EnsureEverythingIsReferencedContext) OK(resp EnsureEverythingIsReferencedResponseOK) error {
+	return c.Context.JSON(200, resp)
+}
+
+// Issue127Context is a context customized for Issue127 (GET /issues/127).
+type Issue127Context struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *Issue127Context) OK(resp Issue127ResponseOK) error {
+	return c.Context.JSON(200, resp)
+}
+
+// Issue185Context is a context customized for Issue185 (GET /issues/185).
+type Issue185Context struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *Issue185Context) ParseJSONBody() (Issue185JSONBody, error) {
+	var resp Issue185JSONBody
+	return resp, bindValidateBody(c.Context, &resp)
+}
+
+// Issue209Context is a context customized for Issue209 (GET /issues/209/${str}).
+type Issue209Context struct {
+	echo.Context
+}
+
+// Issue30Context is a context customized for Issue30 (GET /issues/30/{fallthrough}).
+type Issue30Context struct {
+	echo.Context
+}
+
+// Issue41Context is a context customized for Issue41 (GET /issues/41/{1param}).
+type Issue41Context struct {
+	echo.Context
+}
+
+// Issue9Context is a context customized for Issue9 (GET /issues/9).
+type Issue9Context struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *Issue9Context) ParseJSONBody() (Issue9JSONBody, error) {
+	var resp Issue9JSONBody
+	return resp, bindValidateBody(c.Context, &resp)
+}
+
+// bindValidateBody decodes and validates the body of a request. It's highly inspired
+// from the echo.DefaultBinder BindBody function.
+// This is preferred over echo.Bind, since it grants more control over the binding
+// functionality. Particularly, it returns a well-formatted ValidationError on invalid input.
+func bindValidateBody(c echo.Context, i validation.Validatable) error {
+	req := c.Request()
+	if req.ContentLength != 0 {
+		// Decode
+		ctype := req.Header.Get(echo.HeaderContentType)
+		switch {
+		case strings.HasPrefix(ctype, echo.MIMEApplicationJSON):
+			if err := json.NewDecoder(req.Body).Decode(i); err != nil {
+				// Add some context to the error when possible
+				switch e := err.(type) {
+				case *json.UnmarshalTypeError:
+					err = fmt.Errorf("cannot unmarshal a value of type %v into the field %v of type %v (offset %v)", e.Value, e.Field, e.Type, e.Offset)
+				case *json.SyntaxError:
+					err = fmt.Errorf("%v (offset %v)", err.Error(), e.Offset)
+				}
+				return &ValidationError{ParamType: "body", Err: err}
+			}
+		default:
+			return echo.ErrUnsupportedMediaType
+		}
+	}
+
+	// Validate
+	if err := i.Validate(); err != nil {
+		return &ValidationError{ParamType: "body", Err: err}
+	}
+	return nil
+}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
+	Err       error
+}
+
+// Error implements the error interface.
+func (v *ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	securityHandler SecurityHandler
 }
+
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
 
 // EnsureEverythingIsReferenced converts echo context to params.
 func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced(ctx echo.Context) error {
 	var err error
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	securityReq := SecurityReq{
+		"access-token": nil,
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.EnsureEverythingIsReferenced(ctx)
+	err = w.Handler.EnsureEverythingIsReferenced(&EnsureEverythingIsReferencedContext{ctx})
 	return err
 }
 
@@ -1068,10 +1381,16 @@ func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced(ctx echo.Context) 
 func (w *ServerInterfaceWrapper) Issue127(ctx echo.Context) error {
 	var err error
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	securityReq := SecurityReq{
+		"access-token": nil,
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue127(ctx)
+	err = w.Handler.Issue127(&Issue127Context{ctx})
 	return err
 }
 
@@ -1079,64 +1398,103 @@ func (w *ServerInterfaceWrapper) Issue127(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) Issue185(ctx echo.Context) error {
 	var err error
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	securityReq := SecurityReq{
+		"access-token": nil,
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue185(ctx)
+	err = w.Handler.Issue185(&Issue185Context{ctx})
 	return err
 }
 
 // Issue209 converts echo context to params.
 func (w *ServerInterfaceWrapper) Issue209(ctx echo.Context) error {
 	var err error
+
+	securityReq := SecurityReq{
+		"access-token": nil,
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
+
 	// ------------- Path parameter "str" -------------
 	var str StringInPath
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "str", runtime.ParamLocationPath, ctx.Param("str"), &str)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter str: %s", err))
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "str", Err: errors.Wrap(err, "invalid format")})
 	}
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	if err := str.Validate(); err != nil {
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "str", Err: err})
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue209(ctx, str)
+	err = w.Handler.Issue209(&Issue209Context{ctx}, str)
 	return err
 }
 
 // Issue30 converts echo context to params.
 func (w *ServerInterfaceWrapper) Issue30(ctx echo.Context) error {
 	var err error
+
+	securityReq := SecurityReq{
+		"access-token": nil,
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
+
 	// ------------- Path parameter "fallthrough" -------------
-	var pFallthrough string
+	var pFallthrough Issue30PathFallthrough
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "fallthrough", runtime.ParamLocationPath, ctx.Param("fallthrough"), &pFallthrough)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter fallthrough: %s", err))
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "fallthrough", Err: errors.Wrap(err, "invalid format")})
 	}
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	if err := pFallthrough.Validate(); err != nil {
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "fallthrough", Err: err})
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue30(ctx, pFallthrough)
+	err = w.Handler.Issue30(&Issue30Context{ctx}, pFallthrough)
 	return err
 }
 
 // Issue41 converts echo context to params.
 func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
 	var err error
+
+	securityReq := SecurityReq{
+		"access-token": nil,
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
+
 	// ------------- Path parameter "1param" -------------
-	var n1param N5StartsWithNumber
+	var n1param Issue41Path1param
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "1param", runtime.ParamLocationPath, ctx.Param("1param"), &n1param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter 1param: %s", err))
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "1param", Err: errors.Wrap(err, "invalid format")})
 	}
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	if err := n1param.Validate(); err != nil {
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "1param", Err: err})
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue41(ctx, n1param)
+	err = w.Handler.Issue41(&Issue41Context{ctx}, n1param)
 	return err
 }
 
@@ -1144,7 +1502,13 @@ func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) Issue9(ctx echo.Context) error {
 	var err error
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	securityReq := SecurityReq{
+		"access-token": nil,
+	}
+	err = w.securityHandler(ctx, securityReq)
+	if err != nil {
+		return err
+	}
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params Issue9Params
@@ -1152,11 +1516,15 @@ func (w *ServerInterfaceWrapper) Issue9(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, true, "foo", ctx.QueryParams(), &params.Foo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter foo: %s", err))
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue9(ctx, params)
+	err = w.Handler.Issue9(&Issue9Context{ctx}, params)
 	return err
 }
 
@@ -1176,25 +1544,26 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler, m ...echo.MiddlewareFunc) {
+	RegisterHandlersWithBaseURL(router, si, "", sh, m...)
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, sh SecurityHandler, m ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.GET(baseURL+"/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced)
-	router.GET(baseURL+"/issues/127", wrapper.Issue127)
-	router.GET(baseURL+"/issues/185", wrapper.Issue185)
-	router.GET(baseURL+"/issues/209/$:str", wrapper.Issue209)
-	router.GET(baseURL+"/issues/30/:fallthrough", wrapper.Issue30)
-	router.GET(baseURL+"/issues/41/:1param", wrapper.Issue41)
-	router.GET(baseURL+"/issues/9", wrapper.Issue9)
+	router.GET(baseURL+"/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced, m...)
+	router.GET(baseURL+"/issues/127", wrapper.Issue127, m...)
+	router.GET(baseURL+"/issues/185", wrapper.Issue185, m...)
+	router.GET(baseURL+"/issues/209/$:str", wrapper.Issue209, m...)
+	router.GET(baseURL+"/issues/30/:fallthrough", wrapper.Issue30, m...)
+	router.GET(baseURL+"/issues/41/:1param", wrapper.Issue41, m...)
+	router.GET(baseURL+"/issues/9", wrapper.Issue9, m...)
 
 }
 

@@ -60,10 +60,9 @@ type configuration struct {
 }
 
 func main() {
-
 	flag.StringVar(&flagPackageName, "package", "", "The package name for generated code")
-	flag.StringVar(&flagGenerate, "generate", "types,client,server,spec",
-		`Comma-separated list of code to generate; valid options: "types", "client", "chi-server", "server", "spec", "skip-fmt", "skip-prune"`)
+	flag.StringVar(&flagGenerate, "generate", "types,client,typed-client,server,spec",
+		`Comma-separated list of code to generate; valid options: "types", "client", "test-client", "typed-client", "chi-server", "server", "spec", "skip-fmt", "skip-prune"`)
 	flag.StringVar(&flagOutputFile, "o", "", "Where to output generated code, stdout is default")
 	flag.StringVar(&flagIncludeTags, "include-tags", "", "Only include operations with the given tags. Comma-separated list of tags.")
 	flag.StringVar(&flagExcludeTags, "exclude-tags", "", "Exclude operations that are tagged with the given tags. Comma-separated list of tags.")
@@ -110,6 +109,10 @@ func main() {
 		switch g {
 		case "client":
 			opts.GenerateClient = true
+		case "test-client":
+			opts.GenerateTestClient = true
+		case "typed-client":
+			opts.GenerateTypedClient = true
 		case "chi-server":
 			opts.GenerateChiServer = true
 		case "server":

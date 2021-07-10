@@ -13,11 +13,36 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // ObjectB defines model for ObjectB.
 type ObjectB struct {
 	Name *string `json:"name,omitempty"`
+}
+
+// Validate perform validation on the ObjectB
+func (s ObjectB) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Name,
+		),
+	)
+
+}
+
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

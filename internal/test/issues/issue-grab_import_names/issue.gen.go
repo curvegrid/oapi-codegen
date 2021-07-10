@@ -18,8 +18,22 @@ import (
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
+
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		v, isNil := validation.Indirect(value)
+		if isNil {
+			return nil
+		}
+		return validation.Each(rules...).Validate(v)
+	})
+}
 
 // GetFooParams defines parameters for GetFoo.
 type GetFooParams struct {
@@ -29,6 +43,33 @@ type GetFooParams struct {
 
 	// openapi_types. path. runtime. strings. time.Duration time.Time url. xml. yaml.
 	Bar *string `json:"Bar,omitempty"`
+}
+
+// Validate perform validation on the GetFooParams
+func (s GetFooParams) Validate() error {
+	// Run validate on a struct
+	return validation.ValidateStruct(
+		&s,
+		validation.Field(
+			&s.Foo,
+		),
+		validation.Field(
+			&s.Bar,
+		),
+	)
+
+}
+
+// GetFooResponseOK defines parameters for GetFoo.
+type GetFooResponseOK string
+
+// Validate perform validation on the GetFooResponseOK
+func (s GetFooResponseOK) Validate() error {
+	// Run validate on a scalar
+	return validation.Validate(
+		(string)(s),
+	)
+
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -216,10 +257,12 @@ type ClientWithResponsesInterface interface {
 	GetFooWithResponse(ctx context.Context, params *GetFooParams, reqEditors ...RequestEditorFn) (*GetFooResponse, error)
 }
 
+// GetFooResponseJSON200 represents a possible response for the GetFoo request.
+type GetFooResponseJSON200 string
 type GetFooResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *string
+	JSON200      *GetFooResponseJSON200
 }
 
 // Status returns HTTPResponse.Status
@@ -262,7 +305,7 @@ func ParseGetFooResponse(rsp *http.Response) (*GetFooResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest string
+		var dest GetFooResponseJSON200
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -277,13 +320,90 @@ func ParseGetFooResponse(rsp *http.Response) (*GetFooResponse, error) {
 type ServerInterface interface {
 
 	// (GET /foo)
-	GetFoo(ctx echo.Context, params GetFooParams) error
+	GetFoo(ctx *GetFooContext, params GetFooParams) error
+}
+
+// GetFooContext is a context customized for GetFoo (GET /foo).
+type GetFooContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *GetFooContext) OK(resp GetFooResponseOK) error {
+	return c.Context.JSON(200, resp)
+}
+
+// bindValidateBody decodes and validates the body of a request. It's highly inspired
+// from the echo.DefaultBinder BindBody function.
+// This is preferred over echo.Bind, since it grants more control over the binding
+// functionality. Particularly, it returns a well-formatted ValidationError on invalid input.
+func bindValidateBody(c echo.Context, i validation.Validatable) error {
+	req := c.Request()
+	if req.ContentLength != 0 {
+		// Decode
+		ctype := req.Header.Get(echo.HeaderContentType)
+		switch {
+		case strings.HasPrefix(ctype, echo.MIMEApplicationJSON):
+			if err := json.NewDecoder(req.Body).Decode(i); err != nil {
+				// Add some context to the error when possible
+				switch e := err.(type) {
+				case *json.UnmarshalTypeError:
+					err = fmt.Errorf("cannot unmarshal a value of type %v into the field %v of type %v (offset %v)", e.Value, e.Field, e.Type, e.Offset)
+				case *json.SyntaxError:
+					err = fmt.Errorf("%v (offset %v)", err.Error(), e.Offset)
+				}
+				return &ValidationError{ParamType: "body", Err: err}
+			}
+		default:
+			return echo.ErrUnsupportedMediaType
+		}
+	}
+
+	// Validate
+	if err := i.Validate(); err != nil {
+		return &ValidationError{ParamType: "body", Err: err}
+	}
+	return nil
+}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
+	Err       error
+}
+
+// Error implements the error interface.
+func (v *ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	securityHandler SecurityHandler
 }
+
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
 
 // GetFoo converts echo context to params.
 func (w *ServerInterfaceWrapper) GetFoo(ctx echo.Context) error {
@@ -298,12 +418,12 @@ func (w *ServerInterfaceWrapper) GetFoo(ctx echo.Context) error {
 		var Foo string
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for Foo, got %d", n))
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "Foo", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameterWithLocation("simple", false, "Foo", runtime.ParamLocationHeader, valueList[0], &Foo)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter Foo: %s", err))
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "Foo", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.Foo = &Foo
@@ -313,19 +433,19 @@ func (w *ServerInterfaceWrapper) GetFoo(ctx echo.Context) error {
 		var Bar string
 		n := len(valueList)
 		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for Bar, got %d", n))
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "Bar", Err: errors.Errorf("expected one value, got %d", n)})
 		}
 
 		err = runtime.BindStyledParameterWithLocation("simple", false, "Bar", runtime.ParamLocationHeader, valueList[0], &Bar)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter Bar: %s", err))
+			return errors.WithStack(&ValidationError{ParamType: "header", Param: "Bar", Err: errors.Wrap(err, "invalid format")})
 		}
 
 		params.Bar = &Bar
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetFoo(ctx, params)
+	err = w.Handler.GetFoo(&GetFooContext{ctx}, params)
 	return err
 }
 
@@ -345,19 +465,20 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler, m ...echo.MiddlewareFunc) {
+	RegisterHandlersWithBaseURL(router, si, "", sh, m...)
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, sh SecurityHandler, m ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.GET(baseURL+"/foo", wrapper.GetFoo)
+	router.GET(baseURL+"/foo", wrapper.GetFoo, m...)
 
 }
 

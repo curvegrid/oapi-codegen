@@ -1,4 +1,83 @@
 {{range .Types}}
 {{ with .Schema.Description }}{{ . }}{{ else }}// {{.TypeName}} defines model for {{.JsonName}}.{{ end }}
 type {{.TypeName}} {{if and (opts.AliasTypes) (.CanAlias)}}={{end}} {{.Schema.TypeDecl}}
+
+{{ if not .CanAlias }}
+// Validate perform validation on the {{.TypeName}}
+func (s {{.TypeName}}) Validate() error {
+    {{- if eq (len .Schema.Properties) 0 }}
+    {{- if ne (len .Schema.EnumValues) 0 }}
+    // Run validate on an enum
+    if err := validation.Validate(
+        s,
+        validation.In(
+            {{ range $key, $value := .Schema.EnumValues }}{{ printf "%v" $key }},{{ end }}
+        ),
+        validation.Skip, // do not recurse infinitely
+    ); err != nil {
+        return err
+    }
+    {{- end }}
+    // Run validate on a scalar
+    return validation.Validate(
+        ({{.Schema.GoType}})(s),
+        {{- template "validateRules" .Schema -}}
+    )
+    {{- else }}
+    // Run validate on a struct
+    return validation.ValidateStruct(
+        &s,
+        {{- range .Schema.EmbeddedFields }}validation.Field(&s.{{.}}),{{ end }}
+        {{- range .Schema.Properties }}
+        validation.Field(
+            &s.{{.GoFieldName}},
+            {{ if and .Required (not .Nullable) }}validation.Required,{{ end }}
+            {{- template "validateRules" .Schema -}}
+        ),
+        {{- end }}
+        {{- if .Schema.HasAdditionalProperties }}
+        validation.Field(&s.AdditionalProperties, {{ template "validateRules" .Schema.AdditionalPropertiesType }}),
+        {{ end }}
+    )
+    {{ end }}
+}
+{{ end }}
 {{end}}
+
+{{ define "validateRules" }}
+{{- $v := .OAPISchema }}
+{{- if $v }}
+{{- if or $v.MinItems $v.MaxItems }}
+validation.Length({{if $v.MinItems}}{{$v.MinItems}}{{else}}0{{end}}, {{if $v.MaxItems}}{{ $v.MaxItems }}{{else}}0{{end}}),
+{{ end }}
+{{- if or $v.MinProps $v.MaxProps }}
+validation.Length({{$v.MinProps}}, {{if $v.MaxProps}}{{ $v.MaxProps }}{{else}}0{{end}}),
+{{ end }}
+{{- if .ItemType }}
+eachWithIndirection(
+    {{ template "validateRules" .ItemType }}
+),
+{{ end }}
+{{- if $v.Min }} validation.Min({{ $v.Min }}){{if $v.ExclusiveMin}}.Exclusive(){{end}},{{end}}
+{{- if $v.Max }} validation.Max({{ $v.Max }}){{if $v.ExclusiveMax}}.Exclusive(){{end}},{{end}}
+{{- if $v.MultipleOf }} validation.MultipleOf({{ $v.MultipleOf }}),{{end}}
+{{- if or $v.MinLength $v.MaxLength }}
+validation.Length({{$v.MinLength}}, {{if $v.MaxLength}}{{ $v.MaxLength }}{{else}}0{{end}}),
+{{- end }}
+{{- if ne $v.Pattern "" }}
+validation.Match(regexp.MustCompile({{ printf "%#v" $v.Pattern}})),
+{{- end }}
+{{- end }}
+{{ end }}
+
+// validation.Each does not handle a pointer to slices/arrays or maps.
+// This does the job.
+func eachWithIndirection(rules ...validation.Rule) validation.Rule {
+  return validation.By(func(value interface{}) error {
+    v, isNil := validation.Indirect(value)
+    if isNil {
+        return nil
+    }
+    return validation.Each(rules...).Validate(v)
+  })
+}

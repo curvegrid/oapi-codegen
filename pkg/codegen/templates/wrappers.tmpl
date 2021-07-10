@@ -1,11 +1,41 @@
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
     Handler ServerInterface
+
+    securityHandler SecurityHandler
 }
+
+type (
+    // SecurityScheme is a security scheme name
+    SecurityScheme string
+
+    // SecurityScopes is a list of security scopes
+    SecurityScopes []string
+
+    // SecurityReq is a map of security scheme names and their respective scopes
+    SecurityReq map[SecurityScheme]SecurityScopes
+
+    // SecurityHandler defines a function to handle the security requirements
+    // defined in the OpenAPI specification.
+    SecurityHandler func(echo.Context, SecurityReq) error
+)
 
 {{range .}}{{$opid := .OperationId}}// {{$opid}} converts echo context to params.
 func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     var err error
+
+{{if .SecurityDefinitions}}
+    securityReq := SecurityReq{
+    {{range .SecurityDefinitions -}}
+        "{{.ProviderName}}": {{if .Scopes}}{{toStringArray .Scopes}}{{else}}nil{{end}},
+    {{end}}
+    }
+    err = w.securityHandler(ctx, securityReq)
+    if err != nil {
+        return err
+    }
+{{end}}
+
 {{range .PathParams}}// ------------- Path parameter "{{.ParamName}}" -------------
     var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}
 {{if .IsPassThrough}}
@@ -14,19 +44,18 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
 {{if .IsJson}}
     err = json.Unmarshal([]byte(ctx.Param("{{.ParamName}}")), &{{$varName}})
     if err != nil {
-        return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter '{{.ParamName}}' as JSON")
+        return errors.WithStack(&ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: errors.Wrap(err, "cannot parse as json")})
     }
 {{end}}
 {{if .IsStyled}}
     err = runtime.BindStyledParameterWithLocation("{{.Style}}",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationPath, ctx.Param("{{.ParamName}}"), &{{$varName}})
     if err != nil {
-        return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter {{.ParamName}}: %s", err))
+        return errors.WithStack(&ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
     }
 {{end}}
-{{end}}
-
-{{range .SecurityDefinitions}}
-    ctx.Set({{.ProviderName | sanitizeGoIdentity | ucFirst}}Scopes, {{toStringArray .Scopes}})
+    if err := {{$varName}}.Validate(); err != nil {
+        return errors.WithStack(&ValidationError{ParamType: "path", Param: "{{.ParamName}}", Err: err})
+    }
 {{end}}
 
 {{if .RequiresParamObject}}
@@ -36,7 +65,7 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     {{if .IsStyled}}
     err = runtime.BindQueryParameter("{{.Style}}", {{.Explode}}, {{.Required}}, "{{.ParamName}}", ctx.QueryParams(), &params.{{.GoName}})
     if err != nil {
-        return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter {{.ParamName}}: %s", err))
+        return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
     }
     {{else}}
     if paramValue := ctx.QueryParam("{{.ParamName}}"); paramValue != "" {
@@ -47,14 +76,17 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     var value {{.TypeDef}}
     err = json.Unmarshal([]byte(paramValue), &value)
     if err != nil {
-        return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter '{{.ParamName}}' as JSON")
+        return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "cannot parse as json")})
     }
     params.{{.GoName}} = {{if not .Required}}&{{end}}value
     {{end}}
     }{{if .Required}} else {
-        return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Query argument {{.ParamName}} is required, but not found"))
+        return errors.WithStack(&ValidationError{ParamType: "query", Param: "{{.ParamName}}, Err: errors.New("required but not found")})
     }{{end}}
     {{end}}
+    if err := params.Validate(); err != nil {
+        return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
+    }
 {{end}}
 
 {{if .HeaderParams}}
@@ -64,7 +96,7 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
         var {{.GoName}} {{.TypeDef}}
         n := len(valueList)
         if n != 1 {
-            return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for {{.ParamName}}, got %d", n))
+            return errors.WithStack(&ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Errorf("expected one value, got %d", n)})
         }
 {{if .IsPassThrough}}
         params.{{.GoName}} = {{if not .Required}}&{{end}}valueList[0]
@@ -72,18 +104,18 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
 {{if .IsJson}}
         err = json.Unmarshal([]byte(valueList[0]), &{{.GoName}})
         if err != nil {
-            return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter '{{.ParamName}}' as JSON")
+            return errors.WithStack(&ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Wrap(err, "cannot parse as json")})
         }
 {{end}}
 {{if .IsStyled}}
         err = runtime.BindStyledParameterWithLocation("{{.Style}}",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationHeader, valueList[0], &{{.GoName}})
         if err != nil {
-            return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter {{.ParamName}}: %s", err))
+            return errors.WithStack(&ValidationError{ParamType: "header", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
         }
 {{end}}
         params.{{.GoName}} = {{if not .Required}}&{{end}}{{.GoName}}
         } {{if .Required}}else {
-            return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter {{.ParamName}} is required, but not found"))
+            return errors.WithStack(&ValidationError{ParamType: "header", Param: "{{.ParamName}}, Err: errors.New("required but not found")})
         }{{end}}
 {{end}}
 {{end}}
@@ -98,11 +130,11 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     var decoded string
     decoded, err := url.QueryUnescape(cookie.Value)
     if err != nil {
-        return echo.NewHTTPError(http.StatusBadRequest, "Error unescaping cookie parameter '{{.ParamName}}'")
+        return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: err})
     }
     err = json.Unmarshal([]byte(decoded), &value)
     if err != nil {
-        return echo.NewHTTPError(http.StatusBadRequest, "Error unmarshaling parameter '{{.ParamName}}' as JSON")
+        return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Wrap(err, "cannot parse as json")})
     }
     params.{{.GoName}} = {{if not .Required}}&{{end}}value
     {{end}}
@@ -110,19 +142,19 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
     var value {{.TypeDef}}
     err = runtime.BindStyledParameterWithLocation("simple",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationCookie, cookie.Value, &value)
     if err != nil {
-        return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter {{.ParamName}}: %s", err))
+        return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Wrap(err, "invalid format")})
     }
     params.{{.GoName}} = {{if not .Required}}&{{end}}value
     {{end}}
     }{{if .Required}} else {
-        return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Query argument {{.ParamName}} is required, but not found"))
+        return errors.WithStack(&ValidationError{ParamType: "cookie", Param: "{{.ParamName}}", Err: errors.Errorf("required, but not found")})
     }{{end}}
 
 {{end}}{{/* .CookieParams */}}
 
 {{end}}{{/* .RequiresParamObject */}}
     // Invoke the callback with all the unmarshalled arguments
-    err = w.Handler.{{.OperationId}}(ctx{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
+    err = w.Handler.{{.OperationId}}(&{{.OperationId}}Context{ctx}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
     return err
 }
 {{end}}

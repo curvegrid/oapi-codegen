@@ -7,37 +7,159 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Returns all pets
 	// (GET /pets)
-	FindPets(ctx echo.Context, params FindPetsParams) error
+	FindPets(ctx *FindPetsContext, params FindPetsParams) error
 	// Creates a new pet
 	// (POST /pets)
-	AddPet(ctx echo.Context) error
+	AddPet(ctx *AddPetContext) error
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(ctx echo.Context, id int64) error
+	DeletePet(ctx *DeletePetContext, id DeletePetPathId) error
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetByID(ctx echo.Context, id int64) error
+	FindPetByID(ctx *FindPetByIDContext, id FindPetByIDPathId) error
+}
+
+// FindPetsContext is a context customized for FindPets (GET /pets).
+type FindPetsContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *FindPetsContext) OK(resp FindPetsResponseOK) error {
+	return c.Context.JSON(200, resp)
+}
+
+// AddPetContext is a context customized for AddPet (POST /pets).
+type AddPetContext struct {
+	echo.Context
+}
+
+// The body parsers
+// ParseJSONBody tries to parse the body into the respective structure and validate it.
+func (c *AddPetContext) ParseJSONBody() (AddPetJSONBody, error) {
+	var resp AddPetJSONBody
+	return resp, bindValidateBody(c.Context, &resp)
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *AddPetContext) OK(resp AddPetResponseOK) error {
+	return c.Context.JSON(200, resp)
+}
+
+// DeletePetContext is a context customized for DeletePet (DELETE /pets/{id}).
+type DeletePetContext struct {
+	echo.Context
+}
+
+// Responses
+
+// NoContent returns the successful response with no body.
+func (c *DeletePetContext) NoContent() error {
+	return c.Context.NoContent(204)
+}
+
+// FindPetByIDContext is a context customized for FindPetByID (GET /pets/{id}).
+type FindPetByIDContext struct {
+	echo.Context
+}
+
+// Responses
+
+// OK responses with the appropriate code and the JSON response.
+func (c *FindPetByIDContext) OK(resp FindPetByIDResponseOK) error {
+	return c.Context.JSON(200, resp)
+}
+
+// bindValidateBody decodes and validates the body of a request. It's highly inspired
+// from the echo.DefaultBinder BindBody function.
+// This is preferred over echo.Bind, since it grants more control over the binding
+// functionality. Particularly, it returns a well-formatted ValidationError on invalid input.
+func bindValidateBody(c echo.Context, i validation.Validatable) error {
+	req := c.Request()
+	if req.ContentLength != 0 {
+		// Decode
+		ctype := req.Header.Get(echo.HeaderContentType)
+		switch {
+		case strings.HasPrefix(ctype, echo.MIMEApplicationJSON):
+			if err := json.NewDecoder(req.Body).Decode(i); err != nil {
+				// Add some context to the error when possible
+				switch e := err.(type) {
+				case *json.UnmarshalTypeError:
+					err = fmt.Errorf("cannot unmarshal a value of type %v into the field %v of type %v (offset %v)", e.Value, e.Field, e.Type, e.Offset)
+				case *json.SyntaxError:
+					err = fmt.Errorf("%v (offset %v)", err.Error(), e.Offset)
+				}
+				return &ValidationError{ParamType: "body", Err: err}
+			}
+		default:
+			return echo.ErrUnsupportedMediaType
+		}
+	}
+
+	// Validate
+	if err := i.Validate(); err != nil {
+		return &ValidationError{ParamType: "body", Err: err}
+	}
+	return nil
+}
+
+// ValidationError is the special validation error type, returned from failed validation runs.
+type ValidationError struct {
+	ParamType string // can be "path", "cookie", "header", "query" or "body"
+	Param     string // which field? can be omitted, when we parse the entire struct at once
+	Err       error
+}
+
+// Error implements the error interface.
+func (v *ValidationError) Error() string {
+	if v.Param == "" {
+		return fmt.Sprintf("validation failed for '%s': %v", v.ParamType, v.Err)
+	}
+	return fmt.Sprintf("validation failed for %s parameter '%s': %v", v.ParamType, v.Param, v.Err)
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+
+	securityHandler SecurityHandler
 }
+
+type (
+	// SecurityScheme is a security scheme name
+	SecurityScheme string
+
+	// SecurityScopes is a list of security scopes
+	SecurityScopes []string
+
+	// SecurityReq is a map of security scheme names and their respective scopes
+	SecurityReq map[SecurityScheme]SecurityScopes
+
+	// SecurityHandler defines a function to handle the security requirements
+	// defined in the OpenAPI specification.
+	SecurityHandler func(echo.Context, SecurityReq) error
+)
 
 // FindPets converts echo context to params.
 func (w *ServerInterfaceWrapper) FindPets(ctx echo.Context) error {
@@ -49,18 +171,25 @@ func (w *ServerInterfaceWrapper) FindPets(ctx echo.Context) error {
 
 	err = runtime.BindQueryParameter("form", true, false, "tags", ctx.QueryParams(), &params.Tags)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
 	}
 
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
+	}
 	// ------------- Optional query parameter "limit" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := params.Validate(); err != nil {
+		return errors.WithStack(&ValidationError{ParamType: "query", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.FindPets(ctx, params)
+	err = w.Handler.FindPets(&FindPetsContext{ctx}, params)
 	return err
 }
 
@@ -69,39 +198,49 @@ func (w *ServerInterfaceWrapper) AddPet(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.AddPet(ctx)
+	err = w.Handler.AddPet(&AddPetContext{ctx})
 	return err
 }
 
 // DeletePet converts echo context to params.
 func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var id DeletePetPathId
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := id.Validate(); err != nil {
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeletePet(ctx, id)
+	err = w.Handler.DeletePet(&DeletePetContext{ctx}, id)
 	return err
 }
 
 // FindPetByID converts echo context to params.
 func (w *ServerInterfaceWrapper) FindPetByID(ctx echo.Context) error {
 	var err error
+
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var id FindPetByIDPathId
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: errors.Wrap(err, "invalid format")})
+	}
+
+	if err := id.Validate(); err != nil {
+		return errors.WithStack(&ValidationError{ParamType: "path", Param: "id", Err: err})
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.FindPetByID(ctx, id)
+	err = w.Handler.FindPetByID(&FindPetByIDContext{ctx}, id)
 	return err
 }
 
@@ -121,22 +260,23 @@ type EchoRouter interface {
 }
 
 // RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+func RegisterHandlers(router EchoRouter, si ServerInterface, sh SecurityHandler, m ...echo.MiddlewareFunc) {
+	RegisterHandlersWithBaseURL(router, si, "", sh, m...)
 }
 
 // Registers handlers, and prepends BaseURL to the paths, so that the paths
 // can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string, sh SecurityHandler, m ...echo.MiddlewareFunc) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:         si,
+		securityHandler: sh,
 	}
 
-	router.GET(baseURL+"/pets", wrapper.FindPets)
-	router.POST(baseURL+"/pets", wrapper.AddPet)
-	router.DELETE(baseURL+"/pets/:id", wrapper.DeletePet)
-	router.GET(baseURL+"/pets/:id", wrapper.FindPetByID)
+	router.GET(baseURL+"/pets", wrapper.FindPets, m...)
+	router.POST(baseURL+"/pets", wrapper.AddPet, m...)
+	router.DELETE(baseURL+"/pets/:id", wrapper.DeletePet, m...)
+	router.GET(baseURL+"/pets/:id", wrapper.FindPetByID, m...)
 
 }
 
